@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASPEC ERP - 메인</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        
+        /* 메뉴 활성화 스타일 */
+        .nav-btn.active { background-color: #1e293b; color: #22d3ee; border-right: 4px solid #22d3ee; }
+        
+        /* 인쇄 설정 */
+        @media print {
+            @page { size: A4; margin: 0; }
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; padding: 20mm; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col z-20 shadow-xl">
+            <div class="p-6 border-b border-slate-800">
+                 <svg width="120" height="40" viewBox="0 0 400 150">
+                    <rect x="30" y="50" width="12" height="50" fill="#06b6d4"/>
+                    <rect x="48" y="40" width="12" height="60" fill="#0891b2"/>
+                    <rect x="66" y="45" width="12" height="55" fill="#0e7490"/>
+                    <text x="95" y="90" font-family="Arial" font-size="60" font-weight="bold" fill="white">ASPEC</text>
+                </svg>
+            </div>
+            
+            <nav class="flex-1 py-4 space-y-1">
+                <button onclick="switchTab('sales')" id="btn-sales" class="nav-btn active w-full text-left px-6 py-4 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
+                    <i class="fa-solid fa-cart-shopping"></i> 견적/주문/판매
+                </button>
+                <button onclick="switchTab('inventory')" id="btn-inventory" class="nav-btn w-full text-left px-6 py-4 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
+                    <i class="fa-solid fa-boxes-stacked"></i> 재고 관리
+                </button>
+                <button onclick="switchTab('history')" id="btn-history" class="nav-btn w-full text-left px-6 py-4 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
+                    <i class="fa-solid fa-list"></i> 거래 내역
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="logout()" class="w-full bg-slate-800 text-slate-400 py-2 rounded hover:bg-slate-700 hover:text-white transition text-sm">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> 로그아웃
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto relative">
+            <header class="bg-white h-16 border-b flex items-center justify-between px-8 sticky top-0 z-10">
+                <h1 class="text-xl font-bold text-slate-800" id="headerTitle">판매 관리</h1>
+                <div class="text-sm text-slate-500">Logged in as <span id="userEmail" class="font-bold text-cyan-600">User</span></div>
+            </header>
+
+            <div class="p-8">
+                <section id="sec-sales" class="tab-content">
+                    <div class="grid grid-cols-12 gap-6">
+                        <div class="col-span-8 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-400 uppercase">문서 구분</label>
+                                    <select id="txType" class="w-full mt-1 p-2 bg-slate-50 border border-slate-300 rounded focus:border-cyan-500 outline-none">
+                                        <option value="견적서">📄 견적서 (재고유지)</option>
+                                        <option value="주문서">📦 주문서 (발주)</option>
+                                        <option value="거래명세서">💰 판매/출고 (재고차감)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-400 uppercase">거래처명</label>
+                                    <input type="text" id="partnerName" class="w-full mt-1 p-2 border border-slate-300 rounded focus:border-cyan-500 outline-none" placeholder="(주)거래처">
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 p-4 rounded-lg mb-6 flex gap-2 border border-slate-200">
+                                <select id="productSelect" class="flex-1 p-2 border border-slate-300 rounded outline-none">
+                                    <option>상품 로딩중...</option>
+                                </select>
+                                <input type="number" id="qtyInput" class="w-24 p-2 border border-slate-300 rounded outline-none" placeholder="수량">
+                                <button onclick="addToCart()" class="bg-slate-800 text-white px-4 rounded hover:bg-slate-700 font-bold">+</button>
+                            </div>
+
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-100 text-slate-500 border-b">
+                                    <tr>
+                                        <th class="p-3 text-left">품목</th>
+                                        <th class="p-3 text-right">단가</th>
+                                        <th class="p-3 text-center">수량</th>
+                                        <th class="p-3 text-right">합계</th>
+                                        <th class="p-3 text-center">삭제</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cartBody">
+                                    </tbody>
+                            </table>
+                            <div id="emptyCartMsg" class="text-center py-10 text-slate-400">장바구니가 비었습니다.</div>
+                        </div>
+
+                        <div class="col-span-4 space-y-4">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="text-slate-500 text-sm mb-1">Total Amount</div>
+                                <div class="text-3xl font-bold text-cyan-600 text-right mb-6" id="totalPrice">0 원</div>
+                                
+                                <button onclick="saveData()" class="w-full bg-cyan-600 text-white py-3 rounded-lg font-bold hover:bg-cyan-700 mb-3 shadow-lg shadow-cyan-500/30 transition transform active:scale-95">
+                                    저장 및 확정
+                                </button>
+                                <button onclick="printDoc()" class="w-full bg-white border-2 border-slate-200 text-slate-600 py-3 rounded-lg font-bold hover:bg-slate-50 transition flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-print"></i> 인쇄 / PDF 저장
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="sec-inventory" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-100 border-b text-slate-500">
+                                <tr>
+                                    <th class="p-4">상품명</th>
+                                    <th class="p-4">규격</th>
+                                    <th class="p-4 text-right">단가</th>
+                                    <th class="p-4 text-right">현재고</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="sec-history" class="tab-content hidden">
+                    <div id="historyList" class="space-y-3"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div id="printArea" class="hidden">
+        <div class="h-full border-2 border-black p-8 flex flex-col justify-between text-black">
+            <div>
+                <div class="flex justify-between items-end border-b-2 border-black pb-4 mb-8">
+                    <h1 id="printTitle" class="text-4xl font-serif font-bold">거 래 명 세 서</h1>
+                    <div class="text-right">
+                         <svg width="100" height="30" viewBox="0 0 400 150">
+                            <rect x="30" y="50" width="12" height="50" fill="#000"/>
+                            <rect x="48" y="40" width="12" height="60" fill="#333"/>
+                            <rect x="66" y="45" width="12" height="55" fill="#666"/>
+                            <text x="95" y="90" font-family="Arial" font-size="60" font-weight="bold" fill="#000">ASPEC</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="flex mb-8 text-sm border border-black">
+                    <div class="w-1/2 border-r border-black p-2">
+                        <table class="w-full">
+                            <tr><td class="font-bold w-16">공급자</td><td>ASPEC (아스펙)</td></tr>
+                            <tr><td class="font-bold">대표</td><td>홍길동</td></tr>
+                        </table>
+                    </div>
+                    <div class="w-1/2 p-2">
+                        <table class="w-full">
+                            <tr><td class="font-bold w-16">귀하</td><td id="printPartner"></td></tr>
+                            <tr><td class="font-bold">날짜</td><td id="printDate"></td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                <table class="w-full border-collapse border border-black text-sm mb-4">
+                    <thead>
+                        <tr class="bg-gray-100 text-center">
+                            <th class="border border-black p-2">품목</th>
+                            <th class="border border-black p-2 w-16">수량</th>
+                            <th class="border border-black p-2 w-24">단가</th>
+                            <th class="border border-black p-2 w-28">금액</th>
+                        </tr>
+                    </thead>
+                    <tbody id="printBody"></tbody>
+                    <tfoot>
+                        <tr class="font-bold">
+                            <td colspan="3" class="border border-black p-2 text-center">합 계</td>
+                            <td id="printTotal" class="border border-black p-2 text-right"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="text-center text-sm">위와 같이 청구(영수)합니다.</div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // [설정] index.html과 똑같은 키를 넣으세요!
+        // ==========================================
+        const SUPABASE_URL = 'https://[본인주소].supabase.co';
+        const SUPABASE_KEY = '[본인_ANON_KEY]';
+        // ==========================================
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let cart = [];
+        let products = [];
+
+        // 1. 보안 검사 (로그인 안했으면 쫓아냄)
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                alert("로그인이 필요합니다.");
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('userEmail').innerText = session.user.email.split('@')[0];
+                loadProducts();
+                loadHistory();
+            }
+        }
+
+        // 2. 탭 전환 (메뉴 누르면 작동)
+        function switchTab(tabName) {
+            // 모든 섹션 숨기기
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // 선택한 섹션 보이기
+            document.getElementById('sec-' + tabName).classList.remove('hidden');
+            
+            // 버튼 스타일 초기화
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'bg-slate-800', 'text-white'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                // Tailwind 기본 hover 클래스는 유지해야 함
+            });
+            
+            // 선택된 버튼 활성화
+            const activeBtn = document.getElementById('btn-' + tabName);
+            activeBtn.classList.add('active');
+
+            // 제목 변경
+            const titles = { 'sales': '판매 관리', 'inventory': '재고 관리', 'history': '거래 내역' };
+            document.getElementById('headerTitle').innerText = titles[tabName];
+
+            if(tabName === 'inventory') loadProducts();
+            if(tabName === 'history') loadHistory();
+        }
+
+        // 3. 데이터 로직 (이전과 동일하나 최적화됨)
+        async function loadProducts() {
+            const { data, error } = await supabase.from('products').select('*').order('name');
+            if(error) return console.error(error);
+            products = data;
+            
+            // 셀렉트박스 갱신
+            const select = document.getElementById('productSelect');
+            select.innerHTML = '';
+            products.forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.name} (${p.spec}) - ${p.stock}개</option>`;
+            });
+
+            // 재고테이블 갱신
+            const tbody = document.getElementById('inventoryBody');
+            tbody.innerHTML = '';
+            products.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-medium">${p.name}</td>
+                        <td class="p-4 text-slate-500">${p.spec}</td>
+                        <td class="p-4 text-right">${p.price.toLocaleString()}</td>
+                        <td class="p-4 text-right font-bold ${p.stock < 10 ? 'text-red-500' : 'text-cyan-600'}">${p.stock}</td>
+                    </tr>`;
+            });
+        }
+
+        function addToCart() {
+            const pid = document.getElementById('productSelect').value;
+            const qty = parseInt(document.getElementById('qtyInput').value);
+            if(!pid || !qty) return;
+
+            const product = products.find(p => p.id == pid);
+            const exist = cart.find(i => i.id == pid);
+            if(exist) exist.qty += qty;
+            else cart.push({ ...product, qty });
+
+            renderCart();
+            document.getElementById('qtyInput').value = '';
+        }
+
+        function renderCart() {
+            const tbody = document.getElementById('cartBody');
+            const msg = document.getElementById('emptyCartMsg');
+            tbody.innerHTML = '';
+            
+            if(cart.length === 0) {
+                msg.classList.remove('hidden');
+            } else {
+                msg.classList.add('hidden');
+                let total = 0;
+                cart.forEach((item, idx) => {
+                    const sum = item.price * item.qty;
+                    total += sum;
+                    tbody.innerHTML += `
+                        <tr class="border-b">
+                            <td class="p-3">${item.name}</td>
+                            <td class="p-3 text-right text-slate-400">${item.price.toLocaleString()}</td>
+                            <td class="p-3 text-center font-bold">${item.qty}</td>
+                            <td class="p-3 text-right">${sum.toLocaleString()}</td>
+                            <td class="p-3 text-center text-red-400 cursor-pointer hover:text-red-600" onclick="cart.splice(${idx},1); renderCart()">
+                                <i class="fa-solid fa-trash"></i>
+                            </td>
+                        </tr>`;
+                });
+                document.getElementById('totalPrice').innerText = total.toLocaleString() + " 원";
+            }
+        }
+
+        async function saveData() {
+            if(cart.length === 0) return alert('장바구니가 비었습니다.');
+            const type = document.getElementById('txType').value;
+            const partner = document.getElementById('partnerName').value;
+            const total = parseInt(document.getElementById('totalPrice').innerText.replace(/[^0-9]/g,''));
+
+            // 트랜잭션 저장
+            await supabase.from('transactions').insert({
+                type, partner_name: partner, items: cart, total_amount: total
+            });
+
+            // 재고 차감 (거래명세서일 때만)
+            if(type === '거래명세서') {
+                for(const item of cart) {
+                    await supabase.from('products').update({ stock: item.stock - item.qty }).eq('id', item.id);
+                }
+            }
+
+            alert('저장 완료!');
+            cart = []; renderCart(); loadProducts(); switchTab('history');
+        }
+
+        async function loadHistory() {
+            const { data } = await supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(20);
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            data.forEach(tx => {
+                const colors = {'견적서':'bg-yellow-100 text-yellow-700', '주문서':'bg-blue-100 text-blue-700', '거래명세서':'bg-green-100 text-green-700'};
+                list.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg border border-slate-200 flex justify-between items-center hover:shadow-md transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold px-2 py-1 rounded ${colors[tx.type] || 'bg-gray-100'}">${tx.type}</span>
+                            <span class="font-bold text-slate-700">${tx.partner_name || '무명'}</span>
+                            <span class="text-xs text-slate-400">${tx.created_at.slice(0,10)}</span>
+                        </div>
+                        <div class="font-bold text-slate-800">${tx.total_amount.toLocaleString()}원</div>
+                    </div>`;
+            });
+        }
+
+        function printDoc() {
+            if(cart.length === 0) return alert('인쇄할 내용이 없습니다.');
+            
+            const type = document.getElementById('txType').value;
+            document.getElementById('printTitle').innerText = type === '견적서' ? '견 적 서' : '거 래 명 세 서';
+            document.getElementById('printPartner').innerText = document.getElementById('partnerName').value;
+            document.getElementById('printDate').innerText = new Date().toISOString().slice(0,10);
+            
+            const tbody = document.getElementById('printBody');
+            tbody.innerHTML = '';
+            let total = 0;
+            
+            cart.forEach(item => {
+                const sum = item.price * item.qty;
+                total += sum;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="border border-black p-2 text-left">${item.name} <span class="text-xs text-gray-500">(${item.spec})</span></td>
+                        <td class="border border-black p-2 text-center">${item.qty}</td>
+                        <td class="border border-black p-2 text-right">${item.price.toLocaleString()}</td>
+                        <td class="border border-black p-2 text-right">${sum.toLocaleString()}</td>
+                    </tr>`;
+            });
+            
+            // 빈 줄 5개 추가 (모양새 유지)
+            for(let i=0; i<5; i++) tbody.innerHTML += `<tr><td class="border border-black p-2">&nbsp;</td><td class="border border-black p-2"></td><td class="border border-black p-2"></td><td class="border border-black p-2"></td></tr>`;
+            
+            document.getElementById('printTotal').innerText = total.toLocaleString();
+            window.print();
+        }
+
+        function logout() {
+            supabase.auth.signOut().then(() => window.location.href = 'index.html');
+        }
+
+        // 실행
+        checkAuth();
+    </script>
+</body>
+</html>
