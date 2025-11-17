@@ -2,27 +2,28 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>ASPEC ERP - Integrated System</title>
+    <title>ASPEC ERP System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
-        body { font-family: 'Noto Sans KR', sans-serif; }
+        body { font-family: 'Noto Sans KR', sans-serif; font-size: 14px; }
         
-        /* 모달 스타일 */
+        /* 모달 */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; display: none; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 90%; max-width: 1200px; max-height: 90vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        .modal-content { background: white; width: 95%; max-width: 1300px; max-height: 95vh; overflow-y: auto; border-radius: 8px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal.active { display: flex; }
 
-        /* 테이블 스타일 */
-        th { background-color: #f8fafc; color: #64748b; font-weight: 600; padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; font-size: 0.9rem; }
-        td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; font-size: 0.9rem; }
-        .input-box { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
-        .input-box:focus { outline: none; border-color: #06b6d4; ring: 2px solid #06b6d4; }
+        /* 테이블 */
+        th { background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+        td { padding: 10px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+        .input-box { width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; }
+        .input-box:focus { outline: none; border-color: #06b6d4; ring: 1px solid #06b6d4; }
+        .readonly-input { background-color: #f8fafc; color: #64748b; cursor: not-allowed; }
 
-        /* 인쇄 전용 스타일 */
+        /* 인쇄 */
         @media print {
             @page { size: A4; margin: 10mm; }
             body * { visibility: hidden; }
@@ -32,105 +33,93 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-100 text-slate-800">
 
     <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shadow-xl z-20">
-            <div class="p-6 border-b border-slate-800">
-                <h1 class="text-2xl font-bold text-white tracking-wider">ASPEC <span class="text-cyan-400 text-xs align-top">ERP</span></h1>
+        <aside class="w-60 bg-slate-900 text-slate-300 flex flex-col shadow-xl z-20">
+            <div class="p-5 border-b border-slate-800">
+                <h1 class="text-xl font-bold text-white">ASPEC <span class="text-cyan-400 text-xs">ERP</span></h1>
             </div>
-            <nav class="flex-1 py-4 space-y-1 overflow-y-auto">
-                <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">기초 등록</div>
-                <button onclick="switchTab('partners')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-building"></i> 거래처 관리</button>
-                <button onclick="switchTab('products')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-box"></i> 품목 관리</button>
+            <nav class="flex-1 py-4 overflow-y-auto text-sm">
+                <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-2 mb-2">기초 등록</div>
+                <button onclick="switchTab('partners')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-building w-4"></i> 거래처 관리</button>
+                <button onclick="switchTab('products')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-box w-4"></i> 품목 관리</button>
                 
-                <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">구매 관리</div>
-                <button onclick="switchTab('purchases')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-cart-flatbed"></i> 구매 내역</button>
+                <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">자재/재고</div>
+                <button onclick="switchTab('purchases')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-cart-flatbed w-4"></i> 구매 관리</button>
+                <button onclick="switchTab('inventory')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-warehouse w-4"></i> 재고 관리</button>
                 
-                <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">영업 관리</div>
-                <button onclick="switchTab('quotes')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-file-invoice"></i> 견적 관리</button>
-                <button onclick="switchTab('orders')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-file-signature"></i> 주문(수주) 관리</button>
-                <button onclick="switchTab('sales')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-truck-fast"></i> 판매(출고) 관리</button>
+                <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">영업 관리</div>
+                <button onclick="switchTab('quotes')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-file-invoice w-4"></i> 견적 관리</button>
+                <button onclick="switchTab('orders')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-file-signature w-4"></i> 주문 관리</button>
+                <button onclick="switchTab('sales')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-truck-fast w-4"></i> 판매 관리</button>
             </nav>
             <div class="p-4 border-t border-slate-800">
-                <button onclick="logout()" class="w-full bg-slate-800 py-2 rounded text-sm hover:text-white">로그아웃</button>
+                <button onclick="logout()" class="w-full bg-slate-800 py-2 rounded text-xs hover:text-white">로그아웃</button>
             </div>
         </aside>
 
-        <main class="flex-1 overflow-y-auto p-8 relative" id="mainContent">
+        <main class="flex-1 overflow-y-auto p-6" id="mainContent">
             <div id="contentArea"></div>
         </main>
     </div>
 
     <div id="genericModal" class="modal">
         <div class="modal-content">
-            <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h2 id="modalTitle" class="text-2xl font-bold text-slate-800">입력</h2>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500 text-2xl"><i class="fa-solid fa-times"></i></button>
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 id="modalTitle" class="text-xl font-bold text-slate-800">입력</h2>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
-            <div id="modalBody">
-                </div>
+            <div id="modalBody"></div>
         </div>
     </div>
 
     <div id="loadDataModal" class="modal" style="z-index: 60;">
         <div class="modal-content" style="max-width: 800px;">
-            <h3 class="text-xl font-bold mb-4">데이터 불러오기</h3>
-            <div class="overflow-y-auto max-h-96">
+            <h3 class="text-lg font-bold mb-4">데이터 불러오기</h3>
+            <div class="overflow-y-auto max-h-96 border rounded">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-100">
-                        <tr><th class="p-2">날짜</th><th class="p-2">거래처</th><th class="p-2">금액</th><th class="p-2">선택</th></tr>
-                    </thead>
+                    <thead class="bg-slate-50"><tr><th>날짜</th><th>거래처</th><th>총액</th><th>선택</th></tr></thead>
                     <tbody id="loadDataBody"></tbody>
                 </table>
             </div>
-            <button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="mt-4 px-4 py-2 bg-slate-500 text-white rounded">닫기</button>
+            <div class="mt-4 text-right"><button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="px-4 py-2 bg-slate-200 rounded">닫기</button></div>
         </div>
     </div>
 
-    <div id="printArea" class="hidden p-10 bg-white text-black">
+    <div id="printArea" class="hidden p-10 bg-white text-black text-sm">
         <div class="border-2 border-black p-1">
             <div class="border border-black p-8">
-                <div class="flex justify-between items-center border-b-2 border-black pb-2 mb-6">
-                    <div class="text-sm">
-                        <div>일자: <span id="prtDate"></span></div>
-                    </div>
+                <div class="flex justify-between items-end border-b-2 border-black pb-2 mb-4">
+                    <div>일자: <span id="prtDate"></span></div>
                     <h1 class="text-4xl font-serif font-bold tracking-[1rem]">거 래 명 세 서</h1>
-                    <div class="text-sm text-right">
-                        <div>No. <span id="prtNo"></span></div>
-                    </div>
+                    <div>No. <span id="prtNo"></span></div>
                 </div>
-
-                <div class="flex border border-black mb-6">
-                    <div class="w-1/2 border-r border-black">
-                        <div class="bg-slate-100 text-center font-bold border-b border-black py-1">공급 받는 자</div>
-                        <div class="p-2 grid grid-cols-1 gap-2 text-sm">
-                            <div class="flex"><span class="w-16 font-bold">상호</span> <span id="prtPartner" class="flex-1"></span></div>
-                            <div class="flex"><span class="w-16 font-bold">주소</span> <span class="flex-1">-</span></div>
-                            <div class="flex"><span class="w-16 font-bold">담당자</span> <span id="prtManager" class="flex-1"></span></div>
+                <div class="flex border border-black mb-4">
+                    <div class="w-1/2 border-r border-black p-2">
+                        <div class="text-center font-bold border-b border-black mb-2">공급 받는 자</div>
+                        <div class="grid grid-cols-1 gap-1">
+                            <div class="flex"><span class="w-16 font-bold">상호</span> <span id="prtPartner"></span></div>
+                            <div class="flex"><span class="w-16 font-bold">담당자</span> <span id="prtManager"></span></div>
                         </div>
                     </div>
-                    <div class="w-1/2">
-                        <div class="bg-slate-100 text-center font-bold border-b border-black py-1">공 급 자</div>
-                        <div class="p-2 grid grid-cols-1 gap-2 text-sm relative">
-                            <div class="flex"><span class="w-16 font-bold">등록번호</span> <span>130-86-72885</span></div>
-                            <div class="flex"><span class="w-16 font-bold">상호</span> <span>(주)ASPEC Tech</span> <span class="font-bold ml-4">성명</span> 이창현</div>
-                            <div class="flex"><span class="w-16 font-bold">주소</span> <span>경기 안양시...</span></div>
-                            <div class="flex"><span class="w-16 font-bold">업태</span> <span>제조,도소매</span> <span class="font-bold ml-4">종목</span> 전자부품</div>
-                            <div class="absolute right-4 top-8 opacity-50 border-2 border-red-500 rounded-full w-12 h-12 flex items-center justify-center text-red-500 text-xs font-bold transform -rotate-12">인</div>
+                    <div class="w-1/2 p-2 relative">
+                        <div class="text-center font-bold border-b border-black mb-2">공 급 자</div>
+                        <div class="grid grid-cols-1 gap-1">
+                            <div class="flex"><span class="w-16 font-bold">등록번호</span> 130-86-72885</div>
+                            <div class="flex"><span class="w-16 font-bold">상호</span> (주)ASPEC Tech <span class="font-bold ml-2">성명</span> 이창현</div>
+                            <div class="flex"><span class="w-16 font-bold">주소</span> 경기 안양시...</div>
+                            <div class="absolute right-4 top-10 opacity-50 border-2 border-red-500 rounded-full w-10 h-10 flex items-center justify-center text-red-500 text-xs font-bold transform -rotate-12">인</div>
                         </div>
                     </div>
                 </div>
-
-                <div class="border border-black mb-6 p-2 flex justify-between font-bold">
-                    <span>합계금액 (공급가액 + 세액)</span>
-                    <span class="text-lg">₩ <span id="prtGrandTotal">0</span></span>
+                <div class="border border-black mb-4 p-2 flex justify-between font-bold text-lg bg-slate-50">
+                    <span>합계금액 (공급가액+세액)</span>
+                    <span>₩ <span id="prtGrandTotal"></span></span>
                 </div>
-
-                <table class="w-full text-sm border-collapse border border-black mb-4">
-                    <thead>
-                        <tr class="bg-slate-100 text-center">
-                            <th class="border border-black p-1">월/일</th>
+                <table class="w-full border-collapse border border-black mb-4 text-center">
+                    <thead class="bg-slate-100">
+                        <tr>
                             <th class="border border-black p-1">품목명</th>
                             <th class="border border-black p-1">규격</th>
                             <th class="border border-black p-1">수량</th>
@@ -139,27 +128,22 @@
                             <th class="border border-black p-1">세액</th>
                         </tr>
                     </thead>
-                    <tbody id="prtTableBody" class="text-center"></tbody>
+                    <tbody id="prtTableBody"></tbody>
                     <tfoot>
                         <tr class="font-bold bg-slate-50">
-                            <td colspan="5" class="border border-black p-2 text-center">소 계</td>
-                            <td id="prtSupplyTotal" class="border border-black p-2 text-right"></td>
-                            <td id="prtVatTotal" class="border border-black p-2 text-right"></td>
+                            <td colspan="4" class="border border-black p-1">소 계</td>
+                            <td id="prtSupplyTotal" class="border border-black p-1 text-right"></td>
+                            <td id="prtVatTotal" class="border border-black p-1 text-right"></td>
                         </tr>
                     </tfoot>
                 </table>
-                
-                <div class="flex justify-between text-sm mt-8">
-                    <div>인수자: ________________ (인)</div>
-                    <div>납품자: ASPEC Tech (인)</div>
-                </div>
             </div>
         </div>
     </div>
 
     <script>
         // ==========================================
-        // [설정] 본인의 Supabase URL/Key 입력 (따옴표 주의)
+        // [설정] YOUR_SUPABASE_URL / KEY 입력 필수!
         // ==========================================
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
@@ -172,46 +156,51 @@
         let productList = []; 
 
         window.onload = async () => {
-            await fetchData('partners');
-            await fetchData('products');
-            switchTab('partners'); 
+            await fetchData();
+            switchTab('partners');
         };
+
+        async function fetchData() {
+            const pRes = await supabase.from('partners').select('*');
+            const prodRes = await supabase.from('products').select('*');
+            partnerList = pRes.data || [];
+            productList = prodRes.data || [];
+        }
 
         async function switchTab(tab) {
             currentTab = tab;
+            await fetchData(); // 탭 전환 시 최신 데이터 갱신
             const container = document.getElementById('contentArea');
-            let html = '';
-
+            
             const titles = {
-                'partners': '기초등록 > 거래처 관리',
-                'products': '기초등록 > 품목 관리',
-                'purchases': '구매 관리', // 수정: DB 테이블명과 일치시킴
-                'quotes': '영업 관리 > 견적서',
-                'orders': '영업 관리 > 주문서(수주)',
-                'sales': '영업 관리 > 판매(출고)'
+                'partners': '거래처 관리', 'products': '품목 관리', 'purchases': '구매 관리', 
+                'inventory': '재고 관리 현황', 'quotes': '견적 관리', 'orders': '주문 관리 (수주)', 'sales': '판매 관리 (출고)'
             };
 
-            html += `<div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-slate-800">${titles[tab]}</h2>
-                        <button onclick="openNewModal('${tab}')" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-cyan-500/30 transition">
-                            <i class="fa-solid fa-plus mr-2"></i> 신규 등록
-                        </button>
-                     </div>`;
-
-            html += `<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <table class="w-full text-left border-collapse">`;
+            let html = `<div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-slate-800 border-l-4 border-cyan-500 pl-3">${titles[tab]}</h2>`;
             
-            if (tab === 'partners') {
-                html += `<thead><tr><th>상호</th><th>담당자</th><th>전화번호</th><th>사업자번호</th><th>비고</th></tr></thead><tbody id="listBody"></tbody>`;
-            } else if (tab === 'products') {
-                html += `<thead><tr><th>품목코드</th><th>품목명</th><th>규격</th><th>입고단가</th><th>판매단가</th></tr></thead><tbody id="listBody"></tbody>`;
-            } else if (tab === 'purchases') {
-                // 수정: 단가 및 비고란 반영
-                html += `<thead><tr><th>일자</th><th>매입처</th><th>품목명</th><th>수량</th><th>단가 (VAT별도)</th><th>합계</th><th>비고</th></tr></thead><tbody id="listBody"></tbody>`;
-            } else {
-                html += `<thead><tr><th>일자</th><th>거래처</th><th>담당자</th><th>총금액</th><th>비고</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            if(tab !== 'inventory') {
+                html += `<button onclick="openNewModal('${tab}')" class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded font-bold shadow-sm transition text-sm"><i class="fa-solid fa-plus mr-2"></i>신규 등록</button>`;
             }
-            
+            html += `</div>`;
+
+            html += `<div class="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse">`;
+
+            // 테이블 헤더
+            if (tab === 'partners') {
+                html += `<thead><tr><th>상호</th><th>담당자</th><th>전화번호</th><th>비고</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            } else if (tab === 'products') {
+                html += `<thead><tr><th>품목코드</th><th>품목명</th><th>규격</th><th>현재고</th><th>입고단가</th><th>판매단가</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            } else if (tab === 'purchases') {
+                html += `<thead><tr><th>일자</th><th>매입처</th><th>품목명</th><th>수량</th><th>단가(VAT별도)</th><th>공급가합계</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            } else if (tab === 'inventory') {
+                html += `<thead><tr><th>품목코드</th><th>품목명</th><th>규격</th><th>실재고</th><th>예약 현황 (주문접수)</th></tr></thead><tbody id="listBody"></tbody>`;
+            } else {
+                // 견적/주문/판매 공통
+                html += `<thead><tr><th>일자</th><th>거래처</th><th>담당자</th><th>공급가액</th><th>부가세</th><th>합계</th><th>비고</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            }
             html += `</table></div>`;
             container.innerHTML = html;
             
@@ -220,413 +209,393 @@
 
         async function loadListData(tab) {
             const tbody = document.getElementById('listBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4">로딩중...</td></tr>';
-            
-            const { data, error } = await supabase.from(tab).select('*').order('created_at', { ascending: false });
-            
-            // 에러 발생 시 로그 출력 및 화면 표시
-            if (error) { 
-                console.error("Load Error:", error); 
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-red-500">데이터 로딩 실패: ${error.message}</td></tr>`;
-                return; 
-            }
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4">로딩중...</td></tr>';
 
-            tbody.innerHTML = '';
-            if(!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-slate-400">데이터가 없습니다.</td></tr>';
+            if(tab === 'inventory') {
+                await loadInventoryData();
                 return;
             }
 
+            const { data, error } = await supabase.from(tab).select('*').order('created_at', { ascending: false });
+            if (error || !data) { tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4">데이터 없음</td></tr>'; return; }
+
+            tbody.innerHTML = '';
             data.forEach(row => {
                 let tr = `<tr class="hover:bg-slate-50 border-b">`;
+                const delBtn = `<button onclick="deleteItem('${tab}', ${row.id})" class="text-red-400 hover:text-red-600 ml-2" title="삭제"><i class="fa-solid fa-trash"></i></button>`;
+
                 if (tab === 'partners') {
-                    tr += `<td>${row.name}</td><td>${row.manager_name||'-'}</td><td>${row.phone||'-'}</td><td>${row.biz_num||'-'}</td><td>${row.note||''}</td>`;
+                    tr += `<td>${row.name}</td><td>${row.manager_name||'-'}</td><td>${row.phone||'-'}</td><td>${row.note||''}</td><td class="text-center">${delBtn}</td>`;
                 } else if (tab === 'products') {
                     tr += `<td class="font-mono text-cyan-600">${row.code}</td><td>${row.name}</td><td>${row.spec||'-'}</td>
-                           <td class="text-right">${(row.cost_price||0).toLocaleString()}</td><td class="text-right font-bold">${(row.price||0).toLocaleString()}</td>`;
+                           <td class="font-bold text-blue-600">${row.stock}</td>
+                           <td class="text-right">${(row.cost_price||0).toLocaleString()}</td><td class="text-right">${(row.price||0).toLocaleString()}</td><td class="text-center">${delBtn}</td>`;
                 } else if (tab === 'purchases') {
-                    // 수정: 구매내역 리스트 출력 (단가 포함)
                     tr += `<td>${row.date}</td><td>${row.partner_name}</td><td>${row.item_name}</td><td class="text-center">${row.qty}</td>
-                           <td class="text-right">${(row.unit_price||0).toLocaleString()}</td>
-                           <td class="text-right font-bold text-slate-600">${(row.supply_price||0).toLocaleString()}</td>
-                           <td>${row.note||''}</td>`;
+                           <td class="text-right">${(row.unit_price||0).toLocaleString()}</td><td class="text-right font-bold">${(row.supply_price||0).toLocaleString()}</td><td class="text-center">${delBtn}</td>`;
                 } else {
+                    // 견적/주문/판매
+                    const printBtn = tab === 'sales' ? `<button onclick='printTrans(${JSON.stringify(row)})' class="bg-slate-100 border px-2 py-1 rounded text-xs hover:bg-slate-200 mr-2"><i class="fa-solid fa-print"></i></button>` : '';
                     tr += `<td>${row.date}</td><td class="font-bold">${row.partner_name||'-'}</td><td>${row.manager||'-'}</td>
-                           <td class="text-right text-cyan-700 font-bold">${(row.total_amount||0).toLocaleString()}원</td><td>${row.note||''}</td>
-                           <td class="text-center">
-                                ${tab === 'sales' ? `<button onclick='printTrans(${JSON.stringify(row)})' class="bg-slate-100 px-2 py-1 rounded text-xs border hover:bg-slate-200">인쇄</button>` : ''}
-                           </td>`;
+                           <td class="text-right text-slate-600">${(row.total_supply||0).toLocaleString()}</td>
+                           <td class="text-right text-slate-400 text-xs">${(row.total_vat||0).toLocaleString()}</td>
+                           <td class="text-right font-bold text-cyan-700">${(row.total_amount||0).toLocaleString()}</td>
+                           <td>${row.note||''}</td>
+                           <td class="text-center flex justify-center items-center">${printBtn} ${delBtn}</td>`;
                 }
                 tr += `</tr>`;
                 tbody.innerHTML += tr;
             });
         }
 
+        // =========================
+        // 재고 관리 (예약 표시 로직)
+        // =========================
+        async function loadInventoryData() {
+            const tbody = document.getElementById('listBody');
+            // 1. 모든 품목 가져오기
+            // 2. 아직 출고되지 않은 모든 주문서 가져오기 (여기선 편의상 모든 주문서를 가져와서 매칭)
+            // *실제로는 sales 테이블에 없는 order_id만 필터링해야 하지만, 간단히 orders 전체를 예약으로 간주하고 표시
+            const ordersRes = await supabase.from('orders').select('*');
+            const allOrders = ordersRes.data || [];
+
+            tbody.innerHTML = '';
+            productList.forEach(prod => {
+                // 이 품목이 포함된 주문 찾기
+                let reservedQty = 0;
+                let partners = [];
+                
+                allOrders.forEach(ord => {
+                    if(ord.items) {
+                        ord.items.forEach(item => {
+                            if(item.name === prod.name) {
+                                reservedQty += item.qty;
+                                if(!partners.includes(ord.partner_name)) partners.push(ord.partner_name);
+                            }
+                        });
+                    }
+                });
+
+                let reservedText = reservedQty > 0 
+                    ? `<span class="text-red-500 font-bold">(${reservedQty}개 예정)</span> <span class="text-xs text-gray-500 ml-1">- ${partners.join(', ')} 등</span>` 
+                    : '<span class="text-gray-300">-</span>';
+
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="font-mono text-slate-500">${prod.code}</td>
+                        <td class="font-bold">${prod.name}</td>
+                        <td>${prod.spec||''}</td>
+                        <td class="font-bold text-lg text-blue-600">${prod.stock} EA</td>
+                        <td>${reservedText}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // =========================
+        // 삭제 기능
+        // =========================
+        async function deleteItem(table, id) {
+            if(!confirm("정말 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.")) return;
+            
+            // 참조 무결성 때문에 순서가 중요하지만, cascade설정 또는 단순 삭제 시도
+            const { error } = await supabase.from(table).delete().eq('id', id);
+            if(error) alert("삭제 실패 (다른 데이터와 연결되어 있을 수 있습니다): " + error.message);
+            else {
+                await fetchData();
+                loadListData(table);
+            }
+        }
+
+        // =========================
+        // 신규 등록 모달
+        // =========================
         function openNewModal(tab) {
             const modal = document.getElementById('genericModal');
-            const title = document.getElementById('modalTitle');
+            document.getElementById('modalTitle').innerText = getTitle(tab) + ' 등록';
             const body = document.getElementById('modalBody');
-            tempItems = []; 
+            tempItems = []; // 초기화
 
             modal.classList.add('active');
             
+            let html = '';
+            const today = new Date().toISOString().split('T')[0];
+
             if (tab === 'partners') {
-                title.innerText = '거래처 신규 등록';
-                body.innerHTML = `
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-xs text-slate-500">상호 (필수)</label><input type="text" id="pName" class="input-box" placeholder="(주)ASPEC"></div>
-                        <div><label class="text-xs text-slate-500">사업자번호</label><input type="text" id="pBiz" class="input-box"></div>
-                        <div><label class="text-xs text-slate-500">대표자</label><input type="text" id="pOwner" class="input-box"></div>
-                        <div><label class="text-xs text-slate-500">담당자명</label><input type="text" id="pManager" class="input-box"></div>
-                        <div><label class="text-xs text-slate-500">전화번호</label><input type="text" id="pPhone" class="input-box"></div>
-                        <div><label class="text-xs text-slate-500">이메일</label><input type="text" id="pEmail" class="input-box"></div>
-                        <div class="col-span-2"><label class="text-xs text-slate-500">비고</label><input type="text" id="pNote" class="input-box"></div>
-                    </div>
-                    <button onclick="savePartner()" class="w-full mt-6 bg-cyan-600 text-white py-3 rounded-lg font-bold">저장하기</button>
-                `;
+                html = `<div class="grid grid-cols-2 gap-3">
+                    <div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div>
+                    <div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div>
+                    <div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div>
+                    <div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div>
+                    <div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div>
+                    <div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div>
+                    <div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div>
+                </div><button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
             } else if (tab === 'products') {
-                title.innerText = '품목 신규 등록';
-                body.innerHTML = `
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="col-span-2 bg-blue-50 p-2 rounded text-xs text-blue-600 mb-2">💡 품목명을 입력하면 품목코드가 자동 생성됩니다.</div>
-                        <div><label class="text-xs text-slate-500">품목명</label><input type="text" id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div>
-                        <div><label class="text-xs text-slate-500">품목코드 (자동)</label><input type="text" id="prodCode" class="input-box bg-slate-100" readonly></div>
-                        <div class="col-span-2"><label class="text-xs text-slate-500">규격 (Spec)</label><input type="text" id="prodSpec" class="input-box" placeholder="예: 1/3 inch sensor, 4K"></div>
-                        <div><label class="text-xs text-slate-500">입고단가</label><input type="number" id="prodCost" class="input-box"></div>
-                        <div><label class="text-xs text-slate-500">판매단가</label><input type="number" id="prodPrice" class="input-box"></div>
-                    </div>
-                    <button onclick="saveProduct()" class="w-full mt-6 bg-cyan-600 text-white py-3 rounded-lg font-bold">저장하기</button>
-                `;
+                html = `<div class="grid grid-cols-2 gap-3">
+                    <div><label class="text-xs">품목명 (필수)</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div>
+                    <div><label class="text-xs">품목코드 (자동)</label><input id="prodCode" class="input-box bg-slate-100" readonly></div>
+                    <div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div>
+                    <div><label class="text-xs">기초재고</label><input type="number" id="prodStock" class="input-box" value="0"></div>
+                    <div><label class="text-xs">입고단가</label><input type="number" id="prodCost" class="input-box" value="0"></div>
+                    <div><label class="text-xs">판매단가</label><input type="number" id="prodPrice" class="input-box" value="0"></div>
+                </div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
             } else if (tab === 'purchases') {
-                // 수정: 구매내역 입력폼 (단가 추가)
-                title.innerText = '구매 내역 등록';
-                body.innerHTML = `
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-xs text-slate-500">일자</label><input type="date" id="purDate" class="input-box" value="${new Date().toISOString().split('T')[0]}"></div>
-                        <div><label class="text-xs text-slate-500">매입처</label><input type="text" id="purPartner" class="input-box"></div>
-                        <div><label class="text-xs text-slate-500">품목명</label><input type="text" id="purItem" class="input-box"></div>
-                        <div><label class="text-xs text-slate-500">수량</label><input type="number" id="purQty" class="input-box"></div>
-                        <div><label class="text-xs text-slate-500">단가 (VAT 별도)</label><input type="number" id="purPrice" class="input-box" placeholder="0"></div>
-                        <div class="col-span-2"><label class="text-xs text-slate-500">비고</label><input type="text" id="purNote" class="input-box"></div>
-                    </div>
-                    <button onclick="savePurchase()" class="w-full mt-6 bg-cyan-600 text-white py-3 rounded-lg font-bold">저장하기</button>
-                `;
+                html = `<div class="grid grid-cols-2 gap-3">
+                    <div><label class="text-xs">일자</label><input type="date" id="purDate" class="input-box" value="${today}"></div>
+                    <div><label class="text-xs">매입처</label><input id="purPartner" class="input-box"></div>
+                    <div><label class="text-xs">품목명</label><input id="purItem" class="input-box"></div>
+                    <div><label class="text-xs">수량</label><input type="number" id="purQty" class="input-box"></div>
+                    <div><label class="text-xs">단가 (VAT별도)</label><input type="number" id="purPrice" class="input-box"></div>
+                    <div class="col-span-2"><label class="text-xs">비고</label><input id="purNote" class="input-box"></div>
+                </div><button onclick="saveSimpleData('purchases')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
             } else {
-                renderSalesForm(tab, body);
+                // 견적, 주문, 판매 (복합 폼)
+                renderComplexForm(tab, body);
+                return; 
             }
+            body.innerHTML = html;
         }
 
-        function closeModal() {
-            document.getElementById('genericModal').classList.remove('active');
+        function getTitle(tab) {
+            const map = {'partners':'거래처','products':'품목','purchases':'구매','quotes':'견적','orders':'주문','sales':'판매'};
+            return map[tab] || '';
         }
 
-        function autoGenCode(name) {
-            if(!name) return;
-            const code = 'P-' + Math.floor(Math.random() * 10000) + '-' + Date.now().toString().slice(-4);
-            document.getElementById('prodCode').value = code;
-        }
+        function closeModal() { document.getElementById('genericModal').classList.remove('active'); }
+        function autoGenCode(val) { if(val) document.getElementById('prodCode').value = 'P-' + Date.now().toString().slice(-6); }
 
-        async function savePartner() {
-            const data = {
-                name: document.getElementById('pName').value,
-                biz_num: document.getElementById('pBiz').value,
-                owner_name: document.getElementById('pOwner').value,
-                manager_name: document.getElementById('pManager').value,
-                phone: document.getElementById('pPhone').value,
-                email: document.getElementById('pEmail').value,
-                note: document.getElementById('pNote').value
-            };
-            if(!data.name) return alert('상호는 필수입니다.');
-            await supabase.from('partners').insert(data);
-            closeModal(); loadListData('partners'); fetchData('partners');
-        }
-
-        async function saveProduct() {
-            const data = {
-                name: document.getElementById('prodName').value,
-                code: document.getElementById('prodCode').value,
-                spec: document.getElementById('prodSpec').value,
-                cost_price: document.getElementById('prodCost').value,
-                price: document.getElementById('prodPrice').value
-            };
-            if(!data.name) return alert('품목명은 필수입니다.');
-            await supabase.from('products').insert(data);
-            closeModal(); loadListData('products'); fetchData('products');
-        }
-
-        async function savePurchase() {
-            // 수정: 구매내역 저장 (단가 저장 및 합계 자동계산)
-            const qty = parseInt(document.getElementById('purQty').value) || 0;
-            const price = parseInt(document.getElementById('purPrice').value) || 0;
-            
-            const data = {
-                date: document.getElementById('purDate').value,
-                partner_name: document.getElementById('purPartner').value,
-                item_name: document.getElementById('purItem').value,
-                qty: qty,
-                unit_price: price,
-                supply_price: qty * price, // 합계 계산
-                note: document.getElementById('purNote').value
-            };
-            
-            const { error } = await supabase.from('purchases').insert(data);
-            if(error) alert("저장 오류: " + error.message);
-            else {
-                closeModal(); loadListData('purchases');
+        // =========================
+        // 데이터 저장 (기초/구매)
+        // =========================
+        async function saveSimpleData(tab) {
+            let data = {};
+            if(tab === 'partners') {
+                data = { name: el('pName'), biz_num: el('pBiz'), owner_name: el('pOwner'), manager_name: el('pManager'), phone: el('pPhone'), email: el('pEmail'), note: el('pNote') };
+            } else if(tab === 'products') {
+                data = { name: el('prodName'), code: el('prodCode'), spec: el('prodSpec'), stock: el('prodStock'), cost_price: el('prodCost'), price: el('prodPrice') };
+            } else if(tab === 'purchases') {
+                const q = parseInt(el('purQty'))||0; const p = parseInt(el('purPrice'))||0;
+                data = { date: el('purDate'), partner_name: el('purPartner'), item_name: el('purItem'), qty: q, unit_price: p, supply_price: q*p, note: el('purNote') };
+                // 구매 시 품목 재고 증가 로직은 별도로 products update 필요하지만 여기선 생략(심플버전)
             }
+            
+            const { error } = await supabase.from(tab).insert(data);
+            if(error) alert('오류: '+error.message);
+            else { closeModal(); switchTab(tab); }
         }
+        function el(id) { return document.getElementById(id).value; }
 
-        function renderSalesForm(tab, container) {
+        // =========================
+        // 복합 폼 (견적/주문/판매)
+        // =========================
+        function renderComplexForm(tab, container) {
             const today = new Date().toISOString().split('T')[0];
             let loadBtn = '';
             if(tab === 'orders') loadBtn = `<button onclick="openLoadModal('quotes')" class="bg-orange-500 text-white px-3 py-1 rounded text-xs ml-2">견적 불러오기</button>`;
             if(tab === 'sales') loadBtn = `<button onclick="openLoadModal('orders')" class="bg-blue-500 text-white px-3 py-1 rounded text-xs ml-2">주문 불러오기</button>`;
-
-            let dateLabel = tab === 'sales' || tab === 'orders' ? '납기/납품일자' : '일자';
-            let extraFields = '';
-            if(tab === 'orders') extraFields = `<div><label class="text-xs text-slate-500">발주번호(PO)</label><input type="text" id="sPO" class="input-box"></div>`;
             
+            // 주문관리일 때만 재고 체크가 필요하므로 data-tab 속성 추가
             container.innerHTML = `
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-4">
-                    <div class="grid grid-cols-3 gap-4 mb-2">
-                        <div><label class="text-xs text-slate-500">${dateLabel}</label><input type="date" id="sDate" class="input-box" value="${today}"></div>
-                        <div class="relative">
-                            <label class="text-xs text-slate-500">거래처 검색</label>
-                            <input type="text" id="sPartner" class="input-box" placeholder="검색..." list="partnerOptions" onchange="fillPartnerInfo(this.value)">
-                            <datalist id="partnerOptions"></datalist>
-                        </div>
-                        <div><label class="text-xs text-slate-500">우리측 담당자</label><input type="text" id="sManager" class="input-box"></div>
+                <div class="bg-slate-50 p-4 rounded mb-4 border" data-tab="${tab}">
+                    <div class="grid grid-cols-3 gap-3 mb-2">
+                        <div><label class="text-xs text-slate-500">일자</label><input type="date" id="sDate" class="input-box" value="${today}"></div>
+                        <div><label class="text-xs text-slate-500">거래처 ${loadBtn}</label><input id="sPartner" class="input-box" list="dl_part" onchange="fillPart(this.value)"></div>
+                        <div><label class="text-xs text-slate-500">담당자</label><input id="sManager" class="input-box"></div>
                     </div>
-                    <div class="grid grid-cols-3 gap-4 mb-2">
-                        <div><label class="text-xs text-slate-500">거래처 담당자</label><input type="text" id="sPManager" class="input-box"></div>
-                        <div><label class="text-xs text-slate-500">이메일/연락처</label><input type="text" id="sContact" class="input-box"></div>
-                        ${extraFields}
+                    <div class="grid grid-cols-3 gap-3 mb-2">
+                        <div><label class="text-xs text-slate-500">거래처담당자</label><input id="sPManager" class="input-box"></div>
+                        <div><label class="text-xs text-slate-500">연락처/메일</label><input id="sContact" class="input-box"></div>
+                        <div><label class="text-xs text-slate-500">비고</label><input id="sNote" class="input-box"></div>
                     </div>
-                    <div><label class="text-xs text-slate-500">비고</label><input type="text" id="sNote" class="input-box"></div>
-                    <div class="mt-2 text-right">${loadBtn}</div>
                 </div>
 
-                <div class="bg-white border border-slate-200 rounded-lg p-2 mb-4">
+                <div class="bg-white border p-3 rounded mb-4 shadow-sm">
                     <div class="flex gap-2 items-end">
-                         <div class="w-1/4">
-                            <label class="text-xs">품목명</label>
-                            <input type="text" id="iName" class="input-box" list="prodOptions" onchange="fillProdInfo(this.value)">
-                            <datalist id="prodOptions"></datalist>
-                        </div>
-                        <div class="w-1/6"><label class="text-xs">규격(자동)</label><input type="text" id="iSpec" class="input-box bg-slate-50" readonly></div>
+                        <div class="w-1/4"><label class="text-xs">품목명</label><input id="iName" class="input-box" list="dl_prod" onchange="fillProd(this.value)"></div>
+                        <div class="w-1/4"><label class="text-xs">규격 (수정가능)</label><input id="iSpec" class="input-box"></div>
                         <div class="w-20"><label class="text-xs">수량</label><input type="number" id="iQty" class="input-box" value="1"></div>
                         <div class="w-24"><label class="text-xs">단가</label><input type="number" id="iPrice" class="input-box"></div>
-                        <div class="w-24"><label class="text-xs">입고가</label><input type="number" id="iCost" class="input-box"></div>
-                        <button onclick="addTempItem()" class="bg-slate-800 text-white px-4 py-2 rounded text-sm font-bold h-10">추가</button>
+                        <div class="w-24 hidden"><label class="text-xs">입고가</label><input type="number" id="iCost" class="input-box"></div>
+                        <button onclick="addItemToGrid('${tab}')" class="bg-slate-700 text-white px-4 py-2 rounded font-bold text-sm h-9">추가</button>
                     </div>
                 </div>
 
-                <table class="w-full text-sm border-collapse border border-slate-200 text-center">
+                <table class="w-full text-sm border-collapse border text-center mb-4">
                     <thead class="bg-slate-100">
-                        <tr>
-                            <th class="p-2">품목명</th>
-                            <th class="p-2">규격</th>
-                            <th class="p-2">수량</th>
-                            <th class="p-2">단가</th>
-                            <th class="p-2">공급가액</th>
-                            <th class="p-2">마진율</th>
-                            <th class="p-2">삭제</th>
-                        </tr>
+                        <tr><th>품목명</th><th>규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>마진</th><th>삭제</th></tr>
                     </thead>
-                    <tbody id="tempItemBody"></tbody>
+                    <tbody id="itemGrid"></tbody>
                 </table>
-                <div class="text-right mt-4 text-xl font-bold text-cyan-700">총액: <span id="sTotal">0</span>원</div>
+                
+                <div class="text-right text-lg font-bold text-cyan-700">총 합계: <span id="sGrandTotal">0</span>원</div>
+                <button onclick="saveComplexData('${tab}')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg">문서 저장</button>
 
-                <button onclick="saveSalesData('${tab}')" class="w-full mt-6 bg-cyan-600 text-white py-3 rounded-lg font-bold">문서 저장</button>
+                <datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>
             `;
-
-            fillDatalist('partnerOptions', partnerList);
-            fillDatalist('prodOptions', productList);
-        }
-
-        async function fetchData(table) {
-            const { data } = await supabase.from(table).select('*');
-            if (table === 'partners') partnerList = data;
-            if (table === 'products') productList = data;
-        }
-
-        function fillDatalist(id, list) {
-            const dl = document.getElementById(id);
-            if(!dl) return;
-            dl.innerHTML = '';
-            list.forEach(item => {
-                const val = item.name;
-                const opt = document.createElement('option');
-                opt.value = val;
-                dl.appendChild(opt);
-            });
-        }
-
-        function fillPartnerInfo(name) {
-            const p = partnerList.find(x => x.name === name);
-            if(p) {
-                document.getElementById('sPManager').value = p.manager_name || '';
-                document.getElementById('sContact').value = (p.email || '') + ' ' + (p.phone || '');
-            }
-        }
-
-        function fillProdInfo(name) {
-            const p = productList.find(x => x.name === name);
-            if(p) {
-                document.getElementById('iSpec').value = p.spec || '';
-                document.getElementById('iPrice').value = p.price || 0;
-                document.getElementById('iCost').value = p.cost_price || 0;
-            }
-        }
-
-        function addTempItem() {
-            const name = document.getElementById('iName').value;
-            if(!name) return;
             
-            const qty = parseInt(document.getElementById('iQty').value) || 0;
-            const price = parseInt(document.getElementById('iPrice').value) || 0;
-            const cost = parseInt(document.getElementById('iCost').value) || 0;
-            const spec = document.getElementById('iSpec').value;
+            fillDL('dl_part', partnerList); fillDL('dl_prod', productList);
+        }
+
+        function fillDL(id, list) { document.getElementById(id).innerHTML = list.map(i=>`<option value="${i.name}">`).join(''); }
+        
+        function fillPart(val) {
+            const f = partnerList.find(x=>x.name===val);
+            if(f) { document.getElementById('sPManager').value=f.manager_name||''; document.getElementById('sContact').value=(f.email||'')+' '+(f.phone||''); }
+        }
+        function fillProd(val) {
+            const f = productList.find(x=>x.name===val);
+            if(f) { 
+                document.getElementById('iSpec').value=f.spec||''; 
+                document.getElementById('iPrice').value=f.price||0;
+                document.getElementById('iCost').value=f.cost_price||0; 
+            }
+        }
+
+        // =========================
+        // 그리드 추가 및 재고 체크
+        // =========================
+        function addItemToGrid(tab) {
+            const name = el('iName');
+            const spec = el('iSpec');
+            const qty = parseInt(el('iQty'))||0;
+            const price = parseInt(el('iPrice'))||0;
+            const cost = parseInt(el('iCost'))||0;
+
+            if(!name || qty <= 0) return alert("품목명과 수량을 확인하세요.");
+
+            // [재고 체크 로직] 주문관리(orders)인 경우만 체크
+            if(tab === 'orders') {
+                const prod = productList.find(p => p.name === name);
+                if(!prod) return alert("등록되지 않은 품목입니다. 기초등록을 먼저 해주세요.");
+                if(qty > prod.stock) return alert(`[재고부족] 현재 재고: ${prod.stock}개 / 요청 수량: ${qty}개\n입력이 불가능합니다.`);
+            }
+
             const supply = qty * price;
-            
+            const vat = Math.floor(supply * 0.1);
+            const total = supply + vat;
+            // 마진율: (공급가 - (수량*입고가)) / 공급가
             let margin = 0;
-            if (price > 0) margin = ((price - cost) / price * 100).toFixed(1);
+            if(supply > 0) margin = ((supply - (qty*cost)) / supply * 100).toFixed(1);
 
-            tempItems.push({ name, spec, qty, price, cost, supply, margin });
-            renderTempItems();
+            tempItems.push({ name, spec, qty, price, supply, vat, total, margin });
+            renderGrid();
             
-            document.getElementById('iName').value = '';
-            document.getElementById('iSpec').value = '';
+            // 입력창 초기화
+            document.getElementById('iName').value='';
+            document.getElementById('iSpec').value='';
+            document.getElementById('iQty').value='1';
         }
 
-        function renderTempItems() {
-            const tbody = document.getElementById('tempItemBody');
+        function renderGrid() {
+            const tbody = document.getElementById('itemGrid');
             tbody.innerHTML = '';
-            let total = 0;
+            let grandTotal = 0;
             tempItems.forEach((item, idx) => {
-                total += item.supply;
+                grandTotal += item.total;
                 tbody.innerHTML += `
                     <tr>
-                        <td class="p-2">${item.name}</td>
-                        <td class="p-2 text-xs text-slate-500">${item.spec}</td>
-                        <td class="p-2">${item.qty}</td>
-                        <td class="p-2 text-right">${item.price.toLocaleString()}</td>
-                        <td class="p-2 text-right font-bold">${item.supply.toLocaleString()}</td>
-                        <td class="p-2 text-xs text-red-500">${item.margin}%</td>
-                        <td class="p-2 cursor-pointer text-red-400" onclick="tempItems.splice(${idx},1); renderTempItems();"><i class="fa-solid fa-trash"></i></td>
+                        <td>${item.name}</td>
+                        <td>${item.spec}</td>
+                        <td>${item.qty}</td>
+                        <td class="text-right">${item.price.toLocaleString()}</td>
+                        <td class="text-right">${item.supply.toLocaleString()}</td>
+                        <td class="text-right">${item.vat.toLocaleString()}</td>
+                        <td class="text-right font-bold">${item.total.toLocaleString()}</td>
+                        <td class="text-red-500 text-xs">${item.margin}%</td>
+                        <td onclick="tempItems.splice(${idx},1); renderGrid()" class="cursor-pointer text-red-400"><i class="fa-solid fa-trash"></i></td>
                     </tr>
                 `;
             });
-            document.getElementById('sTotal').innerText = total.toLocaleString();
+            document.getElementById('sGrandTotal').innerText = grandTotal.toLocaleString();
         }
 
-        async function openLoadModal(sourceTab) {
+        // =========================
+        // 데이터 불러오기 (연동)
+        // =========================
+        async function openLoadModal(srcTab) {
             document.getElementById('loadDataModal').classList.add('active');
             const tbody = document.getElementById('loadDataBody');
             tbody.innerHTML = '<tr><td colspan="4">로딩중...</td></tr>';
             
-            const { data } = await supabase.from(sourceTab).select('*').order('created_at', {ascending: false});
+            const { data } = await supabase.from(srcTab).select('*').order('created_at', {ascending:false});
             tbody.innerHTML = '';
-            
             data.forEach(row => {
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-slate-50">
-                        <td class="p-2 text-xs">${row.date}</td>
-                        <td class="p-2 font-bold">${row.partner_name}</td>
-                        <td class="p-2 text-right text-xs">${(row.total_amount||0).toLocaleString()}</td>
-                        <td class="p-2"><button onclick='applyLoadedData(${JSON.stringify(row)})' class="bg-cyan-600 text-white px-2 py-1 rounded text-xs">선택</button></td>
-                    </tr>
-                `;
+                const amt = srcTab==='orders' ? row.total_amount : row.total_amount; 
+                tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td>${row.date}</td><td>${row.partner_name}</td><td class="text-right">${(amt||0).toLocaleString()}</td>
+                <td><button onclick='applyData(${JSON.stringify(row)})' class="bg-blue-500 text-white px-2 py-1 text-xs rounded">선택</button></td></tr>`;
             });
         }
 
-        function applyLoadedData(row) {
-            document.getElementById('sPartner').value = row.partner_name || '';
-            document.getElementById('sManager').value = row.manager || '';
+        function applyData(row) {
+            document.getElementById('sPartner').value = row.partner_name;
+            document.getElementById('sManager').value = row.manager||'';
             if(row.items) {
                 tempItems = row.items;
-                renderTempItems();
+                renderGrid();
             }
             document.getElementById('loadDataModal').classList.remove('active');
-            alert('데이터를 불러왔습니다.');
         }
 
-        async function saveSalesData(tab) {
-            if(tempItems.length === 0) return alert('품목을 추가해주세요.');
+        // =========================
+        // 최종 저장
+        // =========================
+        async function saveComplexData(tab) {
+            if(tempItems.length === 0) return alert("품목을 입력해주세요.");
             
-            const total = parseInt(document.getElementById('sTotal').innerText.replace(/,/g, ''));
+            let tSupply=0, tVat=0, tTotal=0;
+            tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
+
             const data = {
-                date: document.getElementById('sDate').value,
-                partner_name: document.getElementById('sPartner').value,
-                manager: document.getElementById('sManager').value,
-                partner_manager: document.getElementById('sPManager').value, 
-                phone: document.getElementById('sContact').value, 
+                date: el('sDate'),
+                partner_name: el('sPartner'),
+                manager: el('sManager'),
                 items: tempItems,
-                total_amount: total,
-                vat: Math.floor(total * 0.1), 
-                note: document.getElementById('sNote').value
+                total_supply: tSupply,
+                total_vat: tVat,
+                total_amount: tTotal,
+                note: el('sNote')
             };
 
-            if(tab === 'orders') data.po_number = document.getElementById('sPO').value;
+            // 추가정보
+            if(tab === 'quotes') { data.partner_manager=el('sPManager'); data.phone=el('sContact'); }
+            if(tab === 'orders') { data.po_number='AUTO'; } // 발주번호 등 필요시 추가
 
             const { error } = await supabase.from(tab).insert(data);
-            if(error) alert('저장 실패: ' + error.message);
-            else {
-                alert('저장되었습니다.');
-                closeModal();
-                loadListData(tab);
-            }
+            if(error) alert("저장실패: "+error.message);
+            else { closeModal(); switchTab(tab); }
         }
 
+        // =========================
+        // 인쇄 기능
+        // =========================
         function printTrans(row) {
             document.getElementById('prtDate').innerText = row.date;
-            document.getElementById('prtNo').innerText = row.id; 
+            document.getElementById('prtNo').innerText = row.id;
             document.getElementById('prtPartner').innerText = row.partner_name;
-            document.getElementById('prtManager').innerText = row.partner_manager || ''; 
-            
+            document.getElementById('prtManager').innerText = row.partner_manager || row.manager || '';
+            document.getElementById('prtGrandTotal').innerText = (row.total_amount||0).toLocaleString();
+            document.getElementById('prtSupplyTotal').innerText = (row.total_supply||0).toLocaleString();
+            document.getElementById('prtVatTotal').innerText = (row.total_vat||0).toLocaleString();
+
             const tbody = document.getElementById('prtTableBody');
             tbody.innerHTML = '';
-            
-            let supplyTotal = 0;
-            let vatTotal = 0;
-
-            if(row.items && Array.isArray(row.items)) {
-                row.items.forEach(item => {
-                    const supply = item.qty * item.price;
-                    const vat = Math.floor(supply * 0.1);
-                    supplyTotal += supply;
-                    vatTotal += vat;
-                    
-                    const md = row.date.substring(5, 10); 
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="border border-black p-1">${md}</td>
-                            <td class="border border-black p-1 text-left pl-2">${item.name}</td>
-                            <td class="border border-black p-1">${item.spec || ''}</td>
-                            <td class="border border-black p-1">${item.qty}</td>
-                            <td class="border border-black p-1 text-right pr-2">${item.price.toLocaleString()}</td>
-                            <td class="border border-black p-1 text-right pr-2">${supply.toLocaleString()}</td>
-                            <td class="border border-black p-1 text-right pr-2">${vat.toLocaleString()}</td>
-                        </tr>
-                    `;
+            if(row.items) {
+                row.items.forEach(i => {
+                    tbody.innerHTML += `<tr>
+                        <td class="border border-black p-1 text-left pl-2">${i.name}</td>
+                        <td class="border border-black p-1">${i.spec}</td>
+                        <td class="border border-black p-1">${i.qty}</td>
+                        <td class="border border-black p-1 text-right pr-2">${i.price.toLocaleString()}</td>
+                        <td class="border border-black p-1 text-right pr-2">${i.supply.toLocaleString()}</td>
+                        <td class="border border-black p-1 text-right pr-2">${i.vat.toLocaleString()}</td>
+                    </tr>`;
                 });
             }
-
-            for(let i=0; i < 5 - (row.items?.length || 0); i++) {
-                tbody.innerHTML += `<tr><td class="border border-black p-1">&nbsp;</td><td class="border border-black p-1"></td><td class="border border-black p-1"></td><td class="border border-black p-1"></td><td class="border border-black p-1"></td><td class="border border-black p-1"></td><td class="border border-black p-1"></td></tr>`;
-            }
-
-            document.getElementById('prtSupplyTotal').innerText = supplyTotal.toLocaleString();
-            document.getElementById('prtVatTotal').innerText = vatTotal.toLocaleString();
-            document.getElementById('prtGrandTotal').innerText = (supplyTotal + vatTotal).toLocaleString();
-
             window.print();
         }
 
-        function logout() {
-            supabase.auth.signOut().then(() => window.location.href = 'index.html');
-        }
+        function logout() { supabase.auth.signOut().then(()=>window.location.href='index.html'); }
     </script>
 </body>
 </html>
