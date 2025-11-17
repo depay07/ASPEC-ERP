@@ -45,7 +45,7 @@
                 <button onclick="switchTab('products')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-box"></i> 품목 관리</button>
                 
                 <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">구매 관리</div>
-                <button onclick="switchTab('purchase')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-cart-flatbed"></i> 구매 내역</button>
+                <button onclick="switchTab('purchases')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-cart-flatbed"></i> 구매 내역</button>
                 
                 <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">영업 관리</div>
                 <button onclick="switchTab('quotes')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition flex items-center gap-3"><i class="fa-solid fa-file-invoice"></i> 견적 관리</button>
@@ -159,7 +159,7 @@
 
     <script>
         // ==========================================
-        // [설정] 본인의 Supabase URL/Key 입력
+        // [설정] 본인의 Supabase URL/Key 입력 (따옴표 주의)
         // ==========================================
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
@@ -167,28 +167,25 @@
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentTab = 'partners';
-        let tempItems = []; // 견적/주문/판매 품목 임시 저장
-        let partnerList = []; // 자동완성용
-        let productList = []; // 자동완성용
+        let tempItems = []; 
+        let partnerList = []; 
+        let productList = []; 
 
-        // 초기화
         window.onload = async () => {
             await fetchData('partners');
             await fetchData('products');
-            switchTab('partners'); // 기본 탭
+            switchTab('partners'); 
         };
 
-        // 탭 전환 함수
         async function switchTab(tab) {
             currentTab = tab;
             const container = document.getElementById('contentArea');
             let html = '';
 
-            // 상단 타이틀
             const titles = {
                 'partners': '기초등록 > 거래처 관리',
                 'products': '기초등록 > 품목 관리',
-                'purchase': '구매 관리',
+                'purchases': '구매 관리', // 수정: DB 테이블명과 일치시킴
                 'quotes': '영업 관리 > 견적서',
                 'orders': '영업 관리 > 주문서(수주)',
                 'sales': '영업 관리 > 판매(출고)'
@@ -201,7 +198,6 @@
                         </button>
                      </div>`;
 
-            // 테이블 헤더
             html += `<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-left border-collapse">`;
             
@@ -209,10 +205,10 @@
                 html += `<thead><tr><th>상호</th><th>담당자</th><th>전화번호</th><th>사업자번호</th><th>비고</th></tr></thead><tbody id="listBody"></tbody>`;
             } else if (tab === 'products') {
                 html += `<thead><tr><th>품목코드</th><th>품목명</th><th>규격</th><th>입고단가</th><th>판매단가</th></tr></thead><tbody id="listBody"></tbody>`;
-            } else if (tab === 'purchase') {
-                html += `<thead><tr><th>일자</th><th>매입처</th><th>품목명</th><th>수량</th><th>비고</th></tr></thead><tbody id="listBody"></tbody>`;
+            } else if (tab === 'purchases') {
+                // 수정: 단가 및 비고란 반영
+                html += `<thead><tr><th>일자</th><th>매입처</th><th>품목명</th><th>수량</th><th>단가 (VAT별도)</th><th>합계</th><th>비고</th></tr></thead><tbody id="listBody"></tbody>`;
             } else {
-                // 견적, 주문, 판매 공통
                 html += `<thead><tr><th>일자</th><th>거래처</th><th>담당자</th><th>총금액</th><th>비고</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
             }
             
@@ -222,16 +218,24 @@
             loadListData(tab);
         }
 
-        // 데이터 로딩 (리스트)
         async function loadListData(tab) {
             const tbody = document.getElementById('listBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4">로딩중...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4">로딩중...</td></tr>';
             
             const { data, error } = await supabase.from(tab).select('*').order('created_at', { ascending: false });
-            if (error) { console.error(error); return; }
+            
+            // 에러 발생 시 로그 출력 및 화면 표시
+            if (error) { 
+                console.error("Load Error:", error); 
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-red-500">데이터 로딩 실패: ${error.message}</td></tr>`;
+                return; 
+            }
 
             tbody.innerHTML = '';
-            if(data.length === 0) tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-slate-400">데이터가 없습니다.</td></tr>';
+            if(!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-slate-400">데이터가 없습니다.</td></tr>';
+                return;
+            }
 
             data.forEach(row => {
                 let tr = `<tr class="hover:bg-slate-50 border-b">`;
@@ -240,10 +244,13 @@
                 } else if (tab === 'products') {
                     tr += `<td class="font-mono text-cyan-600">${row.code}</td><td>${row.name}</td><td>${row.spec||'-'}</td>
                            <td class="text-right">${(row.cost_price||0).toLocaleString()}</td><td class="text-right font-bold">${(row.price||0).toLocaleString()}</td>`;
-                } else if (tab === 'purchase') {
-                    tr += `<td>${row.date}</td><td>${row.partner_name}</td><td>${row.item_name}</td><td>${row.qty}</td><td>${row.note||''}</td>`;
+                } else if (tab === 'purchases') {
+                    // 수정: 구매내역 리스트 출력 (단가 포함)
+                    tr += `<td>${row.date}</td><td>${row.partner_name}</td><td>${row.item_name}</td><td class="text-center">${row.qty}</td>
+                           <td class="text-right">${(row.unit_price||0).toLocaleString()}</td>
+                           <td class="text-right font-bold text-slate-600">${(row.supply_price||0).toLocaleString()}</td>
+                           <td>${row.note||''}</td>`;
                 } else {
-                    // 영업 관련 (견적/주문/판매)
                     tr += `<td>${row.date}</td><td class="font-bold">${row.partner_name||'-'}</td><td>${row.manager||'-'}</td>
                            <td class="text-right text-cyan-700 font-bold">${(row.total_amount||0).toLocaleString()}원</td><td>${row.note||''}</td>
                            <td class="text-center">
@@ -255,14 +262,11 @@
             });
         }
 
-        // ========================
-        // [모달] 신규 등록 팝업 띄우기
-        // ========================
         function openNewModal(tab) {
             const modal = document.getElementById('genericModal');
             const title = document.getElementById('modalTitle');
             const body = document.getElementById('modalBody');
-            tempItems = []; // 품목 리스트 초기화
+            tempItems = []; 
 
             modal.classList.add('active');
             
@@ -293,7 +297,8 @@
                     </div>
                     <button onclick="saveProduct()" class="w-full mt-6 bg-cyan-600 text-white py-3 rounded-lg font-bold">저장하기</button>
                 `;
-            } else if (tab === 'purchase') {
+            } else if (tab === 'purchases') {
+                // 수정: 구매내역 입력폼 (단가 추가)
                 title.innerText = '구매 내역 등록';
                 body.innerHTML = `
                     <div class="grid grid-cols-2 gap-4">
@@ -301,12 +306,12 @@
                         <div><label class="text-xs text-slate-500">매입처</label><input type="text" id="purPartner" class="input-box"></div>
                         <div><label class="text-xs text-slate-500">품목명</label><input type="text" id="purItem" class="input-box"></div>
                         <div><label class="text-xs text-slate-500">수량</label><input type="number" id="purQty" class="input-box"></div>
+                        <div><label class="text-xs text-slate-500">단가 (VAT 별도)</label><input type="number" id="purPrice" class="input-box" placeholder="0"></div>
                         <div class="col-span-2"><label class="text-xs text-slate-500">비고</label><input type="text" id="purNote" class="input-box"></div>
                     </div>
                     <button onclick="savePurchase()" class="w-full mt-6 bg-cyan-600 text-white py-3 rounded-lg font-bold">저장하기</button>
                 `;
             } else {
-                // 영업 (견적/주문/판매) 공통 폼
                 renderSalesForm(tab, body);
             }
         }
@@ -315,16 +320,12 @@
             document.getElementById('genericModal').classList.remove('active');
         }
 
-        // 품목코드 자동생성 (랜덤 ID + 날짜)
         function autoGenCode(name) {
             if(!name) return;
             const code = 'P-' + Math.floor(Math.random() * 10000) + '-' + Date.now().toString().slice(-4);
             document.getElementById('prodCode').value = code;
         }
 
-        // ========================
-        // [저장 로직] 기초/구매
-        // ========================
         async function savePartner() {
             const data = {
                 name: document.getElementById('pName').value,
@@ -354,28 +355,33 @@
         }
 
         async function savePurchase() {
+            // 수정: 구매내역 저장 (단가 저장 및 합계 자동계산)
+            const qty = parseInt(document.getElementById('purQty').value) || 0;
+            const price = parseInt(document.getElementById('purPrice').value) || 0;
+            
             const data = {
                 date: document.getElementById('purDate').value,
                 partner_name: document.getElementById('purPartner').value,
                 item_name: document.getElementById('purItem').value,
-                qty: document.getElementById('purQty').value,
+                qty: qty,
+                unit_price: price,
+                supply_price: qty * price, // 합계 계산
                 note: document.getElementById('purNote').value
             };
-            await supabase.from('purchase').insert(data);
-            closeModal(); loadListData('purchase');
+            
+            const { error } = await supabase.from('purchases').insert(data);
+            if(error) alert("저장 오류: " + error.message);
+            else {
+                closeModal(); loadListData('purchases');
+            }
         }
 
-        // ========================
-        // [영업 관리] 폼 렌더링 및 로직
-        // ========================
         function renderSalesForm(tab, container) {
             const today = new Date().toISOString().split('T')[0];
-            // 버튼 로직: 주문이면 '견적 불러오기', 판매면 '주문 불러오기'
             let loadBtn = '';
             if(tab === 'orders') loadBtn = `<button onclick="openLoadModal('quotes')" class="bg-orange-500 text-white px-3 py-1 rounded text-xs ml-2">견적 불러오기</button>`;
             if(tab === 'sales') loadBtn = `<button onclick="openLoadModal('orders')" class="bg-blue-500 text-white px-3 py-1 rounded text-xs ml-2">주문 불러오기</button>`;
 
-            // 탭별 필드 차이
             let dateLabel = tab === 'sales' || tab === 'orders' ? '납기/납품일자' : '일자';
             let extraFields = '';
             if(tab === 'orders') extraFields = `<div><label class="text-xs text-slate-500">발주번호(PO)</label><input type="text" id="sPO" class="input-box"></div>`;
@@ -434,12 +440,10 @@
                 <button onclick="saveSalesData('${tab}')" class="w-full mt-6 bg-cyan-600 text-white py-3 rounded-lg font-bold">문서 저장</button>
             `;
 
-            // 데이터 리스트 채우기
             fillDatalist('partnerOptions', partnerList);
             fillDatalist('prodOptions', productList);
         }
 
-        // 캐시 데이터 (거래처/품목)
         async function fetchData(table) {
             const { data } = await supabase.from(table).select('*');
             if (table === 'partners') partnerList = data;
@@ -458,7 +462,6 @@
             });
         }
 
-        // 입력 자동완성 로직
         function fillPartnerInfo(name) {
             const p = partnerList.find(x => x.name === name);
             if(p) {
@@ -476,7 +479,6 @@
             }
         }
 
-        // 품목 추가/삭제/계산
         function addTempItem() {
             const name = document.getElementById('iName').value;
             if(!name) return;
@@ -487,14 +489,12 @@
             const spec = document.getElementById('iSpec').value;
             const supply = qty * price;
             
-            // 마진율 계산: (판매가 - 입고가) / 판매가 * 100
             let margin = 0;
             if (price > 0) margin = ((price - cost) / price * 100).toFixed(1);
 
             tempItems.push({ name, spec, qty, price, cost, supply, margin });
             renderTempItems();
             
-            // 입력창 초기화
             document.getElementById('iName').value = '';
             document.getElementById('iSpec').value = '';
         }
@@ -520,7 +520,6 @@
             document.getElementById('sTotal').innerText = total.toLocaleString();
         }
 
-        // 견적/주문 불러오기 기능
         async function openLoadModal(sourceTab) {
             document.getElementById('loadDataModal').classList.add('active');
             const tbody = document.getElementById('loadDataBody');
@@ -542,10 +541,8 @@
         }
 
         function applyLoadedData(row) {
-            // 불러온 데이터 폼에 적용
             document.getElementById('sPartner').value = row.partner_name || '';
             document.getElementById('sManager').value = row.manager || '';
-            // 품목 리스트 복사
             if(row.items) {
                 tempItems = row.items;
                 renderTempItems();
@@ -554,7 +551,6 @@
             alert('데이터를 불러왔습니다.');
         }
 
-        // 최종 저장 (견적/주문/판매)
         async function saveSalesData(tab) {
             if(tempItems.length === 0) return alert('품목을 추가해주세요.');
             
@@ -563,11 +559,11 @@
                 date: document.getElementById('sDate').value,
                 partner_name: document.getElementById('sPartner').value,
                 manager: document.getElementById('sManager').value,
-                partner_manager: document.getElementById('sPManager').value, // 견적용
-                phone: document.getElementById('sContact').value, // 견적용
+                partner_manager: document.getElementById('sPManager').value, 
+                phone: document.getElementById('sContact').value, 
                 items: tempItems,
                 total_amount: total,
-                vat: Math.floor(total * 0.1), // 부가세 10% 자동계산
+                vat: Math.floor(total * 0.1), 
                 note: document.getElementById('sNote').value
             };
 
@@ -582,15 +578,11 @@
             }
         }
 
-        // ========================
-        // [인쇄] 거래명세서 출력
-        // ========================
         function printTrans(row) {
-            // 데이터 채우기
             document.getElementById('prtDate').innerText = row.date;
-            document.getElementById('prtNo').innerText = row.id; // 또는 발주번호
+            document.getElementById('prtNo').innerText = row.id; 
             document.getElementById('prtPartner').innerText = row.partner_name;
-            document.getElementById('prtManager').innerText = row.partner_manager || ''; // DB에 저장했다면
+            document.getElementById('prtManager').innerText = row.partner_manager || ''; 
             
             const tbody = document.getElementById('prtTableBody');
             tbody.innerHTML = '';
@@ -605,7 +597,6 @@
                     supplyTotal += supply;
                     vatTotal += vat;
                     
-                    // 날짜는 판매일자(row.date)의 월/일만 파싱
                     const md = row.date.substring(5, 10); 
 
                     tbody.innerHTML += `
@@ -622,7 +613,6 @@
                 });
             }
 
-            // 빈 칸 채우기 (폼 유지를 위해)
             for(let i=0; i < 5 - (row.items?.length || 0); i++) {
                 tbody.innerHTML += `<tr><td class="border border-black p-1">&nbsp;</td><td class="border border-black p-1"></td><td class="border border-black p-1"></td><td class="border border-black p-1"></td><td class="border border-black p-1"></td><td class="border border-black p-1"></td><td class="border border-black p-1"></td></tr>`;
             }
