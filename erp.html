@@ -38,20 +38,27 @@
                 font-family: "Malgun Gothic", dotum, sans-serif; color: black !important;
             }
             
-            .print-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
-            .print-table th, .print-table td { border: 1px solid black; padding: 4px; }
-            .print-table th { background-color: #f3f3f3 !important; text-align: center; font-weight: bold; -webkit-print-color-adjust: exact; }
-            
-            .supplier-box { display: flex; border: 1px solid black; margin-bottom: 10px; }
-            .supplier-half { width: 50%; }
-            .supplier-half:first-child { border-right: 1px solid black; }
-            .info-row { display: flex; border-bottom: 1px solid black; }
-            .info-row:last-child { border-bottom: none; }
-            .info-label { width: 60px; background: #f3f3f3 !important; text-align: center; padding: 5px; font-weight: bold; border-right: 1px solid black; -webkit-print-color-adjust: exact; display: flex; align-items: center; justify-content: center; }
-            .info-val { flex: 1; padding: 5px; display: flex; align-items: center; overflow: hidden; }
+            .print-wrap { width: 100%; max-width: 210mm; margin: 0 auto; }
+            .print-title-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
+            .print-title-main { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
+            .print-title-sub { font-size: 24px; font-weight: normal; font-style: italic; margin-left: 10px; }
+            .print-meta { text-align: right; font-size: 11px; line-height: 1.4; }
 
-            .stamp-img { position: absolute; right: 0; top: -5px; width: 40px; height: 40px; border: 2px solid red; border-radius: 50%; color: red; text-align: center; line-height: 36px; font-size: 10px; opacity: 0.7; font-weight: bold; z-index: 10; }
-            .items-row td { height: 30px; vertical-align: middle; }
+            .print-grid-box { display: flex; border: 1px solid black; margin-bottom: 10px; }
+            .print-half { width: 50%; padding: 0; }
+            .print-half:first-child { border-right: 1px solid black; }
+            
+            .print-info-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            .print-info-table th { background-color: #f3f3f3 !important; text-align: center; padding: 5px; border: 1px solid black; width: 20%; font-weight: bold; -webkit-print-color-adjust: exact; }
+            .print-info-table td { padding: 5px 8px; border: 1px solid black; }
+            .print-header-cell { text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid black; font-size: 14px; background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; }
+
+            .print-items-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+            .print-items-table th { border: 1px solid black; background-color: #f3f3f3 !important; padding: 5px; text-align: center; -webkit-print-color-adjust: exact; }
+            .print-items-table td { border: 1px solid black; padding: 5px; height: 25px; }
+            
+            .stamp-area { position: relative; height: 40px; }
+            .stamp-img { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border: 2px solid red; border-radius: 50%; color: red; text-align: center; line-height: 36px; font-size: 10px; opacity: 0.7; font-weight: bold; border-style: double; }
         }
     </style>
 </head>
@@ -91,46 +98,111 @@
     <div id="printContainer" class="hidden">
         <div class="print-wrap">
             <div class="print-title-area">
-                <div><span id="p_title_ko" class="print-title-main"></span><span id="p_title_en" class="print-title-sub"></span></div>
-                <div class="print-meta"><div>문서번호: <span id="p_no"></span></div><div>작성일자: <span id="p_date"></span></div><div id="p_valid_date_row">유효기간: <span id="p_valid_date"></span></div></div>
-            </div>
-            <div class="supplier-box">
-                <div class="supplier-half">
-                    <div class="info-row" style="border-bottom: 1px solid black;"><div class="info-label" style="width: 40px;" id="p_left_role"></div><div style="flex: 1;"><div class="info-row"><div class="info-label">상호</div><div class="info-val" id="p_left_name"></div></div><div class="info-row"><div class="info-label">담당자</div><div class="info-val" id="p_left_manager"></div></div><div class="info-row"><div class="info-label">E-mail</div><div class="info-val" id="p_left_email"></div></div><div class="info-row"><div class="info-label">M.P</div><div class="info-val" id="p_left_phone"></div></div><div class="info-row"><div class="info-label">TEL</div><div class="info-val" id="p_left_tel"></div></div></div></div>
+                <div>
+                    <span id="p_title_ko" class="print-title-main">견 적 서</span>
+                    <span id="p_title_en" class="print-title-sub">QUOTATION</span>
                 </div>
-                <div class="supplier-half">
-                     <div class="info-row" style="border-bottom: 1px solid black;"><div class="info-label" style="width: 40px;" id="p_right_role"></div><div style="flex: 1;"><div class="info-row"><div class="info-label">상호</div><div class="info-val">아스펙 (ASPEC)</div></div><div class="info-row"><div class="info-label">주소</div><div class="info-val" style="font-size: 10px;">경기도 화성시 메타폴리스로 42, 9층 902호 (반송동, 디앤씨빌딩)</div></div><div class="info-row"><div class="info-label">담당자</div><div class="info-val" style="position: relative;"><span id="p_right_manager" style="margin-right: 10px;"></span></div></div><div class="info-row"><div class="info-label">E-mail</div><div class="info-val" id="p_right_email"></div></div><div class="info-row"><div class="info-label" style="width: 50%;">FAX: 0504-388-4985</div><div class="info-val" style="width: 50%;">M.P: <span id="p_right_mp"></span></div></div></div></div>
+                <div class="print-meta">
+                    <div>문서번호: <span id="p_no"></span></div>
+                    <div>작성일자: <span id="p_date"></span></div>
+                    <div id="p_valid_date_row">유효기간: <span id="p_valid_date"></span></div>
                 </div>
             </div>
+
+            <div class="print-grid-box">
+                <div class="print-half">
+                    <div class="print-header-cell" id="p_left_role">공 급 받 는 자</div>
+                    <table class="print-info-table" style="border: none;">
+                        <tr><th>상호</th><td id="p_left_name"></td></tr>
+                        <tr><th>담당자</th><td id="p_left_manager"></td></tr>
+                        <tr><th>E-mail</th><td id="p_left_email"></td></tr>
+                        <tr><th>M.P</th><td id="p_left_phone"></td></tr>
+                        <tr><th>TEL</th><td id="p_left_tel"></td></tr>
+                        <tr><th>주소</th><td id="p_left_addr" style="height: 40px; vertical-align: top;"></td></tr>
+                    </table>
+                </div>
+
+                <div class="print-half">
+                    <div class="print-header-cell" id="p_right_role">공 급 자</div>
+                    <table class="print-info-table" style="border: none;">
+                        <tr><th>상호</th><td>아스펙 (ASPEC)</td></tr>
+                        <tr><th>등록번호</th><td>130-86-72885</td></tr>
+                        <tr><th>대표자</th><td>
+                            <div class="stamp-area">
+                                <span style="position: relative; top: 8px;">이창현</span>
+                                <div class="stamp-img">인</div>
+                            </div>
+                        </td></tr>
+                        <tr><th>담당자</th><td id="p_right_manager"></td></tr>
+                        <tr><th>E-mail</th><td id="p_right_email"></td></tr>
+                        <tr><th>M.P</th><td id="p_right_mp"></td></tr>
+                        <tr><th>FAX</th><td>0504-388-4985</td></tr>
+                        <tr><th>주소</th><td style="font-size: 10px; letter-spacing: -0.5px;">경기도 화성시 메타폴리스로 42, 9층 902호<br>(반송동, 디앤씨빌딩)</td></tr>
+                    </table>
+                </div>
+            </div>
+
             <table class="print-items-table">
-                <thead><tr><th style="width: 5%">No</th><th>품명</th><th>규격</th><th style="width: 8%">단위</th><th style="width: 8%">수량</th><th style="width: 12%">단가</th><th style="width: 15%">공급가액</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th style="width: 5%">No</th>
+                        <th>품명</th>
+                        <th>규격</th>
+                        <th style="width: 8%">단위</th>
+                        <th style="width: 8%">수량</th>
+                        <th style="width: 12%">단가</th>
+                        <th style="width: 15%">공급가액</th>
+                    </tr>
+                </thead>
                 <tbody id="p_tbody"></tbody>
-                <tfoot><tr style="background: #f8f8f8; font-weight: bold;"><td colspan="4" style="text-align: center;">합 계 (Total)</td><td style="text-align: center;" id="p_total_qty"></td><td style="text-align: right;">VAT 별도</td><td style="text-align: right;" id="p_total_amt"></td></tr><tr style="background: #fff; border-top: 2px double black;"><td colspan="7" style="padding: 10px;"><strong>[비고]</strong> <span id="p_note"></span></td></tr></tfoot>
+                <tfoot>
+                    <tr style="background: #f8f8f8; font-weight: bold;">
+                        <td colspan="4" style="text-align: center;">합 계 (Total)</td>
+                        <td style="text-align: center;" id="p_total_qty"></td>
+                        <td style="text-align: right;">VAT 포함</td>
+                        <td style="text-align: right;" id="p_total_amt"></td>
+                    </tr>
+                    <tr style="background: #fff; border-top: 2px double black;">
+                        <td colspan="7" style="padding: 10px;">
+                            <strong>[비고]</strong> <span id="p_note"></span>
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
+
+            <div style="margin-top: 30px; text-align: center; font-size: 14px;">
+                위와 같이 <span id="p_end_text">견적</span>합니다.
+            </div>
         </div>
     </div>
 
     <script>
         // ==========================================
-        // [필수] Supabase 키 값 입력
+        // [설정] Supabase URL / KEY 입력
         // ==========================================
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
         // ==========================================
 
         if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_URL')) alert("API 키를 설정해주세요.");
+
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let currentTab = 'partners', tempItems = [], partnerList = [], productList = [], currentEditId = null, currentUserEmail = ""; 
-        
-        // [핵심] 전역 데이터 저장소 (ID 충돌 해결의 열쇠)
-        let globalDataStore = {};
+        let currentTab = 'partners';
+        let tempItems = []; 
+        let partnerList = []; 
+        let productList = [];
+        let currentEditId = null; 
+        let currentUserEmail = ""; 
+        let globalDataStore = {}; // 데이터 저장소
 
         window.onload = async () => { 
             try { 
                 const { data: { user } } = await supabase.auth.getUser();
                 if(user) currentUserEmail = user.email;
-                await fetchData(); switchTab('partners'); 
-            } catch (e) { alert("오류: " + e.message); }
+                await fetchData(); 
+                switchTab('partners'); 
+            } 
+            catch (e) { alert("초기화 오류: " + e.message); }
         };
 
         async function fetchData() {
@@ -140,7 +212,7 @@
             if(!prodRes.error) productList = prodRes.data || [];
         }
 
-        // 데이터 저장소 헬퍼 함수
+        // 데이터 저장소 헬퍼
         function storeRowData(row) {
             const id = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             globalDataStore[id] = row;
@@ -185,17 +257,16 @@
             const eDate = document.getElementById('searchEndDate')?.value;
             if(sDate && eDate) query = query.gte('date', sDate).lte('date', eDate);
 
-            // 검색 조건 매핑 (search_ ID 사용)
             if(tab === 'purchase_orders') {
                 const p = document.getElementById('search_sPartner').value; const e = document.getElementById('search_sEndUser').value;
                 if(p) query = query.ilike('partner_name', `%${p}%`); if(e) query = query.ilike('end_user', `%${e}%`);
-            } else if(tab === 'purchases') {
+            } else if (tab === 'purchases') {
                 const p = document.getElementById('search_sPartner').value; const i = document.getElementById('search_sItem').value;
                 if(p) query = query.ilike('partner_name', `%${p}%`); if(i) query = query.ilike('item_name', `%${i}%`);
-            } else if(tab === 'partners') {
+            } else if (tab === 'partners') {
                 const n = document.getElementById('search_sName').value; const m = document.getElementById('search_sManager').value;
                 if(n) query = query.ilike('name', `%${n}%`); if(m) query = query.ilike('manager_name', `%${m}%`);
-            } else if(tab === 'products') {
+            } else if (tab === 'products') {
                 const n = document.getElementById('search_sName').value; const c = document.getElementById('search_sCode').value;
                 if(n) query = query.ilike('name', `%${n}%`); if(c) query = query.ilike('code', `%${c}%`);
             } else {
@@ -205,6 +276,7 @@
 
             const { data, error } = await query;
             if(error) { alert("검색실패: "+error.message); return; }
+            
             let resultData = data;
             if(tab === 'purchase_orders' || tab === 'purchases') {
                  const sItem = document.getElementById('search_sItem') ? document.getElementById('search_sItem').value.toLowerCase() : '';
@@ -243,7 +315,7 @@
 
             data.forEach(row => {
                 let tr = `<tr class="hover:bg-slate-50 border-b transition">`;
-                const dataId = storeRowData(row); // 데이터 저장 후 ID 반환
+                const dataId = storeRowData(row);
                 
                 let actions = '<div class="flex justify-center items-center gap-3">';
                 if(['quotes', 'orders', 'sales', 'purchase_orders'].includes(tab)) {
@@ -361,10 +433,13 @@
             document.getElementById('p_title_en').innerText = titleEn;
             document.getElementById('p_end_text').innerText = endText;
             document.getElementById('p_date').innerText = row.date;
-            document.getElementById('p_no').innerText = isPO ? (row.po_number || '') : (tab.toUpperCase().slice(0,2)+'-'+row.id);
+            
+            const d = new Date(row.date);
+            const yymmdd = d.getFullYear().toString().slice(2) + (d.getMonth()+1).toString().padStart(2,'0') + d.getDate().toString().padStart(2,'0');
+            document.getElementById('p_no').innerText = isPO ? (row.po_number || '') : `ASPEC-${yymmdd}-${String(row.id).padStart(2,'0')}`;
             
             if(tab === 'quotes') {
-                const d = new Date(row.date); const validDate = new Date(d); validDate.setDate(d.getDate()+14);
+                const validDate = new Date(d); validDate.setDate(d.getDate()+14);
                 document.getElementById('p_valid_date').innerText = validDate.toISOString().split('T')[0];
                 document.getElementById('p_valid_date_row').style.display = 'block';
             } else {
