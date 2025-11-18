@@ -356,7 +356,7 @@
                     document.getElementById('sDate').value = row.date; document.getElementById('sPartner').value = row.partner_name;
                     document.getElementById('sManager').value = row.manager||''; document.getElementById('sNote').value = row.note||'';
                     if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
-                    if(document.getElementById('sPEmail')) document.getElementById('sPEmail').value = row.partner_email || '';
+                    if(document.getElementById('sPEmail')) document.getElementById('sPEmail').value = row.email || '';
                     if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
                     tempItems = row.items || []; renderGrid();
                 }
@@ -412,7 +412,7 @@
             if(tab === 'purchase_orders') { data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); }
             else { 
                 data.partner_manager = el('sPManager'); 
-                data.partner_email = el('sPEmail'); 
+                data.email = el('sPEmail'); 
                 data.phone = el('sContact'); 
                 if(tab === 'orders') data.po_number = 'AUTO'; 
             }
@@ -438,12 +438,19 @@
                 return `ASPEC-${yy}${mm}${dd}-${idx}`;
             };
             
-            // 이메일별 전화번호 매핑
+            // 이메일별 전화번호 및 담당자 매핑
             const getPhoneByEmail = (email) => {
                 const phoneMap = {
                     'sales@aspec-tech.co.kr': '010-5919-1810'
                 };
                 return phoneMap[email] || '';
+            };
+            
+            const getManagerByEmail = (email) => {
+                const managerMap = {
+                    'sales@aspec-tech.co.kr': '이창현 프로'
+                };
+                return managerMap[email] || '';
             };
             
             let titleKo = "거 래 명 세 서", titleEn = "TRANSACTION STATEMENT";
@@ -471,13 +478,13 @@
             // 공급받는자 (상대방) - 모든 필드 제대로 매핑
             document.getElementById('p_left_name').innerText = row.partner_name || '';
             document.getElementById('p_left_manager').innerText = row.partner_manager || '';
-            document.getElementById('p_left_email').innerText = row.partner_email || '';
+            document.getElementById('p_left_email').innerText = row.email || '';
             document.getElementById('p_left_phone').innerText = row.phone || '';
             document.getElementById('p_left_tel').innerText = row.partner_tel || '';
             document.getElementById('p_left_addr').innerText = row.partner_addr || '';
             
             // 공급자 (우리) - 현재 사용자 정보
-            document.getElementById('p_right_manager').innerText = row.manager || '담당자';
+            document.getElementById('p_right_manager').innerText = getManagerByEmail(currentUserEmail) || row.manager || '담당자';
             document.getElementById('p_right_email').innerText = currentUserEmail || '';
             document.getElementById('p_right_phone').innerText = getPhoneByEmail(currentUserEmail) || '';
 
