@@ -409,13 +409,37 @@
             let tSupply=0, tVat=0, tTotal=0; tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
             let dateVal = el(tab === 'purchase_orders' ? 'poDate' : 'sDate') || new Date().toISOString().split('T')[0];
             let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: dateVal, partner_name: el('sPartner'), manager: el('sManager'), note: el('sNote') };
-            if(tab === 'purchase_orders') { data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); }
+            
+            // 디버깅: 입력값 확인
+            console.log('=== 저장 데이터 디버깅 ===');
+            console.log('Tab:', tab);
+            console.log('sPartner 값:', el('sPartner'));
+            console.log('sManager 값:', el('sManager'));
+            console.log('sNote 값:', el('sNote'));
+            
+            if(tab === 'purchase_orders') { 
+                data.po_number = el('poNum'); 
+                data.partner_name = el('poPartner'); 
+                data.end_user = el('poEndUser'); 
+                data.manager = el('poManager'); 
+                data.is_pre_order = el('poPreOrder'); 
+                data.note = el('poNote'); 
+            }
             else { 
                 data.partner_manager = el('sPManager'); 
                 data.email = el('sPEmail'); 
-                data.phone = el('sContact'); 
+                data.phone = el('sContact');
+                
+                console.log('sPManager 값:', el('sPManager'));
+                console.log('sPEmail 값:', el('sPEmail'));
+                console.log('sContact 값:', el('sContact'));
+                
                 if(tab === 'orders') data.po_number = 'AUTO'; 
             }
+            
+            console.log('최종 저장 데이터:', data);
+            console.log('======================');
+            
             if(await saveData(tab, data)) { 
                 if(tab === 'sales' && !currentEditId) { for(const item of tempItems) { const prod = productList.find(p => p.name === item.name); if(prod) await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); } }
                 alert("저장되었습니다."); closeModal(); runSearch(tab);
@@ -426,7 +450,16 @@
             const row = JSON.parse(decodeURIComponent(escape(atob(rowStr))));
             const isPO = (tab === 'purchase_orders');
             
-            console.log('Print data:', row); // 디버깅용
+            // 디버깅: 인쇄 데이터 확인
+            console.log('=== 인쇄 데이터 디버깅 ===');
+            console.log('Tab:', tab);
+            console.log('전체 row 데이터:', row);
+            console.log('partner_name:', row.partner_name);
+            console.log('manager:', row.manager);
+            console.log('partner_manager:', row.partner_manager);
+            console.log('email:', row.email);
+            console.log('phone:', row.phone);
+            console.log('======================');
             
             // 문서번호 생성 함수
             const generateDocNumber = (date, id) => {
