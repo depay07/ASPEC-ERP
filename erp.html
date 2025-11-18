@@ -9,20 +9,25 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
-        body { font-family: 'Noto Sans KR', sans-serif; font-size: 14px; }
+        body { font-family: 'Noto Sans KR', sans-serif; font-size: 13px; background-color: #f1f5f9; }
         
+        /* 모달 */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; display: none; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 95%; max-width: 1300px; max-height: 95vh; overflow-y: auto; border-radius: 8px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-content { background: white; width: 95%; max-width: 1200px; max-height: 90vh; overflow-y: auto; border-radius: 8px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .modal.active { display: flex; }
 
-        th { background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
-        td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
-        .input-box { width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; transition: all 0.2s; }
-        .input-box:focus { outline: none; border-color: #06b6d4; ring: 2px solid #e0f2fe; }
+        /* 테이블 스타일 개선 */
+        .data-table { width: 100%; border-collapse: collapse; table-layout: fixed; } /* 고정 레이아웃 */
+        .data-table th { background-color: #e2e8f0; color: #475569; font-weight: 700; padding: 10px 8px; border-bottom: 2px solid #cbd5e1; text-align: center; font-size: 13px; }
+        .data-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
-        .search-panel { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
-        .search-label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 4px; display: block; }
+        /* 입력창 스타일 */
+        .input-box { width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; transition: all 0.2s; font-size: 13px; }
+        .input-box:focus { outline: none; border-color: #06b6d4; ring: 2px solid #e0f2fe; }
+        .search-panel { background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .search-label { font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; display: block; text-transform: uppercase; }
 
+        /* 인쇄 */
         @media print {
             @page { size: A4; margin: 10mm; }
             body * { visibility: hidden; }
@@ -73,10 +78,10 @@
 
     <script>
         // ==========================================
-        // [설정] index.html의 키 값을 여기에 붙여넣으세요!
+        // [설정] YOUR_URL, YOUR_KEY 입력
         // ==========================================
-        const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
+        const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8';
         // ==========================================
 
         if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_URL')) alert("API 키를 설정해주세요.");
@@ -86,9 +91,12 @@
         let tempItems = []; 
         let partnerList = []; 
         let productList = [];
-        let currentEditId = null; // 수정 모드 확인용
+        let currentEditId = null; 
 
-        window.onload = async () => { await fetchData(); switchTab('partners'); };
+        window.onload = async () => { 
+            try { await fetchData(); switchTab('partners'); } 
+            catch (e) { alert("초기화 오류: " + e.message); }
+        };
 
         async function fetchData() {
             const pRes = await supabase.from('partners').select('*');
@@ -98,42 +106,29 @@
             productList = prodRes.data || [];
         }
 
+        // 검색 패널
         function renderSearchPanel(tab) {
             const panel = document.getElementById('searchContainer');
             const today = new Date();
             const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
             const currentDay = today.toISOString().split('T')[0];
-
             let html = `<div class="search-panel"><div class="flex flex-wrap gap-4 items-end">`;
 
-            // 날짜 검색 (기초등록/재고 제외)
             if (!['partners', 'products', 'inventory'].includes(tab)) {
                 html += `<div><span class="search-label">기간 조회</span><div class="flex items-center gap-2"><input type="date" id="searchStartDate" class="input-box" value="${firstDay}"><span class="text-slate-400">~</span><input type="date" id="searchEndDate" class="input-box" value="${currentDay}"></div></div>`;
             }
 
-            // 메뉴별 검색 옵션
             if (tab === 'purchase_orders') {
-                // [수정됨] 발주관리: 납품업체, EndUser, 품목명
-                html += `
-                    <div><span class="search-label">납품업체</span><input type="text" id="sPartner" class="input-box" placeholder="업체명"></div>
-                    <div><span class="search-label">EndUser</span><input type="text" id="sEndUser" class="input-box" placeholder="EndUser"></div>
-                    <div><span class="search-label">품목명</span><input type="text" id="sItem" class="input-box" placeholder="품목명"></div>
-                `;
+                html += `<div><span class="search-label">납품업체</span><input type="text" id="sPartner" class="input-box" placeholder="업체명"></div><div><span class="search-label">EndUser</span><input type="text" id="sEndUser" class="input-box" placeholder="EndUser"></div><div><span class="search-label">품목명</span><input type="text" id="sItem" class="input-box" placeholder="품목명"></div>`;
             } else if (tab === 'purchases') {
-                // [수정됨] 구매관리: 매입처, 품목명
-                html += `
-                    <div><span class="search-label">매입처</span><input type="text" id="sPartner" class="input-box" placeholder="매입처"></div>
-                    <div><span class="search-label">품목명</span><input type="text" id="sItem" class="input-box" placeholder="품목명"></div>
-                `;
+                html += `<div><span class="search-label">매입처</span><input type="text" id="sPartner" class="input-box" placeholder="매입처"></div><div><span class="search-label">품목명</span><input type="text" id="sItem" class="input-box" placeholder="품목명"></div>`;
             } else if (tab === 'partners') {
                 html += `<div><span class="search-label">상호명</span><input type="text" id="sName" class="input-box"></div><div><span class="search-label">담당자</span><input type="text" id="sManager" class="input-box"></div>`;
             } else if (tab === 'products' || tab === 'inventory') {
                 html += `<div><span class="search-label">품목명</span><input type="text" id="sName" class="input-box"></div><div><span class="search-label">코드</span><input type="text" id="sCode" class="input-box"></div>`;
             } else {
-                // 견적, 주문, 판매
                 html += `<div><span class="search-label">거래처</span><input type="text" id="sPartner" class="input-box"></div><div><span class="search-label">담당자</span><input type="text" id="sManager" class="input-box"></div><div><span class="search-label">비고</span><input type="text" id="sNote" class="input-box"></div>`;
             }
-
             html += `<div class="ml-auto"><button onclick="runSearch('${tab}')" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold shadow transition flex items-center gap-2"><i class="fa-solid fa-magnifying-glass"></i> 검색</button></div></div></div>`;
             panel.innerHTML = html;
         }
@@ -142,21 +137,16 @@
             const tbody = document.getElementById('listBody');
             tbody.innerHTML = '<tr><td colspan="10" class="text-center p-4">검색중...</td></tr>';
             if(tab === 'inventory') { await loadInventoryData(true); return; }
-
             let query = supabase.from(tab).select('*').order('created_at', { ascending: false });
-
-            // 날짜 필터
             const sDate = document.getElementById('searchStartDate')?.value;
             const eDate = document.getElementById('searchEndDate')?.value;
             if(sDate && eDate) query = query.gte('date', sDate).lte('date', eDate);
 
-            // 텍스트 필터
             if(tab === 'purchase_orders') {
                 const partner = document.getElementById('sPartner').value;
                 const endUser = document.getElementById('sEndUser').value;
                 if(partner) query = query.ilike('partner_name', `%${partner}%`);
                 if(endUser) query = query.ilike('end_user', `%${endUser}%`);
-                // 품목명 검색은 데이터 가져온 후 JS 필터링 (JSON 필드라)
             } else if (tab === 'purchases') {
                 const partner = document.getElementById('sPartner').value;
                 const item = document.getElementById('sItem').value;
@@ -175,41 +165,32 @@
 
             const { data, error } = await query;
             if(error) { alert("검색실패: "+error.message); return; }
-
-            // [추가] 발주관리 - 품목명 검색 (JSONB 필터링)
             let resultData = data;
             if(tab === 'purchase_orders') {
                 const sItem = document.getElementById('sItem').value.toLowerCase();
-                if(sItem) {
-                    resultData = data.filter(row => {
-                        if(!row.items) return false;
-                        return row.items.some(i => i.name.toLowerCase().includes(sItem));
-                    });
-                }
+                if(sItem) resultData = data.filter(row => row.items && row.items.some(i => i.name.toLowerCase().includes(sItem)));
             }
-
             renderTable(tab, resultData);
         }
 
         async function switchTab(tab) {
-            currentTab = tab; 
-            await fetchData();
-            renderSearchPanel(tab);
-            
+            currentTab = tab; await fetchData(); renderSearchPanel(tab);
             const container = document.getElementById('contentArea');
             const titles = {'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황','quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)'};
             
             let html = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold text-slate-800 border-l-4 border-cyan-500 pl-3">${titles[tab]}</h2>`;
             if(tab === 'inventory') html += `<button onclick="openNewModal('purchases')" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded font-bold shadow-sm text-sm"><i class="fa-solid fa-plus mr-2"></i>제품 입고 (신규등록)</button>`;
             else html += `<button onclick="openNewModal('${tab}')" class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded font-bold shadow-sm text-sm"><i class="fa-solid fa-plus mr-2"></i>신규 등록</button>`;
-            html += `</div><div class="bg-white rounded shadow-sm border border-slate-200 overflow-hidden"><table class="w-full text-left border-collapse">`;
+            html += `</div><div class="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
+            <table class="data-table">`; // 클래스명 data-table 사용
 
-            if (tab === 'partners') html += `<thead><tr><th>상호</th><th>담당자</th><th>전화번호</th><th>비고</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
-            else if (tab === 'products') html += `<thead><tr><th>품목코드</th><th>품목명</th><th>규격</th><th>단위</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
-            else if (tab === 'purchase_orders') html += `<thead><tr><th>PO#</th><th>납품업체</th><th>EndUser</th><th>품목요약</th><th>총 발주금액</th><th>수주일자</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
-            else if (tab === 'purchases') html += `<thead><tr><th>입고일</th><th>매입처</th><th>품목명</th><th>수량</th><th>단가</th><th>공급가</th><th>부가세</th><th>합계</th><th>시리얼</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
-            else if (tab === 'inventory') html += `<thead><tr><th>품목코드</th><th>품목명</th><th>규격</th><th>단위</th><th>실재고</th><th>최근입고일</th><th>최근시리얼</th><th>비고</th><th>예약 현황</th><th>저장</th></tr></thead><tbody id="listBody"></tbody>`;
-            else html += `<thead><tr><th>일자</th><th>거래처</th><th>담당자</th><th>공급가액</th><th>부가세</th><th>합계</th><th>비고</th><th>관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            // [수정됨] 컬럼 너비 지정 (width: N%)
+            if (tab === 'partners') html += `<thead><tr><th style="width:20%">상호</th><th style="width:15%">담당자</th><th style="width:20%">전화번호</th><th>비고</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'products') html += `<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'purchase_orders') html += `<thead><tr><th style="width:12%">PO#</th><th style="width:15%">납품업체</th><th style="width:15%">EndUser</th><th>품목요약</th><th style="width:12%">총액</th><th style="width:10%">일자</th><th style="width:12%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'purchases') html += `<thead><tr><th style="width:10%">일자</th><th style="width:15%">매입처</th><th>품목명</th><th style="width:6%">수량</th><th style="width:10%">단가</th><th style="width:10%">합계</th><th style="width:10%">시리얼</th><th style="width:8%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'inventory') html += `<thead><tr><th style="width:12%">품목코드</th><th style="width:20%">품목명</th><th>규격</th><th style="width:6%">단위</th><th style="width:8%">실재고</th><th style="width:10%">최근입고</th><th style="width:10%">시리얼</th><th>비고</th><th style="width:12%">예약</th><th style="width:6%">저장</th></tr></thead><tbody id="listBody"></tbody>`;
+            else html += `<thead><tr><th style="width:10%">일자</th><th style="width:18%">거래처</th><th style="width:12%">담당자</th><th style="width:12%">공급가액</th><th style="width:10%">부가세</th><th style="width:12%">합계</th><th>비고</th><th style="width:12%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             
             html += `</table></div>`;
             container.innerHTML = html;
@@ -223,98 +204,92 @@
 
             data.forEach(row => {
                 let tr = `<tr class="hover:bg-slate-50 border-b">`;
-                // [수정됨] 수정 버튼 추가 (재고관리 제외)
+                
+                // [수정됨] 수정 버튼 데이터 인코딩 방식 변경 (JSON 파싱 오류 방지)
+                // 데이터를 Base64로 인코딩하여 전달
+                const rowStr = btoa(unescape(encodeURIComponent(JSON.stringify(row))));
+                
                 let actions = '';
                 if(tab !== 'inventory') {
-                    const rowStr = encodeURIComponent(JSON.stringify(row));
                     actions += `<button onclick='openEditModal("${tab}", "${rowStr}")' class="text-blue-500 hover:text-blue-700 mr-2" title="수정"><i class="fa-solid fa-pen-to-square"></i></button>`;
                 }
                 actions += `<button onclick="deleteItem('${tab}', ${row.id})" class="text-red-400 hover:text-red-600" title="삭제"><i class="fa-solid fa-trash"></i></button>`;
 
-                if (tab === 'partners') tr += `<td>${row.name}</td><td>${row.manager_name||'-'}</td><td>${row.phone||'-'}</td><td>${row.note||''}</td><td class="text-center">${actions}</td>`;
-                else if (tab === 'products') tr += `<td class="font-mono text-cyan-600">${row.code}</td><td>${row.name}</td><td>${row.spec||'-'}</td><td class="text-center font-bold text-slate-600">${row.unit||'EA'}</td><td class="text-center">${actions}</td>`;
+                // [수정됨] 정렬 (text-center / text-left / text-right)
+                if (tab === 'partners') tr += `<td>${row.name}</td><td class="text-center">${row.manager_name||'-'}</td><td class="text-center">${row.phone||'-'}</td><td>${row.note||''}</td><td class="text-center">${actions}</td>`;
+                else if (tab === 'products') tr += `<td class="font-mono text-center text-cyan-600">${row.code}</td><td>${row.name}</td><td>${row.spec||'-'}</td><td class="text-center font-bold text-slate-600">${row.unit||'EA'}</td><td class="text-center">${actions}</td>`;
                 else if (tab === 'purchase_orders') {
                     const itemsSummary = row.items && row.items.length > 0 ? `${row.items[0].name} 외 ${row.items.length-1}건` : '-';
-                    const printBtn = `<button onclick='printDocument("PO", ${JSON.stringify(row)})' class="bg-slate-100 border px-2 py-1 rounded text-xs hover:bg-slate-200 mr-2"><i class="fa-solid fa-print"></i></button>`;
-                    tr += `<td class="font-bold text-blue-600">${row.po_number}</td><td>${row.partner_name}</td><td>${row.end_user||'-'}</td><td>${itemsSummary}</td><td class="font-bold text-right">${(row.total_amount||0).toLocaleString()}</td><td>${row.date}</td><td class="text-center flex justify-center items-center">${printBtn} ${actions}</td>`;
+                    const printBtn = `<button onclick='printDocument("PO", "${rowStr}")' class="bg-slate-100 border px-2 py-1 rounded text-xs hover:bg-slate-200 mr-2"><i class="fa-solid fa-print"></i></button>`;
+                    tr += `<td class="font-bold text-blue-600 text-center">${row.po_number}</td><td>${row.partner_name}</td><td class="text-center">${row.end_user||'-'}</td><td>${itemsSummary}</td><td class="font-bold text-right">${(row.total_amount||0).toLocaleString()}</td><td class="text-center">${row.date}</td><td class="text-center flex justify-center items-center">${printBtn} ${actions}</td>`;
                 } else if (tab === 'purchases') {
-                    tr += `<td>${row.date}</td><td>${row.partner_name}</td><td>${row.item_name}</td><td class="text-center font-bold">${row.qty}</td><td class="text-right">${(row.unit_price||0).toLocaleString()}</td><td class="text-right">${(row.supply_price||0).toLocaleString()}</td><td class="text-right">${(row.vat||0).toLocaleString()}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td>${row.serial_no||'-'}</td><td class="text-center">${actions}</td>`;
+                    tr += `<td class="text-center">${row.date}</td><td>${row.partner_name}</td><td>${row.item_name}</td><td class="text-center font-bold">${row.qty}</td><td class="text-right">${(row.unit_price||0).toLocaleString()}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td class="text-center">${row.serial_no||'-'}</td><td class="text-center">${actions}</td>`;
                 } else if (tab === 'inventory') { 
-                    // 재고관리는 수정버튼 없음
+                    // 인벤토리는 loadInventoryData에서 처리
                 } else {
-                    const printBtn = tab === 'sales' ? `<button onclick='printDocument("SALES", ${JSON.stringify(row)})' class="bg-slate-100 border px-2 py-1 rounded text-xs hover:bg-slate-200 mr-2"><i class="fa-solid fa-print"></i></button>` : '';
-                    tr += `<td>${row.date}</td><td class="font-bold">${row.partner_name||'-'}</td><td>${row.manager||'-'}</td><td class="text-right text-slate-600">${(row.total_supply||0).toLocaleString()}</td><td class="text-right text-slate-400 text-xs">${(row.total_vat||0).toLocaleString()}</td><td class="text-right font-bold text-cyan-700">${(row.total_amount||0).toLocaleString()}</td><td>${row.note||''}</td><td class="text-center flex justify-center items-center">${printBtn} ${actions}</td>`;
+                    const printBtn = tab === 'sales' ? `<button onclick='printDocument("SALES", "${rowStr}")' class="bg-slate-100 border px-2 py-1 rounded text-xs hover:bg-slate-200 mr-2"><i class="fa-solid fa-print"></i></button>` : '';
+                    tr += `<td class="text-center">${row.date}</td><td class="font-bold">${row.partner_name||'-'}</td><td class="text-center">${row.manager||'-'}</td><td class="text-right text-slate-600">${(row.total_supply||0).toLocaleString()}</td><td class="text-right text-slate-400 text-xs">${(row.total_vat||0).toLocaleString()}</td><td class="text-right font-bold text-cyan-700">${(row.total_amount||0).toLocaleString()}</td><td>${row.note||''}</td><td class="text-center flex justify-center items-center">${printBtn} ${actions}</td>`;
                 }
                 if(tab !== 'inventory') tbody.innerHTML += tr;
             });
         }
 
-        // =========================
-        // 수정 기능 (Edit)
-        // =========================
+        // [수정됨] Edit Modal 데이터 채우기 로직 수정
         function openEditModal(tab, rowStr) {
-            const row = JSON.parse(decodeURIComponent(rowStr));
-            currentEditId = row.id; // 수정 모드 활성화
-            openNewModal(tab, true); // 모달 열기 (isEdit = true)
+            // Base64 디코딩 -> JSON 파싱
+            const row = JSON.parse(decodeURIComponent(escape(atob(rowStr))));
+            currentEditId = row.id;
+            openNewModal(tab, true);
             
-            // 데이터 채우기
             setTimeout(() => {
                 if(tab === 'partners') {
-                    document.getElementById('pName').value = row.name; document.getElementById('pBiz').value = row.biz_num;
-                    document.getElementById('pOwner').value = row.owner_name; document.getElementById('pManager').value = row.manager_name;
-                    document.getElementById('pPhone').value = row.phone; document.getElementById('pEmail').value = row.email; document.getElementById('pNote').value = row.note;
+                    document.getElementById('pName').value = row.name; document.getElementById('pBiz').value = row.biz_num||'';
+                    document.getElementById('pOwner').value = row.owner_name||''; document.getElementById('pManager').value = row.manager_name||'';
+                    document.getElementById('pPhone').value = row.phone||''; document.getElementById('pEmail').value = row.email||''; document.getElementById('pNote').value = row.note||'';
                 } else if(tab === 'products') {
                     document.getElementById('prodName').value = row.name; document.getElementById('prodCode').value = row.code;
-                    document.getElementById('prodUnit').value = row.unit; document.getElementById('prodSpec').value = row.spec;
+                    document.getElementById('prodUnit').value = row.unit||''; document.getElementById('prodSpec').value = row.spec||'';
                 } else if(tab === 'purchases') {
                     document.getElementById('purDate').value = row.date; document.getElementById('purPartner').value = row.partner_name;
                     document.getElementById('purItem').value = row.item_name; document.getElementById('purQty').value = row.qty;
-                    document.getElementById('purPrice').value = row.unit_price; document.getElementById('purSerial').value = row.serial_no; document.getElementById('purNote').value = row.note;
+                    document.getElementById('purPrice').value = row.unit_price; document.getElementById('purSerial').value = row.serial_no||''; document.getElementById('purNote').value = row.note||'';
                 } else if(tab === 'purchase_orders') {
                     document.getElementById('poNum').value = row.po_number; document.getElementById('poDate').value = row.date;
-                    document.getElementById('poPartner').value = row.partner_name; document.getElementById('poEndUser').value = row.end_user;
-                    document.getElementById('poManager').value = row.manager; document.getElementById('poPreOrder').value = row.is_pre_order; document.getElementById('poNote').value = row.note;
+                    document.getElementById('poPartner').value = row.partner_name; document.getElementById('poEndUser').value = row.end_user||'';
+                    document.getElementById('poManager').value = row.manager||''; document.getElementById('poPreOrder').value = row.is_pre_order||''; document.getElementById('poNote').value = row.note||'';
                     tempItems = row.items || []; renderGrid();
                 } else {
                     document.getElementById('sDate').value = row.date; document.getElementById('sPartner').value = row.partner_name;
-                    document.getElementById('sManager').value = row.manager; document.getElementById('sNote').value = row.note;
+                    document.getElementById('sManager').value = row.manager||''; document.getElementById('sNote').value = row.note||'';
                     if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
                     if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
                     tempItems = row.items || []; renderGrid();
                 }
-            }, 100);
+            }, 50);
         }
 
         function openNewModal(tab, isEdit = false) {
-            if(!isEdit) {
-                currentEditId = null; // 신규 등록 모드
-                tempItems = [];
-            }
+            if(!isEdit) { currentEditId = null; tempItems = []; }
             const modal = document.getElementById('genericModal');
             document.getElementById('modalTitle').innerText = getTitle(tab) + (isEdit ? ' 수정' : ' 등록');
             const body = document.getElementById('modalBody');
             modal.classList.add('active');
-            
             let html = ''; const today = new Date().toISOString().split('T')[0];
+            
             if (tab === 'partners') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div><div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div><div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div><div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div><div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div><div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div><div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div></div><button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
-            else if (tab === 'products') html = `<div class="grid grid-cols-2 gap-3"><div class="col-span-2"><label class="text-xs">품목명 (필수)</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div><div><label class="text-xs">품목코드 (자동)</label><input id="prodCode" class="input-box bg-slate-100" readonly></div><div><label class="text-xs">단위</label><input id="prodUnit" class="input-box" placeholder="EA"></div><div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div></div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
-            else if (tab === 'purchases') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">입고일자</label><input type="date" id="purDate" class="input-box" value="${today}"></div><div><label class="text-xs">매입처</label><input id="purPartner" class="input-box" list="dl_part"></div><div><label class="text-xs">품목명</label><input id="purItem" class="input-box" list="dl_prod"></div><div><label class="text-xs">수량</label><input type="number" id="purQty" class="input-box" value="0"></div><div><label class="text-xs">단가 (VAT별도)</label><input type="number" id="purPrice" class="input-box" value="0"></div><div><label class="text-xs">시리얼번호</label><input type="text" id="purSerial" class="input-box"></div><div class="col-span-2"><label class="text-xs">비고</label><input id="purNote" class="input-box"></div></div><button onclick="savePurchase()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`;
-            else if (tab === 'purchase_orders') html = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">PO#</label><input id="poNum" class="input-box"></div><div><label class="text-xs text-slate-500">수주일자</label><input type="date" id="poDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500">납품업체</label><input id="poPartner" class="input-box" list="dl_part"></div></div><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">EndUser</label><input id="poEndUser" class="input-box"></div><div><label class="text-xs text-slate-500">담당자</label><input id="poManager" class="input-box"></div><div><label class="text-xs text-slate-500">선발주여부</label><select id="poPreOrder" class="input-box"><option>N</option><option>Y</option></select></div></div><div><label class="text-xs text-slate-500">비고</label><input id="poNote" class="input-box"></div></div>${renderItemInputArea(tab)}`;
+            else if (tab === 'products') html = `<div class="grid grid-cols-2 gap-3"><div class="col-span-2"><label class="text-xs">품목명 (필수)</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div><div><label class="text-xs">품목코드 (자동)</label><input id="prodCode" class="input-box bg-slate-100" readonly></div><div><label class="text-xs">단위 (예: EA)</label><input id="prodUnit" class="input-box" placeholder="EA"></div><div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div></div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
+            else if (tab === 'purchases') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">입고일자</label><input type="date" id="purDate" class="input-box" value="${today}"></div><div><label class="text-xs">매입처</label><input id="purPartner" class="input-box" list="dl_part"></div><div><label class="text-xs">품목명</label><input id="purItem" class="input-box" list="dl_prod"></div><div><label class="text-xs">수량</label><input type="number" id="purQty" class="input-box" value="0"></div><div><label class="text-xs">단가 (VAT별도)</label><input type="number" id="purPrice" class="input-box" value="0"></div><div><label class="text-xs">시리얼번호 (선택)</label><input type="text" id="purSerial" class="input-box"></div><div class="col-span-2"><label class="text-xs">비고</label><input id="purNote" class="input-box"></div></div><button onclick="savePurchase()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`;
+            else if (tab === 'purchase_orders') html = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">PO# (발주번호)</label><input id="poNum" class="input-box"></div><div><label class="text-xs text-slate-500">수주일자</label><input type="date" id="poDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500">납품업체</label><input id="poPartner" class="input-box" list="dl_part"></div></div><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">EndUser</label><input id="poEndUser" class="input-box"></div><div><label class="text-xs text-slate-500">담당자</label><input id="poManager" class="input-box"></div><div><label class="text-xs text-slate-500">선발주여부</label><select id="poPreOrder" class="input-box"><option>N</option><option>Y</option></select></div></div><div><label class="text-xs text-slate-500">비고</label><input id="poNote" class="input-box"></div></div>${renderItemInputArea(tab)}`;
             else { renderComplexForm(tab, body); return; }
             body.innerHTML = html;
             if(tab === 'purchases' || tab === 'purchase_orders') { fillDL('dl_part', partnerList); fillDL('dl_prod', productList); }
         }
 
-        // [수정됨] 저장 로직 (Insert / Update 분기 처리)
+        // [수정됨] 저장 로직 (Insert / Update 분기)
         async function saveData(tab, data) {
             let res;
-            if (currentEditId) {
-                // 수정 (Update)
-                res = await supabase.from(tab).update(data).eq('id', currentEditId);
-            } else {
-                // 신규 (Insert)
-                res = await supabase.from(tab).insert(data);
-            }
+            if (currentEditId) res = await supabase.from(tab).update(data).eq('id', currentEditId);
+            else res = await supabase.from(tab).insert(data);
             if(res.error) { alert("오류: " + res.error.message); return false; }
             return true;
         }
@@ -330,9 +305,7 @@
             const qty = parseInt(el('purQty'))||0; const price = parseInt(el('purPrice'))||0; const supply = qty * price; const vat = Math.floor(supply * 0.1);
             const data = { date: el('purDate'), partner_name: el('purPartner'), item_name: el('purItem'), qty: qty, unit_price: price, supply_price: supply, vat: vat, total_amount: supply + vat, serial_no: el('purSerial'), note: el('purNote') };
             
-            // 입고 시 재고 수량 조정 로직 (신규일때만 증가, 수정일때는 차이만큼 조정이 복잡하므로 여기선 단순 수정만 반영)
             if(await saveData('purchases', data)) {
-                // 신규 등록인 경우에만 재고 자동 증가 (수정 시 재고 꼬임 방지 위해 자동반영 제외)
                 if(!currentEditId) {
                     const prod = productList.find(p => p.name === data.item_name);
                     if(prod) await supabase.from('products').update({ stock: prod.stock + qty }).eq('id', prod.id);
@@ -345,13 +318,12 @@
             if(tempItems.length === 0) return alert("품목 없음");
             let tSupply=0, tVat=0, tTotal=0; tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
             let dateVal = el(tab === 'purchase_orders' ? 'poDate' : 'sDate') || new Date().toISOString().split('T')[0];
-            let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: dateVal };
+            let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: dateVal, partner_name: el('sPartner'), manager: el('sManager'), note: el('sNote') };
             
             if(tab === 'purchase_orders') { data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); }
-            else { data.partner_name = el('sPartner'); data.manager = el('sManager'); data.note = el('sNote'); if(tab === 'quotes') { data.partner_manager = el('sPManager'); data.phone = el('sContact'); } if(tab === 'orders') data.po_number = 'AUTO'; }
+            else { if(tab === 'quotes') { data.partner_manager = el('sPManager'); data.phone = el('sContact'); } if(tab === 'orders') data.po_number = 'AUTO'; }
 
             if(await saveData(tab, data)) { 
-                // 판매 신규 등록 시 재고 차감
                 if(tab === 'sales' && !currentEditId) {
                     for(const item of tempItems) {
                         const prod = productList.find(p => p.name === item.name);
@@ -362,7 +334,7 @@
             }
         }
 
-        // 기존 유틸리티 함수들
+        // 기존 유틸리티
         function getTitle(tab) { const map = {'partners':'거래처','products':'품목','purchase_orders':'발주','purchases':'구매(입고)','quotes':'견적','orders':'주문','sales':'판매'}; return map[tab] || ''; }
         function closeModal() { document.getElementById('genericModal').classList.remove('active'); }
         function autoGenCode(val) { if(val && !currentEditId) document.getElementById('prodCode').value = 'P-' + Date.now().toString().slice(-6); }
@@ -375,7 +347,6 @@
             const ordersRes = await supabase.from('orders').select('*');
             const allOrders = ordersRes.data || [];
             tbody.innerHTML = '';
-            
             let filteredProducts = productList;
             if (isSearch) {
                 const sName = document.getElementById('searchProdName').value.toLowerCase();
@@ -383,12 +354,11 @@
                 const sSpec = document.getElementById('searchSpec').value.toLowerCase();
                 filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true) && (sSpec ? (p.spec||'').toLowerCase().includes(sSpec) : true));
             }
-
             filteredProducts.forEach(prod => {
                 let reservedQty = 0; let partners = [];
                 allOrders.forEach(ord => { if(ord.items) { ord.items.forEach(item => { if(item.name === prod.name) { reservedQty += item.qty; if(!partners.includes(ord.partner_name)) partners.push(ord.partner_name); } }); } });
                 let reservedText = reservedQty > 0 ? `<span class="text-red-500 font-bold">(${reservedQty}개 예정)</span> <span class="text-xs text-gray-500 ml-1">- ${partners.join(', ')} 등</span>` : '<span class="text-gray-300">-</span>';
-                tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="font-mono text-slate-500">${prod.code}</td><td class="font-bold">${prod.name}</td><td>${prod.spec||''}</td><td class="text-center text-xs">${prod.unit||'EA'}</td><td class="font-bold text-lg text-blue-600 text-center">${prod.stock}</td><td class="text-center text-sm">${prod.last_incoming_date||'-'}</td><td class="text-center text-sm text-gray-600">${prod.last_serial_no||'-'}</td><td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td><td class="text-xs">${reservedText}</td><td><button onclick="updateInventoryNote(${prod.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">저장</button></td></tr>`;
+                tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="font-mono text-center text-slate-500">${prod.code}</td><td class="font-bold">${prod.name}</td><td>${prod.spec||''}</td><td class="text-center text-xs">${prod.unit||'EA'}</td><td class="font-bold text-lg text-blue-600 text-center">${prod.stock}</td><td class="text-center text-sm">${prod.last_incoming_date||'-'}</td><td class="text-center text-sm text-gray-600">${prod.last_serial_no||'-'}</td><td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td><td class="text-xs">${reservedText}</td><td class="text-center"><button onclick="updateInventoryNote(${prod.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">저장</button></td></tr>`;
             });
         }
         async function updateInventoryNote(id) { const note = document.getElementById(`note_${id}`).value; const { error } = await supabase.from('products').update({ inventory_note: note }).eq('id', id); if(error) alert("저장 실패"); else alert("저장되었습니다."); }
@@ -433,7 +403,9 @@
             document.getElementById('sPartner').value = row.partner_name || ''; document.getElementById('sManager').value = row.manager || '';
             if(row.items) { tempItems = row.items; renderGrid(); } document.getElementById('loadDataModal').classList.remove('active');
         }
-        function printDocument(type, row) {
+        // [수정됨] 인쇄 로직 (Base64 디코딩)
+        function printDocument(type, rowStr) {
+            const row = JSON.parse(decodeURIComponent(escape(atob(rowStr))));
             const isPO = type === 'PO';
             document.getElementById('p_title').innerText = isPO ? '발 주 서' : '거 래 명 세 서'; document.getElementById('p_date').innerText = row.date; document.getElementById('p_no').innerText = isPO ? row.po_number : 'SALES-'+row.id; document.getElementById('p_grand_total').innerText = (row.total_amount||0).toLocaleString();
             if (isPO) { document.getElementById('p_left_type').innerText = "공급받는자"; document.getElementById('p_left_name').innerText = "(주)ASPEC Tech"; document.getElementById('p_left_addr').innerText = "경기 안양시..."; document.getElementById('p_left_tel').innerText = ""; document.getElementById('p_left_project').innerText = row.end_user || '-'; document.getElementById('p_right_type').innerText = "공급자"; document.getElementById('p_right_biz').innerText = "-"; document.getElementById('p_right_name').innerText = row.partner_name; document.getElementById('p_right_owner').innerText = ""; document.getElementById('p_right_tel').innerText = ""; } 
