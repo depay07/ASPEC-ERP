@@ -11,24 +11,31 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans KR', sans-serif; font-size: 14px; }
         
+        /* 모달 스타일 */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; display: none; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 95%; max-width: 1300px; max-height: 95vh; overflow-y: auto; border-radius: 8px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal.active { display: flex; }
 
+        /* 테이블 스타일 */
         th { background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
         td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
         .input-box { width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; }
         .input-box:focus { outline: none; border-color: #06b6d4; ring: 1px solid #06b6d4; }
         
+        /* 인쇄 전용 스타일 */
         @media print {
             @page { size: A4; margin: 10mm; }
             body * { visibility: hidden; }
             #printContainer, #printContainer * { visibility: visible; }
             #printContainer { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 9999; padding: 0; margin: 0; }
+            
             .doc-table { width: 100%; border-collapse: collapse; border: 2px solid black; color: black; font-size: 11px; }
             .doc-table th, .doc-table td { border: 1px solid black; padding: 4px 6px; }
             .doc-header { background-color: #fff; text-align: center; font-weight: bold; }
             .bg-gray { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .text-bold { font-weight: bold; }
             .doc-title { font-size: 32px; font-weight: bold; letter-spacing: 5px; text-align: center; margin: 0; padding: 10px 0; }
         }
     </style>
@@ -44,10 +51,12 @@
                 <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-2 mb-2">기초 등록</div>
                 <button onclick="switchTab('partners')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-building w-4"></i> 거래처 관리</button>
                 <button onclick="switchTab('products')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-box w-4"></i> 품목 관리</button>
+                
                 <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">자재/발주</div>
                 <button onclick="switchTab('purchase_orders')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-file-import w-4"></i> 발주 관리 (PO)</button>
                 <button onclick="switchTab('purchases')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-dolly w-4"></i> 구매 관리 (입고)</button>
                 <button onclick="switchTab('inventory')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-warehouse w-4"></i> 재고 관리 현황</button>
+                
                 <div class="px-4 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">영업 관리</div>
                 <button onclick="switchTab('quotes')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-file-invoice w-4"></i> 견적 관리</button>
                 <button onclick="switchTab('orders')" class="nav-btn w-full text-left px-6 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2"><i class="fa-solid fa-file-signature w-4"></i> 주문 관리</button>
@@ -80,7 +89,8 @@
         // [설정] 본인의 Supabase URL/KEY 입력 필수!
         // ==========================================
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8
+'; 
         // ==========================================
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -161,7 +171,6 @@
                 tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="font-mono text-slate-500">${prod.code}</td><td class="font-bold">${prod.name}</td><td>${prod.spec||''}</td><td class="text-center text-xs">${prod.unit||'EA'}</td><td class="font-bold text-lg text-blue-600 text-center">${prod.stock}</td><td class="text-center text-sm">${prod.last_incoming_date||'-'}</td><td class="text-center text-sm text-gray-600">${prod.last_serial_no||'-'}</td><td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td><td class="text-xs">${reservedText}</td><td><button onclick="updateInventoryNote(${prod.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">저장</button></td></tr>`;
             });
         }
-
         async function updateInventoryNote(id) {
             const note = document.getElementById(`note_${id}`).value;
             const { error } = await supabase.from('products').update({ inventory_note: note }).eq('id', id);
@@ -213,11 +222,9 @@
         }
         function renderComplexForm(tab, container) {
             const today = new Date().toISOString().split('T')[0];
-            // [중요] 불러오기 버튼 로직 강화
             let loadBtn = '';
             if(tab === 'orders') loadBtn = `<button onclick="openLoadModal('quotes')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-orange-600"><i class="fa-solid fa-file-import"></i> 견적 불러오기</button>`;
             if(tab === 'sales') loadBtn = `<button onclick="openLoadModal('orders')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-blue-600"><i class="fa-solid fa-file-import"></i> 주문 불러오기</button>`;
-
             container.innerHTML = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">일자</label><input type="date" id="sDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500 flex items-center">거래처 ${loadBtn}</label><input id="sPartner" class="input-box" list="dl_part" onchange="fillPart(this.value)"></div><div><label class="text-xs text-slate-500">담당자</label><input id="sManager" class="input-box"></div></div><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처담당자</label><input id="sPManager" class="input-box"></div><div><label class="text-xs text-slate-500">연락처</label><input id="sContact" class="input-box"></div><div><label class="text-xs text-slate-500">비고</label><input id="sNote" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
             fillDL('dl_part', partnerList); fillDL('dl_prod', productList);
         }
@@ -241,20 +248,33 @@
             });
             document.getElementById('sGrandTotal').innerText = grandTotal.toLocaleString();
         }
+        // [수정됨] 발주(PO) 저장 시 날짜값(date) 검증 로직 추가
+        async function saveTransaction(tab) {
+            if(tempItems.length === 0) return alert("품목 없음");
+            let tSupply=0, tVat=0, tTotal=0; tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
+            
+            // 날짜값 가져오기 (없으면 오늘 날짜 자동 지정)
+            let dateVal = el(tab === 'purchase_orders' ? 'poDate' : 'sDate');
+            if(!dateVal) dateVal = new Date().toISOString().split('T')[0];
 
-        // =========================
-        // [수정됨] 불러오기 기능 구현
-        // =========================
+            let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: dateVal };
+            
+            if(tab === 'purchase_orders') { data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); } 
+            else { data.partner_name = el('sPartner'); data.manager = el('sManager'); data.note = el('sNote'); if(tab === 'orders') data.po_number = 'AUTO'; }
+            
+            const { error } = await supabase.from(tab).insert(data);
+            if(error) { alert("저장실패: "+error.message); return; }
+            if(tab === 'sales') { for(const item of tempItems) { const prod = productList.find(p => p.name === item.name); if(prod) await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); } }
+            alert("저장되었습니다."); closeModal(); switchTab(tab);
+        }
         async function openLoadModal(srcTab) {
             document.getElementById('loadDataModal').classList.add('active');
             document.getElementById('loadModalTitle').innerText = (srcTab === 'quotes' ? '견적서' : '주문서') + ' 불러오기';
             const tbody = document.getElementById('loadDataBody');
             tbody.innerHTML = '<tr><td colspan="4">로딩중...</td></tr>';
-            
             const { data } = await supabase.from(srcTab).select('*').order('created_at', {ascending:false});
             tbody.innerHTML = '';
             if(!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4">데이터 없음</td></tr>'; return; }
-
             data.forEach(row => {
                 tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td>${row.date}</td><td>${row.partner_name}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td><button onclick='applyData(${JSON.stringify(row)})' class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600">선택</button></td></tr>`;
             });
@@ -265,26 +285,21 @@
             if(row.items) { tempItems = row.items; renderGrid(); }
             document.getElementById('loadDataModal').classList.remove('active');
         }
-
-        // =========================
-        // [수정됨] 복합 데이터 저장 (DB 컬럼 일치)
-        // =========================
         async function saveComplexData(tab) {
             if(tempItems.length === 0) return alert("품목 없음");
             let tSupply=0, tVat=0, tTotal=0; tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
-            let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: el('sDate'), partner_name: el('sPartner'), manager: el('sManager'), note: el('sNote') };
             
-            // 탭별 추가 컬럼
+            let dateVal = el('sDate');
+            if(!dateVal) dateVal = new Date().toISOString().split('T')[0];
+
+            let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: dateVal, partner_name: el('sPartner'), manager: el('sManager'), note: el('sNote') };
             if(tab === 'quotes') { data.partner_manager=el('sPManager'); data.phone=el('sContact'); }
             if(tab === 'orders') { data.po_number='AUTO'; }
-            
             const { error } = await supabase.from(tab).insert(data);
             if(error) { alert("저장실패: "+error.message); return; }
-            
             if(tab === 'sales') { for(const item of tempItems) { const prod = productList.find(p => p.name === item.name); if(prod) await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); } }
             alert("저장되었습니다."); closeModal(); switchTab(tab);
         }
-
         function printDocument(type, row) {
             const isPO = type === 'PO';
             document.getElementById('p_title').innerText = isPO ? '발 주 서' : '거 래 명 세 서';
@@ -305,7 +320,6 @@
             document.getElementById('p_sum_qty').innerText = sumQty.toLocaleString() + " EA"; document.getElementById('p_sum_supply').innerText = sumSupply.toLocaleString(); document.getElementById('p_sum_vat').innerText = sumVat.toLocaleString();
             window.print();
         }
-
         function logout() { supabase.auth.signOut().then(()=>window.location.href='index.html'); }
     </script>
 </body>
