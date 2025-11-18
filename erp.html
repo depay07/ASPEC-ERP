@@ -11,15 +11,22 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans KR', sans-serif; font-size: 14px; }
         
+        /* 모달 */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; display: none; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 95%; max-width: 1300px; max-height: 95vh; overflow-y: auto; border-radius: 8px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal.active { display: flex; }
 
+        /* 테이블 */
         th { background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
         td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
-        .input-box { width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; }
-        .input-box:focus { outline: none; border-color: #06b6d4; ring: 1px solid #06b6d4; }
+        .input-box { width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; transition: all 0.2s; }
+        .input-box:focus { outline: none; border-color: #06b6d4; ring: 2px solid #e0f2fe; }
+
+        /* 검색바 스타일 */
+        .search-panel { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        .search-label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 4px; display: block; }
         
+        /* 인쇄 */
         @media print {
             @page { size: A4; margin: 10mm; }
             body * { visibility: hidden; }
@@ -61,7 +68,11 @@
             </nav>
             <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="w-full bg-slate-800 py-2 rounded text-xs hover:text-white">로그아웃</button></div>
         </aside>
-        <main class="flex-1 overflow-y-auto p-6" id="mainContent"><div id="contentArea"></div></main>
+
+        <main class="flex-1 overflow-y-auto p-6" id="mainContent">
+            <div id="searchContainer"></div>
+            <div id="contentArea"></div>
+        </main>
     </div>
 
     <div id="genericModal" class="modal"><div class="modal-content"><div class="flex justify-between items-center mb-4 border-b pb-3"><h2 id="modalTitle" class="text-xl font-bold text-slate-800">입력</h2><button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button></div><div id="modalBody"></div></div></div>
@@ -71,11 +82,14 @@
 
     <script>
         // ==========================================
-        // [설정] 키 값의 줄바꿈을 수정했습니다!
+        // [설정] index.html에 있는 키를 아래에 붙여넣으세요!
         // ==========================================
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
         // ==========================================
+
+        // 키값 체크
+        if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_URL')) { alert("API 키 설정을 확인해주세요."); }
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentTab = 'partners';
@@ -84,24 +98,131 @@
         let productList = []; 
 
         window.onload = async () => { 
-            try {
-                await fetchData(); 
-                switchTab('partners');
-            } catch(e) {
-                alert("시스템 초기화 오류: " + e.message);
-            }
+            try { await fetchData(); switchTab('partners'); } 
+            catch (e) { alert("초기화 오류: " + e.message); }
         };
 
         async function fetchData() {
             const pRes = await supabase.from('partners').select('*');
             const prodRes = await supabase.from('products').select('*').order('name');
+            if(pRes.error) throw pRes.error; 
             partnerList = pRes.data || [];
             productList = prodRes.data || [];
+        }
+
+        // [핵심] 검색 조건 패널 렌더링
+        function renderSearchPanel(tab) {
+            const panel = document.getElementById('searchContainer');
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            const currentDay = today.toISOString().split('T')[0];
+
+            let searchHtml = `<div class="search-panel"><div class="flex flex-wrap gap-4 items-end">`;
+
+            // 1. 날짜 검색 (기초등록/재고 제외한 모든 메뉴)
+            if (!['partners', 'products', 'inventory'].includes(tab)) {
+                searchHtml += `
+                    <div>
+                        <span class="search-label">기간 조회</span>
+                        <div class="flex items-center gap-2">
+                            <input type="date" id="searchStartDate" class="input-box" value="${firstDay}">
+                            <span class="text-slate-400">~</span>
+                            <input type="date" id="searchEndDate" class="input-box" value="${currentDay}">
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. 메뉴별 검색 조건
+            if (tab === 'partners') {
+                searchHtml += `
+                    <div><span class="search-label">상호명</span><input type="text" id="searchName" class="input-box" placeholder="상호 입력"></div>
+                    <div><span class="search-label">담당자</span><input type="text" id="searchManager" class="input-box" placeholder="담당자명"></div>
+                    <div><span class="search-label">사업자번호</span><input type="text" id="searchBiz" class="input-box" placeholder="번호 입력"></div>
+                `;
+            } else if (tab === 'products' || tab === 'inventory') {
+                searchHtml += `
+                    <div><span class="search-label">품목명</span><input type="text" id="searchProdName" class="input-box" placeholder="품목명"></div>
+                    <div><span class="search-label">품목코드</span><input type="text" id="searchProdCode" class="input-box" placeholder="코드"></div>
+                    <div><span class="search-label">규격</span><input type="text" id="searchSpec" class="input-box" placeholder="규격"></div>
+                `;
+            } else {
+                // 거래 관련 (견적/주문/발주/판매/구매)
+                searchHtml += `
+                    <div><span class="search-label">거래처/업체명</span><input type="text" id="searchPartner" class="input-box" placeholder="업체명"></div>
+                    <div><span class="search-label">담당자</span><input type="text" id="searchUser" class="input-box" placeholder="담당자"></div>
+                    <div><span class="search-label">비고</span><input type="text" id="searchNote" class="input-box" placeholder="비고 검색"></div>
+                `;
+            }
+
+            // 검색 버튼
+            searchHtml += `
+                <div class="ml-auto">
+                    <button onclick="runSearch('${tab}')" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass"></i> 검색(F8)
+                    </button>
+                </div>
+            </div></div>`;
+
+            panel.innerHTML = searchHtml;
+        }
+
+        // [핵심] 검색 실행 로직
+        async function runSearch(tab) {
+            const tbody = document.getElementById('listBody');
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center p-4">검색중...</td></tr>';
+
+            // 재고관리(inventory)는 products 테이블을 기반으로 하므로 별도 처리
+            if (tab === 'inventory') {
+                await loadInventoryData(true);
+                return;
+            }
+
+            let query = supabase.from(tab).select('*').order('created_at', { ascending: false });
+
+            // 1. 날짜 필터 적용
+            const startDate = document.getElementById('searchStartDate')?.value;
+            const endDate = document.getElementById('searchEndDate')?.value;
+            if (startDate && endDate) {
+                query = query.gte('date', startDate).lte('date', endDate);
+            }
+
+            // 2. 텍스트 필터 적용
+            if (tab === 'partners') {
+                const name = document.getElementById('searchName').value;
+                const manager = document.getElementById('searchManager').value;
+                const biz = document.getElementById('searchBiz').value;
+                if(name) query = query.ilike('name', `%${name}%`);
+                if(manager) query = query.ilike('manager_name', `%${manager}%`);
+                if(biz) query = query.ilike('biz_num', `%${biz}%`);
+            } else if (tab === 'products') {
+                const name = document.getElementById('searchProdName').value;
+                const code = document.getElementById('searchProdCode').value;
+                const spec = document.getElementById('searchSpec').value;
+                if(name) query = query.ilike('name', `%${name}%`);
+                if(code) query = query.ilike('code', `%${code}%`);
+                if(spec) query = query.ilike('spec', `%${spec}%`);
+            } else {
+                const partner = document.getElementById('searchPartner').value;
+                const user = document.getElementById('searchUser').value;
+                const note = document.getElementById('searchNote').value;
+                if(partner) query = query.ilike('partner_name', `%${partner}%`);
+                if(user) query = query.ilike('manager', `%${user}%`);
+                if(note) query = query.ilike('note', `%${note}%`);
+            }
+
+            const { data, error } = await query;
+            if (error) { alert("검색 오류: " + error.message); return; }
+            renderTable(tab, data);
         }
 
         async function switchTab(tab) {
             currentTab = tab; 
             await fetchData();
+            
+            // 검색창 렌더링
+            renderSearchPanel(tab);
+
             const container = document.getElementById('contentArea');
             const titles = {'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황','quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)'};
             
@@ -119,17 +240,20 @@
             
             html += `</table></div>`;
             container.innerHTML = html;
-            loadListData(tab);
+            
+            // 초기 로딩 시 기본 검색 실행 (날짜 필터 적용됨)
+            runSearch(tab);
         }
 
-        async function loadListData(tab) {
-            const tbody = document.getElementById('listBody');
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center p-4">로딩중...</td></tr>';
-            if(tab === 'inventory') { await loadInventoryData(); return; }
+        function loadListData(tab) {
+            // 더 이상 직접 호출하지 않고 runSearch를 통해 호출됨
+            runSearch(tab); 
+        }
 
-            const { data, error } = await supabase.from(tab).select('*').order('created_at', { ascending: false });
-            if (error || !data) { tbody.innerHTML = '<tr><td colspan="10" class="text-center p-4">데이터 없음</td></tr>'; return; }
+        function renderTable(tab, data) {
+            const tbody = document.getElementById('listBody');
             tbody.innerHTML = '';
+            if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="text-center p-4">데이터 없음</td></tr>'; return; }
 
             data.forEach(row => {
                 let tr = `<tr class="hover:bg-slate-50 border-b">`;
@@ -143,21 +267,37 @@
                     tr += `<td class="font-bold text-blue-600">${row.po_number}</td><td>${row.partner_name}</td><td>${row.end_user||'-'}</td><td>${itemsSummary}</td><td class="font-bold text-right">${(row.total_amount||0).toLocaleString()}</td><td>${row.date}</td><td class="text-center flex justify-center items-center">${printBtn} ${delBtn}</td>`;
                 } else if (tab === 'purchases') {
                     tr += `<td>${row.date}</td><td>${row.partner_name}</td><td>${row.item_name}</td><td class="text-center font-bold">${row.qty}</td><td class="text-right">${(row.unit_price||0).toLocaleString()}</td><td class="text-right">${(row.supply_price||0).toLocaleString()}</td><td class="text-right">${(row.vat||0).toLocaleString()}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td>${row.serial_no||'-'}</td><td class="text-center">${delBtn}</td>`;
+                } else if (tab === 'inventory') {
+                    // 인벤토리 렌더링은 별도 함수에서 처리
                 } else {
                     const printBtn = tab === 'sales' ? `<button onclick='printDocument("SALES", ${JSON.stringify(row)})' class="bg-slate-100 border px-2 py-1 rounded text-xs hover:bg-slate-200 mr-2"><i class="fa-solid fa-print"></i> 인쇄</button>` : '';
                     tr += `<td>${row.date}</td><td class="font-bold">${row.partner_name||'-'}</td><td>${row.manager||'-'}</td><td class="text-right text-slate-600">${(row.total_supply||0).toLocaleString()}</td><td class="text-right text-slate-400 text-xs">${(row.total_vat||0).toLocaleString()}</td><td class="text-right font-bold text-cyan-700">${(row.total_amount||0).toLocaleString()}</td><td>${row.note||''}</td><td class="text-center flex justify-center items-center">${printBtn} ${delBtn}</td>`;
                 }
-                tr += `</tr>`;
-                tbody.innerHTML += tr;
+                if(tab !== 'inventory') tbody.innerHTML += tr;
             });
         }
 
-        async function loadInventoryData() {
+        async function loadInventoryData(isSearch = false) {
             const tbody = document.getElementById('listBody');
             const ordersRes = await supabase.from('orders').select('*');
             const allOrders = ordersRes.data || [];
             tbody.innerHTML = '';
-            productList.forEach(prod => {
+            
+            // 검색 필터 적용
+            let filteredProducts = productList;
+            if (isSearch) {
+                const sName = document.getElementById('searchProdName').value.toLowerCase();
+                const sCode = document.getElementById('searchProdCode').value.toLowerCase();
+                const sSpec = document.getElementById('searchSpec').value.toLowerCase();
+                
+                filteredProducts = productList.filter(p => 
+                    (sName ? p.name.toLowerCase().includes(sName) : true) &&
+                    (sCode ? p.code.toLowerCase().includes(sCode) : true) &&
+                    (sSpec ? (p.spec||'').toLowerCase().includes(sSpec) : true)
+                );
+            }
+
+            filteredProducts.forEach(prod => {
                 let reservedQty = 0; let partners = [];
                 allOrders.forEach(ord => { if(ord.items) { ord.items.forEach(item => { if(item.name === prod.name) { reservedQty += item.qty; if(!partners.includes(ord.partner_name)) partners.push(ord.partner_name); } }); } });
                 let reservedText = reservedQty > 0 ? `<span class="text-red-500 font-bold">(${reservedQty}개 예정)</span> <span class="text-xs text-gray-500 ml-1">- ${partners.join(', ')} 등</span>` : '<span class="text-gray-300">-</span>';
@@ -173,7 +313,7 @@
         async function deleteItem(table, id) {
             if(!confirm("정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return;
             const { error } = await supabase.from(table).delete().eq('id', id);
-            if(error) alert("삭제 실패"); else { await fetchData(); loadListData(table); }
+            if(error) alert("삭제 실패"); else { runSearch(table); }
         }
         function openNewModal(tab) {
             const modal = document.getElementById('genericModal');
@@ -203,7 +343,7 @@
             if(tab === 'partners') data = { name: el('pName'), biz_num: el('pBiz'), owner_name: el('pOwner'), manager_name: el('pManager'), phone: el('pPhone'), email: el('pEmail'), note: el('pNote') };
             if(tab === 'products') data = { name: el('prodName'), code: el('prodCode'), spec: el('prodSpec'), unit: el('prodUnit') };
             const { error } = await supabase.from(tab).insert(data);
-            if(error) alert('오류: '+error.message); else { closeModal(); switchTab(tab); }
+            if(error) alert('오류: '+error.message); else { closeModal(); runSearch(tab); }
         }
         async function savePurchase() {
             const qty = parseInt(el('purQty'))||0; const price = parseInt(el('purPrice'))||0; const supply = qty * price; const vat = Math.floor(supply * 0.1);
@@ -212,7 +352,7 @@
             if(error) { alert("저장실패: "+error.message); return; }
             const prod = productList.find(p => p.name === data.item_name);
             if(prod) { await supabase.from('products').update({ stock: prod.stock + qty, last_incoming_date: data.date, last_serial_no: data.serial_no || prod.last_serial_no }).eq('id', prod.id); }
-            alert("입고 및 재고반영 완료"); closeModal(); switchTab('purchases');
+            alert("입고 및 재고반영 완료"); closeModal(); runSearch('purchases');
         }
         function renderComplexForm(tab, container) {
             const today = new Date().toISOString().split('T')[0];
@@ -247,7 +387,6 @@
             if(tempItems.length === 0) return alert("품목 없음");
             let tSupply=0, tVat=0, tTotal=0; tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
             
-            // 날짜값 가져오기 (없으면 오늘 날짜 자동 지정)
             let dateVal = el(tab === 'purchase_orders' ? 'poDate' : 'sDate');
             if(!dateVal) dateVal = new Date().toISOString().split('T')[0];
 
@@ -259,7 +398,7 @@
             const { error } = await supabase.from(tab).insert(data);
             if(error) { alert("저장실패: "+error.message); return; }
             if(tab === 'sales') { for(const item of tempItems) { const prod = productList.find(p => p.name === item.name); if(prod) await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); } }
-            alert("저장되었습니다."); closeModal(); switchTab(tab);
+            alert("저장되었습니다."); closeModal(); runSearch(tab);
         }
         async function openLoadModal(srcTab) {
             document.getElementById('loadDataModal').classList.add('active');
@@ -292,7 +431,7 @@
             const { error } = await supabase.from(tab).insert(data);
             if(error) { alert("저장실패: "+error.message); return; }
             if(tab === 'sales') { for(const item of tempItems) { const prod = productList.find(p => p.name === item.name); if(prod) await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); } }
-            alert("저장되었습니다."); closeModal(); switchTab(tab);
+            alert("저장되었습니다."); closeModal(); runSearch(tab);
         }
         function printDocument(type, row) {
             const isPO = type === 'PO';
