@@ -11,18 +11,15 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans KR', sans-serif; font-size: 14px; }
         
-        /* 모달 스타일 */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; display: none; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 95%; max-width: 1300px; max-height: 95vh; overflow-y: auto; border-radius: 8px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal.active { display: flex; }
 
-        /* 테이블 스타일 */
         th { background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
         td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
         .input-box { width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; }
         .input-box:focus { outline: none; border-color: #06b6d4; ring: 1px solid #06b6d4; }
         
-        /* 인쇄 전용 스타일 */
         @media print {
             @page { size: A4; margin: 10mm; }
             body * { visibility: hidden; }
@@ -68,29 +65,16 @@
     </div>
 
     <div id="genericModal" class="modal"><div class="modal-content"><div class="flex justify-between items-center mb-4 border-b pb-3"><h2 id="modalTitle" class="text-xl font-bold text-slate-800">입력</h2><button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button></div><div id="modalBody"></div></div></div>
-    
-    <div id="loadDataModal" class="modal" style="z-index: 60;">
-        <div class="modal-content" style="max-width: 800px;">
-            <h3 class="text-lg font-bold mb-4" id="loadModalTitle">데이터 불러오기</h3>
-            <div class="overflow-y-auto max-h-96 border rounded">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50"><tr><th>날짜</th><th>거래처</th><th>총액</th><th>선택</th></tr></thead>
-                    <tbody id="loadDataBody"></tbody>
-                </table>
-            </div>
-            <div class="mt-4 text-right"><button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="px-4 py-2 bg-slate-200 rounded">닫기</button></div>
-        </div>
-    </div>
+    <div id="loadDataModal" class="modal" style="z-index: 60;"><div class="modal-content" style="max-width: 800px;"><h3 class="text-lg font-bold mb-4" id="loadModalTitle">데이터 불러오기</h3><div class="overflow-y-auto max-h-96 border rounded"><table class="w-full text-left text-sm"><thead class="bg-slate-50"><tr><th>날짜</th><th>거래처</th><th>총액</th><th>선택</th></tr></thead><tbody id="loadDataBody"></tbody></table></div><div class="mt-4 text-right"><button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="px-4 py-2 bg-slate-200 rounded">닫기</button></div></div></div>
 
     <div id="printContainer" class="hidden"><div style="padding: 20px;"><table class="doc-table" style="border: none;"><tr><td style="border: none; width: 30%;"><div style="border: 2px solid black; padding: 5px; text-align: center;"><strong>거래일자</strong><br><span id="p_date"></span></div></td><td style="border: none; text-align: center;"><h1 class="doc-title" id="p_title"></h1></td><td style="border: none; width: 30%;"><div style="border: 2px solid black; padding: 5px; text-align: center;"><strong>문서번호</strong><br><span id="p_no"></span></div></td></tr></table><div style="height: 10px;"></div><table class="doc-table" style="border: 2px solid black;"><tr><td style="width: 4%; text-align: center; background: #f0f0f0; font-weight: bold; padding: 10px 2px;" rowspan="4" id="p_left_type"></td><td style="width: 10%; text-align: center;">상호</td><td style="width: 36%;" id="p_left_name"></td><td style="width: 4%; text-align: center; background: #f0f0f0; font-weight: bold; padding: 10px 2px;" rowspan="4" id="p_right_type"></td><td style="width: 10%; text-align: center;">등록번호</td><td style="width: 36%;" colspan="3" id="p_right_biz"></td></tr><tr><td style="text-align: center;">주소</td><td id="p_left_addr"></td><td style="text-align: center;">상호</td><td id="p_right_name"></td><td style="text-align: center; width: 8%;">성명</td><td style="position: relative;"><span id="p_right_owner"></span><div style="position: absolute; top: 0; right: 10px; opacity: 0.7;"><div style="border: 2px solid red; color: red; width: 40px; height: 40px; border-radius: 50%; text-align: center; line-height: 40px; font-weight: bold; font-size: 10px;">인</div></div></td></tr><tr><td style="text-align: center;">TEL</td><td id="p_left_tel"></td><td style="text-align: center;">주소</td><td colspan="3">경기 안양시...</td></tr><tr><td style="text-align: center;">Project</td><td id="p_left_project"></td><td style="text-align: center;">TEL</td><td id="p_right_tel"></td><td style="text-align: center;">FAX</td><td></td></tr></table><div style="height: 10px;"></div><table class="doc-table"><tr><td style="text-align: center; width: 20%; font-weight: bold; font-size: 14px;">합 계 금 액</td><td style="text-align: right; padding-right: 20px; font-weight: bold; font-size: 16px;">₩ <span id="p_grand_total">0</span> (VAT 포함)</td></tr></table><div style="height: 5px;"></div><table class="doc-table" style="border-top: 2px solid black;"><thead><tr class="bg-gray"><th style="width: 5%;">월/일</th><th>품목명</th><th style="width: 8%;">수량</th><th style="width: 12%;">단가</th><th style="width: 15%;">공급가액</th><th style="width: 12%;">부가세</th></tr></thead><tbody id="p_tbody"></tbody><tfoot><tr class="bg-gray"><td colspan="2" class="text-center text-bold">소 계</td><td class="text-center" id="p_sum_qty"></td><td></td><td class="text-right" id="p_sum_supply"></td><td class="text-right" id="p_sum_vat"></td></tr></tfoot></table><div style="height: 20px;"></div><table class="doc-table"><tr><td style="width: 10%; text-align: center; font-weight: bold; background: #f0f0f0;">인수자</td><td style="width: 40%; text-align: center;">(인)</td><td style="width: 10%; text-align: center; font-weight: bold; background: #f0f0f0;">납품자</td><td style="width: 40%; text-align: center;">(주)ASPEC Tech (인)</td></tr></table></div></div>
 
     <script>
         // ==========================================
-        // [설정] 본인의 Supabase URL/KEY 입력 필수!
+        // [설정] 키 값의 줄바꿈을 수정했습니다!
         // ==========================================
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8
-'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
         // ==========================================
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -99,7 +83,15 @@
         let partnerList = []; 
         let productList = []; 
 
-        window.onload = async () => { await fetchData(); switchTab('partners'); };
+        window.onload = async () => { 
+            try {
+                await fetchData(); 
+                switchTab('partners');
+            } catch(e) {
+                alert("시스템 초기화 오류: " + e.message);
+            }
+        };
+
         async function fetchData() {
             const pRes = await supabase.from('partners').select('*');
             const prodRes = await supabase.from('products').select('*').order('name');
@@ -108,7 +100,8 @@
         }
 
         async function switchTab(tab) {
-            currentTab = tab; await fetchData();
+            currentTab = tab; 
+            await fetchData();
             const container = document.getElementById('contentArea');
             const titles = {'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황','quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)'};
             
@@ -171,6 +164,7 @@
                 tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="font-mono text-slate-500">${prod.code}</td><td class="font-bold">${prod.name}</td><td>${prod.spec||''}</td><td class="text-center text-xs">${prod.unit||'EA'}</td><td class="font-bold text-lg text-blue-600 text-center">${prod.stock}</td><td class="text-center text-sm">${prod.last_incoming_date||'-'}</td><td class="text-center text-sm text-gray-600">${prod.last_serial_no||'-'}</td><td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td><td class="text-xs">${reservedText}</td><td><button onclick="updateInventoryNote(${prod.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">저장</button></td></tr>`;
             });
         }
+
         async function updateInventoryNote(id) {
             const note = document.getElementById(`note_${id}`).value;
             const { error } = await supabase.from('products').update({ inventory_note: note }).eq('id', id);
