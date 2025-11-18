@@ -405,19 +405,32 @@
         }
 
         async function saveComplexData(tab) {
+            // 디버깅: DOM 엘리먼트 확인
+            console.log('=== 저장 시작 ===');
+            const partnerElement = document.getElementById('sPartner');
+            const managerElement = document.getElementById('sManager');
+            
+            console.log('sPartner 엘리먼트:', partnerElement);
+            console.log('sPartner 값:', partnerElement ? partnerElement.value : 'NULL');
+            console.log('sManager 엘리먼트:', managerElement);
+            console.log('sManager 값:', managerElement ? managerElement.value : 'NULL');
+            
             // 필수 입력 체크
             const partnerName = el('sPartner');
             const manager = el('sManager');
             
-            if(!partnerName) {
+            console.log('el() 후 거래처:', partnerName);
+            console.log('el() 후 담당자:', manager);
+            
+            if(!partnerName || partnerName.length === 0) {
                 alert('⚠️ 거래처(회사명)를 입력해주세요!');
-                document.getElementById('sPartner').focus();
+                if(partnerElement) partnerElement.focus();
                 return;
             }
             
-            if(!manager) {
+            if(!manager || manager.length === 0) {
                 alert('⚠️ 담당자(우리)를 입력해주세요!');
-                document.getElementById('sManager').focus();
+                if(managerElement) managerElement.focus();
                 return;
             }
             
@@ -567,7 +580,15 @@
         function getTitle(tab) { const map = {'partners':'거래처','products':'품목','purchase_orders':'발주','purchases':'구매(입고)','quotes':'견적','orders':'주문','sales':'판매'}; return map[tab] || ''; }
         function closeModal() { document.getElementById('genericModal').classList.remove('active'); }
         function autoGenCode(val) { if(val && !currentEditId) document.getElementById('prodCode').value = 'P-' + Date.now().toString().slice(-6); }
-        function el(id) { return document.getElementById(id) ? document.getElementById(id).value : ''; }
+        function el(id) { 
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`엘리먼트를 찾을 수 없음: ${id}`);
+                return ''; 
+            }
+            const value = element.value.trim();
+            return value;
+        }
         function fillDL(id, list) { document.getElementById(id).innerHTML = list.map(i=>`<option value="${i.name}">`).join(''); }
         function fillPart(val) { const f = partnerList.find(x=>x.name===val); if(f) { if(document.getElementById('sPManager')) document.getElementById('sPManager').value=f.manager_name||''; if(document.getElementById('sContact')) document.getElementById('sContact').value=(f.email||'')+' '+(f.phone||''); } }
         function fillProd(val) { const f = productList.find(x=>x.name===val); if(f && document.getElementById('iSpec')) document.getElementById('iSpec').value=f.spec||''; }
@@ -602,7 +623,7 @@
             let loadBtn = '';
             if(tab === 'orders') loadBtn = `<button onclick="openLoadModal('quotes')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-orange-600"><i class="fa-solid fa-file-import"></i> 견적 불러오기</button>`;
             if(tab === 'sales') loadBtn = `<button onclick="openLoadModal('orders')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-blue-600"><i class="fa-solid fa-file-import"></i> 주문 불러오기</button>`;
-            container.innerHTML = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">일자</label><input type="date" id="sDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500 flex items-center"><span class="text-red-500 mr-1">*</span>거래처 (회사명) ${loadBtn}</label><input id="sPartner" class="input-box" list="dl_part" onchange="fillPart(this.value)" placeholder="예: 다솔솔루션"></div><div><label class="text-xs text-slate-500"><span class="text-red-500 mr-1">*</span>담당자 (우리)</label><input id="sManager" class="input-box" placeholder="예: 이창현 프로" value="${autoManager}"></div></div><div class="grid grid-cols-4 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처 담당자</label><input id="sPManager" class="input-box" placeholder="상대방 담당자"></div><div><label class="text-xs text-slate-500">거래처 이메일</label><input id="sPEmail" class="input-box" type="email" placeholder="예: example@company.com"></div><div><label class="text-xs text-slate-500">거래처 연락처</label><input id="sContact" class="input-box" placeholder="예: 010-1234-5678"></div><div><label class="text-xs text-slate-500">비고</label><input id="sNote" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
+            container.innerHTML = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">일자</label><input type="date" id="sDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500 flex items-center"><span class="text-red-500 mr-1">*</span>거래처 (회사명) ${loadBtn}</label><input id="sPartner" class="input-box" list="dl_part" onchange="fillPart(this.value)" placeholder="예: xx비전"></div><div><label class="text-xs text-slate-500"><span class="text-red-500 mr-1">*</span>담당자 (우리)</label><input id="sManager" class="input-box" placeholder="예: 이창현 프로" value="${autoManager}"></div></div><div class="grid grid-cols-4 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처 담당자</label><input id="sPManager" class="input-box" placeholder="상대방 담당자"></div><div><label class="text-xs text-slate-500">거래처 이메일</label><input id="sPEmail" class="input-box" type="email" placeholder="예: example@company.com"></div><div><label class="text-xs text-slate-500">거래처 연락처</label><input id="sContact" class="input-box" placeholder="예: 010-1234-5678"></div><div><label class="text-xs text-slate-500">비고</label><input id="sNote" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
             fillDL('dl_part', partnerList); fillDL('dl_prod', productList);
         }
         function renderItemInputArea(tab) { return `<div class="bg-white border p-3 rounded mb-4 shadow-sm"><div class="flex gap-2 items-end"><div class="w-1/3"><label class="text-xs">품목명</label><input id="iName" class="input-box" list="dl_prod" onchange="fillProd(this.value)"></div><div class="w-20"><label class="text-xs">수량</label><input type="number" id="iQty" class="input-box" value="1"></div><div class="w-32"><label class="text-xs">단가</label><input type="number" id="iPrice" class="input-box"></div><button onclick="addItemToGrid('${tab}')" class="bg-slate-700 text-white px-4 py-2 rounded font-bold text-sm h-9">추가</button></div></div><table class="w-full text-sm border-collapse border text-center mb-4"><thead class="bg-slate-100"><tr><th>품목명</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>삭제</th></tr></thead><tbody id="itemGrid"></tbody></table><div class="text-right text-lg font-bold text-cyan-700">총 합계: <span id="sGrandTotal">0</span>원</div><button onclick="saveComplexData('${tab}')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg">문서 저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`; }
