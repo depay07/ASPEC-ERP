@@ -176,14 +176,17 @@
         let globalDataStore = {};
 
         window.onload = async () => { 
-            try { 
-                const { data: { user } } = await supabase.auth.getUser();
-                if(user) currentUserEmail = user.email;
-                await fetchData(); 
-                switchTab('partners'); 
-            } 
-            catch (e) { alert("초기화 오류: " + e.message); }
-        };
+        try { 
+            const { data: { user } } = await supabase.auth.getUser();
+            if(user) currentUserEmail = user.email;
+            await fetchData(); 
+            switchTab('partners'); 
+        } 
+        catch (e) { 
+            // [수정됨] alert 대신 console.error 사용 (사용자에게 팝업 안 띄움)
+            console.error("초기화 오류 (일시적일 수 있음): ", e); 
+        }
+    };
 
         async function fetchData() {
             const pRes = await supabase.from('partners').select('*');
