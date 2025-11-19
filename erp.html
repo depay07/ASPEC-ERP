@@ -324,31 +324,67 @@
         }
 
         async function openNewModal(tab, isEdit = false) {
-            if(!isEdit) { currentEditId = null; tempItems = []; }
-            const modal = document.getElementById('genericModal');
-            document.getElementById('modalTitle').innerText = getTitle(tab) + (isEdit ? ' 수정' : ' 등록');
-            const body = document.getElementById('modalBody');
-            modal.classList.add('active');
-            let html = ''; const today = new Date().toISOString().split('T')[0];
-            
-            if (tab === 'purchase_orders') {
-                let autoPO = '';
-                if (!isEdit) {
-                    const { count } = await supabase.from('purchase_orders').select('*', { count: 'exact', head: true }).eq('date', today);
-                    const nextSeq = (count || 0) + 1;
-                    const seqStr = String(nextSeq).padStart(2, '0');
-                    const yymmdd = today.slice(2).replace(/-/g,'');
-                    autoPO = `ASPEC-${yymmdd}-P${seqStr}`;
-                }
-                html = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">PO#</label><input id="poNum" class="input-box bg-gray-100" value="${autoPO}"></div><div><label class="text-xs text-slate-500">수주일자</label><input type="date" id="poDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500">납품업체</label><input id="poPartner" class="input-box" list="dl_part" onchange="fillPOPart(this.value)"></div></div><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처 담당자</label><input id="poPManager" class="input-box"></div><div><label class="text-xs text-slate-500">연락처</label><input id="poPhone" class="input-box"></div><div><label class="text-xs text-slate-500">선발주여부</label><select id="poPreOrder" class="input-box"><option>N</option><option>Y</option></select></div></div><div class="mb-2"><label class="text-xs text-slate-500">주소</label><input id="poAddr" class="input-box"></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">이메일</label><input id="poEmail" class="input-box"></div><div><label class="text-xs text-slate-500">비고</label><input id="poNote" class="input-box"></div></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">EndUser</label><input id="poEndUser" class="input-box"></div><div><label class="text-xs text-slate-500">담당자(우리측)</label><input id="poManager" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
-            }
-            else if (tab === 'partners') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">상호</label><input id="pName" class="input-box"></div><div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div><div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div><div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div><div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div><div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div><div class="col-span-2"><label class="text-xs">주소</label><input id="pAddr" class="input-box"></div><div class="col-span-2 border p-2 rounded bg-slate-50"><label class="text-xs font-bold">사업자등록증</label><div class="flex gap-2 mt-1"><input type="file" id="pFile" class="text-xs w-full"><div id="pCurrentFileLink" class="text-xs flex items-center"></div></div></div><div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div></div><button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
-            else if (tab === 'products') html = `<div class="grid grid-cols-2 gap-3"><div class="col-span-2"><label class="text-xs">품목명</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div><div><label class="text-xs">코드</label><input id="prodCode" class="input-box bg-slate-100" readonly></div><div><label class="text-xs">단위</label><input id="prodUnit" class="input-box" placeholder="EA"></div><div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div><div class="col-span-2"><label class="text-xs">제조사</label><input id="prodMaker" class="input-box"></div></div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
-            else if (tab === 'purchases') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">입고일자</label><input type="date" id="purDate" class="input-box" value="${today}"></div><div><label class="text-xs">매입처</label><input id="purPartner" class="input-box" list="dl_part"></div><div><label class="text-xs">품목명</label><input id="purItem" class="input-box" list="dl_prod"></div><div><label class="text-xs">수량</label><input type="number" id="purQty" class="input-box" value="0"></div><div><label class="text-xs">단가</label><input type="number" id="purPrice" class="input-box" value="0"></div><div><label class="text-xs">시리얼번호</label><input type="text" id="purSerial" class="input-box"></div><div class="col-span-2"><label class="text-xs">비고</label><input id="purNote" class="input-box"></div></div><button onclick="savePurchase()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`;
-            else { renderComplexForm(tab, body); return; }
-            body.innerHTML = html;
-            if(tab === 'purchases' || tab === 'purchase_orders') { fillDL('dl_part', partnerList); fillDL('dl_prod', productList); }
+    if(!isEdit) { currentEditId = null; tempItems = []; }
+    const modal = document.getElementById('genericModal');
+    document.getElementById('modalTitle').innerText = getTitle(tab) + (isEdit ? ' 수정' : ' 등록');
+    const body = document.getElementById('modalBody');
+    modal.classList.add('active');
+    let html = ''; const today = new Date().toISOString().split('T')[0];
+    
+    if (tab === 'purchase_orders') {
+        let autoPO = '';
+        if (!isEdit) {
+            const { count } = await supabase.from('purchase_orders').select('*', { count: 'exact', head: true }).eq('date', today);
+            const nextSeq = (count || 0) + 1;
+            const seqStr = String(nextSeq).padStart(2, '0');
+            const yymmdd = today.slice(2).replace(/-/g,'');
+            autoPO = `ASPEC-${yymmdd}-P${seqStr}`;
         }
+        html = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">PO# (자동생성)</label><input id="poNum" class="input-box bg-gray-100" value="${autoPO}"></div><div><label class="text-xs text-slate-500">수주일자</label><input type="date" id="poDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500">납품업체 (자동연동)</label><input id="poPartner" class="input-box" list="dl_part" onchange="fillPOPart(this.value)"></div></div><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처 담당자</label><input id="poPManager" class="input-box"></div><div><label class="text-xs text-slate-500">연락처</label><input id="poPhone" class="input-box"></div><div><label class="text-xs text-slate-500">선발주여부</label><select id="poPreOrder" class="input-box"><option>N</option><option>Y</option></select></div></div><div class="mb-2"><label class="text-xs text-slate-500">주소</label><input id="poAddr" class="input-box"></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">이메일</label><input id="poEmail" class="input-box"></div><div><label class="text-xs text-slate-500">비고</label><input id="poNote" class="input-box"></div></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">EndUser</label><input id="poEndUser" class="input-box"></div><div><label class="text-xs text-slate-500">담당자(우리측)</label><input id="poManager" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
+    }
+    else if (tab === 'partners') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div><div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div><div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div><div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div><div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div><div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div><div class="col-span-2"><label class="text-xs">주소</label><input id="pAddr" class="input-box" placeholder="주소를 입력하세요"></div><div class="col-span-2 border p-2 rounded bg-slate-50"><label class="text-xs font-bold">사업자등록증 (PDF/이미지)</label><div class="flex gap-2 mt-1"><input type="file" id="pFile" class="text-xs w-full" accept=".pdf,.jpg,.png,.jpeg"><div id="pCurrentFileLink" class="text-xs flex items-center"></div></div></div><div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div></div><button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
+    else if (tab === 'products') html = `<div class="grid grid-cols-2 gap-3"><div class="col-span-2"><label class="text-xs">품목명 (필수)</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div><div><label class="text-xs">품목코드 (자동)</label><input id="prodCode" class="input-box bg-slate-100" readonly></div><div><label class="text-xs">단위</label><input id="prodUnit" class="input-box" placeholder="EA"></div><div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div><div class="col-span-2"><label class="text-xs">제조사</label><input id="prodMaker" class="input-box"></div></div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
+    
+    // [수정됨] 구매(입고) 관리: 여러 품목 등록이 가능한 UI로 변경
+    else if (tab === 'purchases') {
+        html = `
+        <div class="bg-slate-50 p-4 rounded mb-4 border">
+            <div class="grid grid-cols-2 gap-3 mb-2">
+                <div><label class="text-xs text-slate-500">입고일자</label><input type="date" id="purDate" class="input-box" value="${today}"></div>
+                <div><label class="text-xs text-slate-500">매입처 (공통)</label><input id="purPartner" class="input-box" list="dl_part"></div>
+            </div>
+            <div><label class="text-xs text-slate-500">비고 (공통)</label><input id="purNote" class="input-box"></div>
+        </div>
+
+        <div class="bg-white border p-3 rounded mb-4 shadow-sm">
+            <div class="flex flex-wrap gap-2 items-end">
+                <div class="w-1/4"><label class="text-xs">품목명</label><input id="purItem" class="input-box" list="dl_prod"></div>
+                <div class="w-1/6"><label class="text-xs">제조사</label><input id="purMaker" class="input-box"></div>
+                <div class="w-1/6"><label class="text-xs">시리얼</label><input id="purSerial" class="input-box"></div>
+                <div class="w-16"><label class="text-xs">수량</label><input type="number" id="purQty" class="input-box" value="1"></div>
+                <div class="w-24"><label class="text-xs">단가</label><input type="number" id="purPrice" class="input-box"></div>
+                <button onclick="addPurchaseItem()" class="bg-slate-700 text-white px-4 py-2 rounded font-bold text-sm h-9">추가</button>
+            </div>
+        </div>
+
+        <table class="w-full text-sm border-collapse border text-center mb-4">
+            <thead class="bg-slate-100">
+                <tr>
+                    <th>품목명</th> <th>제조사</th> <th>시리얼</th> <th>수량</th> <th>단가</th> <th>합계</th> <th>삭제</th>
+                </tr>
+            </thead>
+            <tbody id="purItemGrid"></tbody>
+        </table>
+        
+        <div class="text-right text-lg font-bold text-cyan-700">총 합계: <span id="purGrandTotal">0</span>원</div>
+        <button onclick="savePurchase()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg">입고 처리 (저장)</button>
+        <datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`;
+    }
+
+    else { renderComplexForm(tab, body); return; }
+    body.innerHTML = html;
+    if(tab === 'purchases' || tab === 'purchase_orders') { fillDL('dl_part', partnerList); fillDL('dl_prod', productList); }
+}
 
         async function saveData(tab, data) {
             let res;
@@ -377,25 +413,60 @@
             if(await saveData(tab, data)) { closeModal(); runSearch(tab); }
         }
 
-        async function savePurchase() {
-            const qty = parseInt(el('purQty'))||0; const price = parseInt(el('purPrice'))||0; const supply = qty * price; const vat = Math.floor(supply * 0.1);
-            const data = { date: el('purDate'), partner_name: el('purPartner'), item_name: el('purItem'), qty: qty, unit_price: price, supply_price: supply, vat: vat, total_amount: supply + vat, serial_no: el('purSerial'), note: el('purNote') };
-            if(await saveData('purchases', data)) {
-                if(!currentEditId) { 
-                    const prod = productList.find(p => p.name === data.item_name); 
-                    if(prod) {
-                        // [중요] 입고 시 품목의 재고, 최신 단가, 제조사(없으면) 업데이트
-                        await supabase.from('products').update({ 
-                            stock: prod.stock + qty,
-                            last_vendor: data.partner_name,
-                            last_price: data.unit_price,
-                            last_serial_no: data.serial_no
-                        }).eq('id', prod.id);
-                    }
-                }
-                alert("저장 완료"); closeModal(); runSearch('purchases');
+        // [수정] 여러 품목을 한 번에 저장하도록 변경
+async function savePurchase() {
+    if (tempItems.length === 0) return alert("입고할 품목을 추가해주세요.");
+
+    const dateVal = document.getElementById('purDate').value;
+    const partnerVal = document.getElementById('purPartner').value;
+    const noteVal = document.getElementById('purNote').value;
+
+    if (!dateVal || !partnerVal) return alert("날짜와 매입처를 입력해주세요.");
+
+    let successCount = 0;
+
+    // 추가된 모든 품목을 하나씩 DB에 저장
+    for (const item of tempItems) {
+        const data = {
+            date: dateVal,
+            partner_name: partnerVal,
+            item_name: item.name,
+            manufacturer: item.manufacturer, // 제조사 저장
+            qty: item.qty,
+            unit_price: item.unit_price,
+            supply_price: item.unit_price * item.qty, // 공급가 (간이 계산)
+            vat: Math.floor(item.unit_price * item.qty * 0.1), // 부가세 (간이 계산)
+            total_amount: item.total_amount,
+            serial_no: item.serial_no,
+            note: noteVal
+        };
+
+        const { error } = await supabase.from('purchases').insert(data);
+        
+        if (!error) {
+            successCount++;
+            // 품목 재고 및 정보 업데이트
+            const prod = productList.find(p => p.name === item.name);
+            if (prod) {
+                await supabase.from('products').update({
+                    stock: prod.stock + item.qty,
+                    last_vendor: partnerVal,
+                    last_price: item.unit_price,
+                    last_serial_no: item.serial_no,
+                    manufacturer: item.manufacturer || prod.manufacturer // 새 제조사가 있으면 업데이트
+                }).eq('id', prod.id);
             }
         }
+    }
+
+    if (successCount > 0) {
+        alert(`${successCount}건의 품목이 입고 처리되었습니다.`);
+        closeModal();
+        runSearch('purchases');
+    } else {
+        alert("저장에 실패했습니다.");
+    }
+}
 
         async function saveComplexData(tab) {
             if(tempItems.length === 0) return alert("품목 없음");
@@ -621,6 +692,52 @@
             });
             document.getElementById('sGrandTotal').innerText = grandTotal.toLocaleString();
         }
+        // [신규] 구매 관리 전용: 품목 추가 함수
+        function addPurchaseItem() {
+            const name = document.getElementById('purItem').value;
+            const maker = document.getElementById('purMaker').value;
+            const serial = document.getElementById('purSerial').value;
+            const qty = parseInt(document.getElementById('purQty').value) || 0;
+            const price = parseInt(document.getElementById('purPrice').value) || 0;
+        
+            if (!name || qty <= 0) return alert("품목명과 수량을 확인해주세요.");
+        
+            const total = qty * price;
+            // tempItems에 구매 전용 데이터 구조로 저장
+            tempItems.push({ name, manufacturer: maker, serial_no: serial, qty, unit_price: price, total_amount: total });
+        
+            renderPurchaseGrid();
+            
+            // 입력창 초기화
+            document.getElementById('purItem').value = '';
+            document.getElementById('purMaker').value = '';
+            document.getElementById('purSerial').value = '';
+            document.getElementById('purQty').value = '1';
+        }
+
+        // [신규] 구매 관리 전용: 그리드 렌더링 함수
+function renderPurchaseGrid() {
+    const tbody = document.getElementById('purItemGrid');
+    tbody.innerHTML = '';
+    let grandTotal = 0;
+
+    tempItems.forEach((item, idx) => {
+        grandTotal += item.total_amount;
+        tbody.innerHTML += `
+            <tr>
+                <td>${item.name}</td>
+                <td>${item.manufacturer || '-'}</td>
+                <td>${item.serial_no || '-'}</td>
+                <td>${item.qty}</td>
+                <td>${item.unit_price.toLocaleString()}</td>
+                <td class="font-bold">${item.total_amount.toLocaleString()}</td>
+                <td onclick="tempItems.splice(${idx},1); renderPurchaseGrid()" class="cursor-pointer text-red-400"><i class="fa-solid fa-trash"></i></td>
+            </tr>
+        `;
+    });
+    document.getElementById('purGrandTotal').innerText = grandTotal.toLocaleString();
+}
+        
     </script>
 </body>
 </html>
