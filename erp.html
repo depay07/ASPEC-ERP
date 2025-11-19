@@ -306,7 +306,15 @@
                 actions += `<button onclick="deleteItem('${tab}', ${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제"><i class="fa-solid fa-trash-can fa-lg"></i></button>`;
                 actions += '</div>';
 
-                if (tab === 'partners') tr += `<td>${row.name}</td><td class="text-center">${row.manager_name||'-'}</td><td class="text-center">${row.phone||'-'}</td><td>${row.note||''}</td><td>${actions}</td>`;
+                if (tab === 'partners') {
+                    // 1. 파일 URL이 있으면 아이콘 HTML 생성, 없으면 빈 문자열
+                    const fileIcon = row.biz_file_url 
+                        ? `<a href="${row.biz_file_url}" target="_blank" class="text-green-600 hover:text-green-800 ml-2" title="사업자등록증 보기"><i class="fa-solid fa-file-pdf"></i></a>` 
+                        : '';
+                
+                    // 2. 상호명 옆에 ${fileIcon}을 추가하여 표시
+                    tr += `<td>${row.name} ${fileIcon}</td><td class="text-center">${row.manager_name||'-'}</td><td class="text-center">${row.phone||'-'}</td><td>${row.note||''}</td><td>${actions}</td>`;
+                }
                 else if (tab === 'products') tr += `<td class="font-mono text-center text-cyan-600">${row.code}</td><td>${row.name}</td><td>${row.spec||'-'}</td><td class="text-center font-bold text-slate-600">${row.unit||'EA'}</td><td>${actions}</td>`;
                 else if (tab === 'purchase_orders') {
                     const itemsSummary = row.items && row.items.length > 0 ? `${row.items[0].name} 외 ${row.items.length-1}건` : '-';
@@ -336,6 +344,13 @@
                     document.getElementById('pEmail').value = row.email||''; 
                     document.getElementById('pAddr').value = row.address||'';
                     document.getElementById('pNote').value = row.note||''; 
+                    // [추가됨] 저장된 파일이 있으면 '보기' 링크 표시
+                    const linkDiv = document.getElementById('pCurrentFileLink');
+                    if(row.biz_file_url) {
+                        linkDiv.innerHTML = `<a href="${row.biz_file_url}" target="_blank" class="text-blue-600 hover:underline font-bold ml-2">[기존 파일 보기]</a>`;
+                    } else {
+                        linkDiv.innerHTML = `<span class="text-slate-400 ml-2">(파일 없음)</span>`;
+                    }
                 }
                 else if(tab === 'products') { document.getElementById('prodName').value = row.name; document.getElementById('prodCode').value = row.code; document.getElementById('prodUnit').value = row.unit||''; document.getElementById('prodSpec').value = row.spec||''; }
                 else if(tab === 'purchases') { document.getElementById('purDate').value = row.date; document.getElementById('purPartner').value = row.partner_name; document.getElementById('purItem').value = row.item_name; document.getElementById('purQty').value = row.qty; document.getElementById('purPrice').value = row.unit_price; document.getElementById('purSerial').value = row.serial_no||''; document.getElementById('purNote').value = row.note||''; }
@@ -410,17 +425,26 @@
                 </div>${renderItemInputArea(tab)}`;
             } 
             else if (tab === 'partners') html = `
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div>
-                    <div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div>
-                    <div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div>
-                    <div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div>
-                    <div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div>
-                    <div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div>
-                    <div class="col-span-2"><label class="text-xs">주소</label><input id="pAddr" class="input-box" placeholder="주소를 입력하세요"></div>
-                    <div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div>
+                <div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div>
+                <div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div>
+                <div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div>
+                <div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div>
+                <div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div>
+                <div class="col-span-2"><label class="text-xs">주소</label><input id="pAddr" class="input-box" placeholder="주소를 입력하세요"></div>
+                
+                <div class="col-span-2 border p-2 rounded bg-slate-50">
+                    <label class="text-xs font-bold">사업자등록증 (PDF/이미지)</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="file" id="pFile" class="text-xs w-full" accept=".pdf,.jpg,.png,.jpeg">
+                        <div id="pCurrentFileLink" class="text-xs flex items-center"></div>
+                    </div>
                 </div>
-                <button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
+        
+                <div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div>
+            </div>
+            <button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
             else if (tab === 'products') html = `<div class="grid grid-cols-2 gap-3"><div class="col-span-2"><label class="text-xs">품목명 (필수)</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div><div><label class="text-xs">품목코드 (자동)</label><input id="prodCode" class="input-box bg-slate-100" readonly></div><div><label class="text-xs">단위</label><input id="prodUnit" class="input-box" placeholder="EA"></div><div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div></div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
             else if (tab === 'purchases') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">입고일자</label><input type="date" id="purDate" class="input-box" value="${today}"></div><div><label class="text-xs">매입처</label><input id="purPartner" class="input-box" list="dl_part"></div><div><label class="text-xs">품목명</label><input id="purItem" class="input-box" list="dl_prod"></div><div><label class="text-xs">수량</label><input type="number" id="purQty" class="input-box" value="0"></div><div><label class="text-xs">단가 (VAT별도)</label><input type="number" id="purPrice" class="input-box" value="0"></div><div><label class="text-xs">시리얼번호 (선택)</label><input type="text" id="purSerial" class="input-box"></div><div class="col-span-2"><label class="text-xs">비고</label><input id="purNote" class="input-box"></div></div><button onclick="savePurchase()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`;
             else { renderComplexForm(tab, body); return; }
@@ -436,11 +460,53 @@
             return true;
         }
 
+        // [수정 위치] saveSimpleData 함수 전체를 아래 코드로 교체하세요. (async 처리 필요)
+
         async function saveSimpleData(tab) {
             let data = {};
-            if(tab === 'partners') data = { name: el('pName'), biz_num: el('pBiz'), owner_name: el('pOwner'), manager_name: el('pManager'), phone: el('pPhone'), email: el('pEmail'), address: el('pAddr'), note: el('pNote') };
-            if(tab === 'products') data = { name: el('prodName'), code: el('prodCode'), spec: el('prodSpec'), unit: el('prodUnit') };
-            if(await saveData(tab, data)) { closeModal(); runSearch(tab); }
+        
+            if(tab === 'partners') {
+                // 1. 기본 데이터 수집
+                data = { 
+                    name: el('pName'), biz_num: el('pBiz'), owner_name: el('pOwner'), 
+                    manager_name: el('pManager'), phone: el('pPhone'), email: el('pEmail'), 
+                    address: el('pAddr'), note: el('pNote') 
+                };
+        
+                // 2. 파일 업로드 로직 추가
+                const fileInput = document.getElementById('pFile');
+                if (fileInput && fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `biz_${Date.now()}.${fileExt}`; // 파일명 중복 방지
+                    
+                    // Supabase Storage에 업로드 ('erp-files'는 1단계에서 만든 버킷 이름)
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('erp-files')
+                        .upload(fileName, file);
+        
+                    if (uploadError) {
+                        alert("파일 업로드 실패: " + uploadError.message);
+                        return;
+                    }
+        
+                    // 업로드된 파일의 공개 URL 가져오기
+                    const { data: publicUrlData } = supabase.storage
+                        .from('erp-files')
+                        .getPublicUrl(fileName);
+                    
+                    data.biz_file_url = publicUrlData.publicUrl; // DB에 저장할 URL
+                }
+            }
+            else if(tab === 'products') {
+                data = { name: el('prodName'), code: el('prodCode'), spec: el('prodSpec'), unit: el('prodUnit') };
+            }
+        
+            // 데이터 저장
+            if(await saveData(tab, data)) { 
+                closeModal(); 
+                runSearch(tab); 
+            }
         }
 
         async function savePurchase() {
