@@ -56,9 +56,6 @@
             .print-items-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
             .print-items-table th { border: 1px solid black; background-color: #f3f3f3 !important; padding: 5px; text-align: center; -webkit-print-color-adjust: exact; }
             .print-items-table td { border: 1px solid black; padding: 5px; height: 25px; }
-            
-            .stamp-area { position: relative; height: 40px; }
-            .stamp-img { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border: 2px solid red; border-radius: 50%; color: red; text-align: center; line-height: 36px; font-size: 10px; opacity: 0.7; font-weight: bold; border-style: double; }
         }
     </style>
 </head>
@@ -184,7 +181,7 @@
         let productList = [];
         let currentEditId = null; 
         let currentUserEmail = ""; 
-        let globalDataStore = {}; // 데이터 저장소
+        let globalDataStore = {};
 
         window.onload = async () => { 
             try { 
@@ -203,7 +200,6 @@
             if(!prodRes.error) productList = prodRes.data || [];
         }
 
-        // 데이터 저장소 헬퍼
         function storeRowData(row) {
             const id = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             globalDataStore[id] = row;
@@ -339,11 +335,32 @@
             currentEditId = row.id;
             openNewModal(tab, true);
             setTimeout(() => {
-                if(tab === 'partners') { document.getElementById('pName').value = row.name; document.getElementById('pBiz').value = row.biz_num||''; document.getElementById('pOwner').value = row.owner_name||''; document.getElementById('pManager').value = row.manager_name||''; document.getElementById('pPhone').value = row.phone||''; document.getElementById('pEmail').value = row.email||''; document.getElementById('pNote').value = row.note||''; }
+                if(tab === 'partners') { 
+                    document.getElementById('pName').value = row.name; 
+                    document.getElementById('pBiz').value = row.biz_num||''; 
+                    document.getElementById('pOwner').value = row.owner_name||''; 
+                    document.getElementById('pManager').value = row.manager_name||''; 
+                    document.getElementById('pPhone').value = row.phone||''; 
+                    document.getElementById('pEmail').value = row.email||''; 
+                    // [수정됨] 주소 불러오기
+                    document.getElementById('pAddr').value = row.address||'';
+                    document.getElementById('pNote').value = row.note||''; 
+                }
                 else if(tab === 'products') { document.getElementById('prodName').value = row.name; document.getElementById('prodCode').value = row.code; document.getElementById('prodUnit').value = row.unit||''; document.getElementById('prodSpec').value = row.spec||''; }
                 else if(tab === 'purchases') { document.getElementById('purDate').value = row.date; document.getElementById('purPartner').value = row.partner_name; document.getElementById('purItem').value = row.item_name; document.getElementById('purQty').value = row.qty; document.getElementById('purPrice').value = row.unit_price; document.getElementById('purSerial').value = row.serial_no||''; document.getElementById('purNote').value = row.note||''; }
                 else if(tab === 'purchase_orders') { document.getElementById('poNum').value = row.po_number; document.getElementById('poDate').value = row.date; document.getElementById('poPartner').value = row.partner_name; document.getElementById('poEndUser').value = row.end_user||''; document.getElementById('poManager').value = row.manager||''; document.getElementById('poPreOrder').value = row.is_pre_order||''; document.getElementById('poNote').value = row.note||''; tempItems = row.items || []; renderGrid(); }
-                else { document.getElementById('sDate').value = row.date; document.getElementById('sPartner').value = row.partner_name; document.getElementById('sManager').value = row.manager||''; document.getElementById('sNote').value = row.note||''; if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || ''; if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || ''; if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || ''; tempItems = row.items || []; renderGrid(); }
+                else { 
+                    document.getElementById('sDate').value = row.date; 
+                    document.getElementById('sPartner').value = row.partner_name; 
+                    document.getElementById('sManager').value = row.manager||''; 
+                    document.getElementById('sNote').value = row.note||''; 
+                    // [수정됨] 저장된 추가 정보 불러오기
+                    if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || ''; 
+                    if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || ''; 
+                    if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || ''; 
+                    if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || ''; 
+                    tempItems = row.items || []; renderGrid(); 
+                }
             }, 50);
         }
 
@@ -358,7 +375,20 @@
             if (tab === 'purchase_orders') {
                 const autoPO = isEdit ? '' : `ASPEC-${today.slice(2).replace(/-/g,'')}-P${Math.floor(Math.random()*90+10)}`;
                 html = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">PO# (자동생성)</label><input id="poNum" class="input-box bg-gray-100" value="${autoPO}"></div><div><label class="text-xs text-slate-500">수주일자</label><input type="date" id="poDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500">납품업체</label><input id="poPartner" class="input-box" list="dl_part"></div></div><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">EndUser</label><input id="poEndUser" class="input-box"></div><div><label class="text-xs text-slate-500">담당자</label><input id="poManager" class="input-box"></div><div><label class="text-xs text-slate-500">선발주여부</label><select id="poPreOrder" class="input-box"><option>N</option><option>Y</option></select></div></div><div><label class="text-xs text-slate-500">비고</label><input id="poNote" class="input-box"></div></div>${renderItemInputArea(tab)}`;
-            } else if (tab === 'partners') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div><div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div><div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div><div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div><div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div><div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div><div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div></div><button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
+            } 
+            // [수정됨] 거래처(Partners) 등록 폼에 주소 입력란 추가
+            else if (tab === 'partners') html = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div>
+                    <div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div>
+                    <div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div>
+                    <div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div>
+                    <div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div>
+                    <div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div>
+                    <div class="col-span-2"><label class="text-xs">주소</label><input id="pAddr" class="input-box" placeholder="주소를 입력하세요"></div>
+                    <div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div>
+                </div>
+                <button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
             else if (tab === 'products') html = `<div class="grid grid-cols-2 gap-3"><div class="col-span-2"><label class="text-xs">품목명 (필수)</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div><div><label class="text-xs">품목코드 (자동)</label><input id="prodCode" class="input-box bg-slate-100" readonly></div><div><label class="text-xs">단위</label><input id="prodUnit" class="input-box" placeholder="EA"></div><div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div></div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
             else if (tab === 'purchases') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">입고일자</label><input type="date" id="purDate" class="input-box" value="${today}"></div><div><label class="text-xs">매입처</label><input id="purPartner" class="input-box" list="dl_part"></div><div><label class="text-xs">품목명</label><input id="purItem" class="input-box" list="dl_prod"></div><div><label class="text-xs">수량</label><input type="number" id="purQty" class="input-box" value="0"></div><div><label class="text-xs">단가 (VAT별도)</label><input type="number" id="purPrice" class="input-box" value="0"></div><div><label class="text-xs">시리얼번호 (선택)</label><input type="text" id="purSerial" class="input-box"></div><div class="col-span-2"><label class="text-xs">비고</label><input id="purNote" class="input-box"></div></div><button onclick="savePurchase()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`;
             else { renderComplexForm(tab, body); return; }
@@ -376,7 +406,8 @@
 
         async function saveSimpleData(tab) {
             let data = {};
-            if(tab === 'partners') data = { name: el('pName'), biz_num: el('pBiz'), owner_name: el('pOwner'), manager_name: el('pManager'), phone: el('pPhone'), email: el('pEmail'), note: el('pNote') };
+            // [수정됨] 주소(address) 저장 추가
+            if(tab === 'partners') data = { name: el('pName'), biz_num: el('pBiz'), owner_name: el('pOwner'), manager_name: el('pManager'), phone: el('pPhone'), email: el('pEmail'), address: el('pAddr'), note: el('pNote') };
             if(tab === 'products') data = { name: el('prodName'), code: el('prodCode'), spec: el('prodSpec'), unit: el('prodUnit') };
             if(await saveData(tab, data)) { closeModal(); runSearch(tab); }
         }
@@ -394,12 +425,18 @@
             if(tempItems.length === 0) return alert("품목 없음");
             let tSupply=0, tVat=0, tTotal=0; tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
             let dateVal = el(tab === 'purchase_orders' ? 'poDate' : 'sDate') || new Date().toISOString().split('T')[0];
+            
             let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: dateVal, partner_name: el('sPartner'), manager: el('sManager'), note: el('sNote') };
             
-            if(tab === 'purchase_orders') { data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); }
-            else { 
+            if(tab === 'purchase_orders') { 
+                data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); 
+            } else { 
+                // [수정됨] 주문/견적 저장 시 주소, 담당자, 연락처도 같이 저장
                 data.email = el('sEmail'); 
-                if(tab === 'quotes') { data.partner_manager = el('sPManager'); data.phone = el('sContact'); } 
+                data.partner_manager = el('sPManager'); // 거래처 담당자
+                data.phone = el('sContact');            // 연락처
+                data.partner_address = el('sAddr');     // 주소
+                
                 if(tab === 'orders') data.po_number = 'AUTO'; 
             }
 
@@ -443,7 +480,7 @@
                 document.getElementById('p_left_manager').innerText = row.manager || ''; 
                 document.getElementById('p_left_email').innerText = ""; 
                 document.getElementById('p_left_phone').innerText = "";
-                //document.getElementById('p_left_tel').innerText = "";
+                // [수정됨] 에러 유발 코드 제거 (p_left_tel)
                 document.getElementById('p_left_addr').innerText = "";
                 
                 document.getElementById('p_right_role').innerText = "공 급 자";
@@ -454,11 +491,11 @@
             } else {
                 document.getElementById('p_left_role').innerText = "공 급 받 는 자";
                 document.getElementById('p_left_name').innerText = row.partner_name;
+                // [수정됨] 저장된 담당자와 연락처, 주소 표시
                 document.getElementById('p_left_manager').innerText = row.partner_manager || '';
                 document.getElementById('p_left_email').innerText = row.email || ''; 
                 document.getElementById('p_left_phone').innerText = row.phone || '';
-                //document.getElementById('p_left_tel').innerText = "";
-                document.getElementById('p_left_addr').innerText = "";
+                document.getElementById('p_left_addr').innerText = row.partner_address || ''; 
                 
                 document.getElementById('p_right_role').innerText = "공 급 자";
                 document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
@@ -489,7 +526,18 @@
         function autoGenCode(val) { if(val && !currentEditId) document.getElementById('prodCode').value = 'P-' + Date.now().toString().slice(-6); }
         function el(id) { return document.getElementById(id) ? document.getElementById(id).value : ''; }
         function fillDL(id, list) { document.getElementById(id).innerHTML = list.map(i=>`<option value="${i.name}">`).join(''); }
-        function fillPart(val) { const f = partnerList.find(x=>x.name===val); if(f) { if(document.getElementById('sPManager')) document.getElementById('sPManager').value=f.manager_name||''; if(document.getElementById('sContact')) document.getElementById('sContact').value=(f.email||'')+' '+(f.phone||''); } }
+        
+        // [수정됨] 거래처 선택 시 주소, 담당자 자동 채우기
+        function fillPart(val) { 
+            const f = partnerList.find(x=>x.name===val); 
+            if(f) { 
+                if(document.getElementById('sPManager')) document.getElementById('sPManager').value = f.manager_name||''; 
+                if(document.getElementById('sContact')) document.getElementById('sContact').value = f.phone||'';
+                if(document.getElementById('sAddr')) document.getElementById('sAddr').value = f.address||'';
+                if(document.getElementById('sEmail')) document.getElementById('sEmail').value = f.email||'';
+            } 
+        }
+
         function fillProd(val) { const f = productList.find(x=>x.name===val); if(f && document.getElementById('iSpec')) document.getElementById('iSpec').value=f.spec||''; }
         async function loadInventoryData(isSearch = false) {
             const tbody = document.getElementById('listBody'); const ordersRes = await supabase.from('orders').select('*'); const allOrders = ordersRes.data || []; tbody.innerHTML = '';
@@ -516,7 +564,25 @@
             let loadBtn = '';
             if(tab === 'orders') loadBtn = `<button onclick="openLoadModal('quotes')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-orange-600">견적 불러오기</button>`;
             if(tab === 'sales') loadBtn = `<button onclick="openLoadModal('orders')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-blue-600">주문 불러오기</button>`;
-            container.innerHTML = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">일자</label><input type="date" id="sDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500 flex items-center">거래처 ${loadBtn}</label><input id="sPartner" class="input-box" list="dl_part" onchange="fillPart(this.value)"></div><div><label class="text-xs text-slate-500">담당자</label><input id="sManager" class="input-box"></div></div><div class="grid grid-cols-4 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처담당자</label><input id="sPManager" class="input-box"></div><div><label class="text-xs text-slate-500">거래처이메일</label><input id="sEmail" class="input-box"></div><div><label class="text-xs text-slate-500">연락처</label><input id="sContact" class="input-box"></div><div><label class="text-xs text-slate-500">비고</label><input id="sNote" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
+            
+            // [수정됨] 주소(sAddr) 입력란 추가
+            container.innerHTML = `
+            <div class="bg-slate-50 p-4 rounded mb-4 border">
+                <div class="grid grid-cols-3 gap-3 mb-2">
+                    <div><label class="text-xs text-slate-500">일자</label><input type="date" id="sDate" class="input-box" value="${today}"></div>
+                    <div><label class="text-xs text-slate-500 flex items-center">거래처 ${loadBtn}</label><input id="sPartner" class="input-box" list="dl_part" onchange="fillPart(this.value)"></div>
+                    <div><label class="text-xs text-slate-500">담당자(우리측)</label><input id="sManager" class="input-box"></div>
+                </div>
+                <div class="grid grid-cols-4 gap-3 mb-2">
+                    <div><label class="text-xs text-slate-500">거래처담당자</label><input id="sPManager" class="input-box"></div>
+                    <div><label class="text-xs text-slate-500">연락처</label><input id="sContact" class="input-box"></div>
+                    <div class="col-span-2"><label class="text-xs text-slate-500">주소</label><input id="sAddr" class="input-box"></div>
+                </div>
+                <div class="mb-2">
+                    <label class="text-xs text-slate-500">거래처이메일</label><input id="sEmail" class="input-box">
+                </div>
+                <div><label class="text-xs text-slate-500">비고</label><input id="sNote" class="input-box"></div>
+            </div>${renderItemInputArea(tab)}`;
             fillDL('dl_part', partnerList); fillDL('dl_prod', productList);
         }
         function renderItemInputArea(tab) { return `<div class="bg-white border p-3 rounded mb-4 shadow-sm"><div class="flex gap-2 items-end"><div class="w-1/3"><label class="text-xs">품목명</label><input id="iName" class="input-box" list="dl_prod" onchange="fillProd(this.value)"></div><div class="w-20"><label class="text-xs">수량</label><input type="number" id="iQty" class="input-box" value="1"></div><div class="w-32"><label class="text-xs">단가</label><input type="number" id="iPrice" class="input-box"></div><button onclick="addItemToGrid('${tab}')" class="bg-slate-700 text-white px-4 py-2 rounded font-bold text-sm h-9">추가</button></div></div><table class="w-full text-sm border-collapse border text-center mb-4"><thead class="bg-slate-100"><tr><th>품목명</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>삭제</th></tr></thead><tbody id="itemGrid"></tbody></table><div class="text-right text-lg font-bold text-cyan-700">총 합계: <span id="sGrandTotal">0</span>원</div><button onclick="saveComplexData('${tab}')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg">문서 저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`; }
