@@ -375,16 +375,16 @@
                 else if(tab === 'purchase_orders') { 
                     document.getElementById('poNum').value = row.po_number; document.getElementById('poDate').value = row.date; document.getElementById('poPartner').value = row.partner_name; document.getElementById('poEndUser').value = row.end_user||''; document.getElementById('poManager').value = row.manager||''; document.getElementById('poPreOrder').value = row.is_pre_order||''; document.getElementById('poNote').value = row.note||'';
                     document.getElementById('poPManager').value = row.partner_manager || ''; document.getElementById('poPhone').value = row.phone || ''; document.getElementById('poEmail').value = row.email || ''; document.getElementById('poAddr').value = row.partner_address || '';
-                    tempItems = row.items || []; renderGrid(); 
-                }
-                else { 
-                    document.getElementById('sDate').value = row.date; document.getElementById('sPartner').value = row.partner_name; document.getElementById('sManager').value = row.manager||''; document.getElementById('sNote').value = row.note||''; 
-                    if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || ''; 
-                    if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || ''; 
-                    if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || ''; 
-                    if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || ''; 
-                    tempItems = row.items || []; renderGrid(); 
-                }
+                    tempItems = (row.items || []).map(item => {
+        if (!item.spec) {
+            const prod = productList.find(p => p.name === item.name);
+            if (prod) item.spec = prod.spec;
+        }
+        return item;
+    });
+    
+    renderGrid(); 
+}
             }, 50);
         }
 
@@ -405,7 +405,7 @@
             const yymmdd = today.slice(2).replace(/-/g,'');
             autoPO = `ASPEC-${yymmdd}-P${seqStr}`;
         }
-        html = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">PO# (자동생성)</label><input id="poNum" class="input-box bg-gray-100" value="${autoPO}"></div><div><label class="text-xs text-slate-500">수주일자</label><input type="date" id="poDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500">납품업체 (자동연동)</label><input id="poPartner" class="input-box" list="dl_part" onchange="fillPOPart(this.value)"></div></div><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처 담당자</label><input id="poPManager" class="input-box"></div><div><label class="text-xs text-slate-500">연락처</label><input id="poPhone" class="input-box"></div><div><label class="text-xs text-slate-500">선발주여부</label><select id="poPreOrder" class="input-box"><option>N</option><option>Y</option></select></div></div><div class="mb-2"><label class="text-xs text-slate-500">주소</label><input id="poAddr" class="input-box"></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">이메일</label><input id="poEmail" class="input-box"></div><div><label class="text-xs text-slate-500">비고</label><input id="poNote" class="input-box"></div></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">EndUser</label><input id="poEndUser" class="input-box"></div><div><label class="text-xs text-slate-500">담당자(우리측)</label><input id="poManager" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
+        html = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">PO# (자동생성)</label><input id="poNum" class="input-box bg-gray-100" value="${autoPO}"></div><div><label class="text-xs text-slate-500">수주일자</label><input type="date" id="poDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500">발주업체 </label><input id="poPartner" class="input-box" list="dl_part" onchange="fillPOPart(this.value)"></div></div><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처 담당자</label><input id="poPManager" class="input-box"></div><div><label class="text-xs text-slate-500">연락처</label><input id="poPhone" class="input-box"></div><div><label class="text-xs text-slate-500">선발주여부</label><select id="poPreOrder" class="input-box"><option>N</option><option>Y</option></select></div></div><div class="mb-2"><label class="text-xs text-slate-500">주소</label><input id="poAddr" class="input-box"></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">이메일</label><input id="poEmail" class="input-box"></div><div><label class="text-xs text-slate-500">비고</label><input id="poNote" class="input-box"></div></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">EndUser</label><input id="poEndUser" class="input-box"></div><div><label class="text-xs text-slate-500">담당자(우리측)</label><input id="poManager" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
     }
     else if (tab === 'partners') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div><div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div><div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div><div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div><div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div><div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div><div class="col-span-2"><label class="text-xs">주소</label><input id="pAddr" class="input-box" placeholder="주소를 입력하세요"></div><div class="col-span-2 border p-2 rounded bg-slate-50"><label class="text-xs font-bold">사업자등록증 (PDF/이미지)</label><div class="flex gap-2 mt-1"><input type="file" id="pFile" class="text-xs w-full" accept=".pdf,.jpg,.png,.jpeg"><div id="pCurrentFileLink" class="text-xs flex items-center"></div></div></div><div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div></div><button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
     else if (tab === 'products') html = `<div class="grid grid-cols-2 gap-3"><div class="col-span-2"><label class="text-xs">품목명 (필수)</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div><div><label class="text-xs">품목코드 (자동)</label><input id="prodCode" class="input-box bg-slate-100" readonly></div><div><label class="text-xs">단위</label><input id="prodUnit" class="input-box" placeholder="EA"></div><div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div><div class="col-span-2"><label class="text-xs">제조사</label><input id="prodMaker" class="input-box"></div></div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
@@ -658,12 +658,19 @@
             document.getElementById('p_right_mp').innerText = "010-5919-1810"; 
 
             const tbody = document.getElementById('p_tbody'); tbody.innerHTML = ''; let sumQty=0, sumAmt=0;
-            if (row.items) {
-                row.items.forEach((item, idx) => {
-                    sumQty += parseInt(item.qty)||0; sumAmt += parseInt(item.supply)||0;
-                    tbody.innerHTML += `<tr class="items-row"><td style="text-align:center">${idx+1}</td><td>${item.name}</td><td style="font-size:10px">${item.spec||'-'}</td><td style="text-align:center">${item.unit||'EA'}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${(item.price||0).toLocaleString()}</td><td style="text-align:right">${(item.supply||0).toLocaleString()}</td></tr>`;
-                });
-            }
+           if (row.items) {
+    row.items.forEach((item, idx) => {
+        // [수정] 인쇄 시 규격이 없으면 품목 리스트에서 다시 찾기
+        let spec = item.spec;
+        if (!spec) {
+            const prod = productList.find(p => p.name === item.name);
+            if (prod) spec = prod.spec;
+        }
+
+        sumQty += parseInt(item.qty)||0; sumAmt += parseInt(item.supply)||0;
+        tbody.innerHTML += `<tr class="items-row"><td style="text-align:center">${idx+1}</td><td>${item.name}</td><td style="font-size:10px">${spec||'-'}</td><td style="text-align:center">${item.unit||'EA'}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${(item.price||0).toLocaleString()}</td><td style="text-align:right">${(item.supply||0).toLocaleString()}</td></tr>`;
+    });
+}
             for (let i=0; i<10-(row.items?.length||0); i++) tbody.innerHTML += `<tr class="items-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
             document.getElementById('p_total_qty').innerText = sumQty.toLocaleString();
             document.getElementById('p_total_amt').innerText = "₩ " + (row.total_amount||0).toLocaleString();
@@ -851,12 +858,28 @@ async function openInventoryDetailModal(prodName) {
             return `<div class="bg-white border p-3 rounded mb-4 shadow-sm"><div class="flex gap-2 items-end"><div class="w-1/4"><label class="text-xs">품목명</label><input id="iName" class="input-box" list="dl_prod" onchange="fillProd(this.value)"></div><div class="flex-grow"><label class="text-xs">규격 (수정가능)</label><input id="iSpec" class="input-box"></div><div class="w-20"><label class="text-xs">수량</label><input type="number" id="iQty" class="input-box" value="1"></div><div class="w-28"><label class="text-xs">단가</label><input type="number" id="iPrice" class="input-box"></div><button onclick="addItemToGrid('${tab}')" class="bg-slate-700 text-white px-4 py-2 rounded font-bold text-sm h-9">추가</button></div></div><table class="w-full text-sm border-collapse border text-center mb-4"><thead class="bg-slate-100"><tr><th>품목명</th><th style="width:30%">규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>삭제</th></tr></thead><tbody id="itemGrid"></tbody></table><div class="text-right text-lg font-bold text-cyan-700">총 합계: <span id="sGrandTotal">0</span>원</div><button onclick="saveComplexData('${tab}')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg">문서 저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`; 
         }
         function addItemToGrid(tab) {
-            const name = el('iName'); const qty = parseInt(el('iQty'))||0; const price = parseInt(el('iPrice'))||0; const spec = el('iSpec').value; 
-            if(!name || qty <= 0) return alert("품목명과 수량을 확인해주세요.");
+            const name = el('iName'); 
+            const qty = parseInt(el('iQty'))||0; 
+            const price = parseInt(el('iPrice'))||0;
+            
+            // [수정] 입력된 규격 값(iSpec)을 우선 사용하고, 없으면 품목 정보(prod.spec) 사용
             const prod = productList.find(p => p.name === name);
-            const supply = qty * price; const vat = Math.floor(supply * 0.1); const total = supply + vat; const unit = prod ? prod.unit : 'EA';
+            const inputSpec = el('iSpec');
+            const spec = inputSpec ? inputSpec : (prod ? prod.spec : ''); 
+            
+            if(!name || qty <= 0) return alert("품목명과 수량을 확인해주세요.");
+        
+            const supply = qty * price; 
+            const vat = Math.floor(supply * 0.1); 
+            const total = supply + vat;
+            const unit = prod ? prod.unit : 'EA';
+        
             tempItems.push({ name, qty, price, supply, vat, total, spec, unit });
-            renderGrid(); document.getElementById('iName').value=''; document.getElementById('iQty').value='1'; document.getElementById('iSpec').value=''; 
+            
+            renderGrid(); 
+            document.getElementById('iName').value=''; 
+            document.getElementById('iQty').value='1';
+            document.getElementById('iSpec').value=''; 
         }
         function renderGrid() {
             const tbody = document.getElementById('itemGrid'); tbody.innerHTML = ''; let grandTotal = 0;
@@ -1101,6 +1124,19 @@ function renderComplexForm(tab, container) {
     fillDL('dl_part', partnerList); 
     fillDL('dl_prod', productList);
 }
+
+        // [복구] 로그아웃 함수
+    async function logout() {
+        if (!confirm("정말 로그아웃 하시겠습니까?")) return;
+        try {
+            await supabase.auth.signOut();
+        } catch (e) {
+            console.error("로그아웃 오류 (무시):", e);
+        } finally {
+            alert("로그아웃 되었습니다.");
+            window.location.href = 'index.html'; 
+        }
+    }
         
     </script>
 </body>
