@@ -988,6 +988,109 @@ async function openInventoryDetailModal(prodName) {
             if (error) alert("삭제 실패");
             else openBOMModal(); // 화면 새로고침
         }
+
+        // 1. 데이터 불러오기 팝업 열기 (견적/주문 불러오기)
+async function openLoadModal(srcTab) { 
+    const modal = document.getElementById('loadDataModal');
+    if (!modal) return alert("모달창을 찾을 수 없습니다.");
+    
+    modal.classList.add('active'); 
+    document.getElementById('loadModalTitle').innerText = (srcTab === 'quotes' ? '견적서' : '주문서') + ' 불러오기'; 
+    
+    const tbody = document.getElementById('loadDataBody'); 
+    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">데이터를 불러오는 중...</td></tr>'; 
+    
+    try {
+        const { data, error } = await supabase.from(srcTab).select('*').order('created_at', {ascending:false}); 
+        
+        if (error) throw error;
+        
+        tbody.innerHTML = ''; 
+        if(!data || data.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">데이터가 없습니다.</td></tr>'; 
+            return; 
+        } 
+        
+        data.forEach(row => { 
+            // 작은따옴표 이스케이프 처리 후 ID 전달
+            const rowId = storeRowData(row);
+            tbody.innerHTML += `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-3">${row.date}</td>
+                    <td class="p-3">${row.partner_name}</td>
+                    <td class="p-3 text-right font-bold">${(row.total_amount||0).toLocaleString()}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="applyDataById('${rowId}')" class="bg-blue-500 text-white px-3 py-1 text-xs rounded hover:bg-blue-600">선택</button>
+                    </td>
+                </tr>`; 
+        });
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">오류 발생: ${e.message}</td></tr>`;
+    }
+}
+
+// 2. ID로 데이터 찾아서 적용하기
+function applyDataById(id) { 
+    const row = getRowData(id); 
+    if (row) {
+        applyData(row); 
+    } else {
+        alert("데이터를 찾을 수 없습니다.");
+    }
+}
+
+// 3. 선택한 데이터(견적/주문)를 현재 화면에 채우기
+function applyData(row) { 
+    document.getElementById('sPartner').value = row.partner_name || ''; 
+    document.getElementById('sManager').value = row.manager || ''; 
+    
+    if(row.partner_address || row.phone || row.partner_manager) {
+        if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
+        if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
+        if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || '';
+        if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || '';
+    } else {
+        fillPart(row.partner_name); 
+    }
+
+    if(row.items) { 
+        tempItems = row.items; 
+        renderGrid(); 
+    } 
+    document.getElementById('loadDataModal').classList.remove('active'); 
+}
+
+// 4. 주문/판매 입력 폼 렌더링 (버튼 생성 부분 확인용)
+function renderComplexForm(tab, container) {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // [중요] 불러오기 버튼 생성 로직
+    let loadBtn = '';
+    if(tab === 'orders') loadBtn = `<button onclick="openLoadModal('quotes')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-orange-600">견적 불러오기</button>`;
+    if(tab === 'sales') loadBtn = `<button onclick="openLoadModal('orders')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-blue-600">주문 불러오기</button>`;
+    
+    container.innerHTML = `
+    <div class="bg-slate-50 p-4 rounded mb-4 border">
+        <div class="grid grid-cols-3 gap-3 mb-2">
+            <div><label class="text-xs text-slate-500">일자</label><input type="date" id="sDate" class="input-box" value="${today}"></div>
+            <div><label class="text-xs text-slate-500 flex items-center">거래처 ${loadBtn}</label><input id="sPartner" class="input-box" list="dl_part" onchange="fillPart(this.value)"></div>
+            <div><label class="text-xs text-slate-500">담당자(우리측)</label><input id="sManager" class="input-box"></div>
+        </div>
+        <div class="grid grid-cols-4 gap-3 mb-2">
+            <div><label class="text-xs text-slate-500">거래처담당자</label><input id="sPManager" class="input-box"></div>
+            <div><label class="text-xs text-slate-500">연락처</label><input id="sContact" class="input-box"></div>
+            <div class="col-span-2"><label class="text-xs text-slate-500">주소</label><input id="sAddr" class="input-box"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-2">
+            <div><label class="text-xs text-slate-500">거래처이메일</label><input id="sEmail" class="input-box"></div>
+            <div><label class="text-xs text-slate-500">비고</label><input id="sNote" class="input-box"></div>
+        </div>
+    </div>${renderItemInputArea(tab)}`;
+    
+    fillDL('dl_part', partnerList); 
+    fillDL('dl_prod', productList);
+}
+        
     </script>
 </body>
 </html>
