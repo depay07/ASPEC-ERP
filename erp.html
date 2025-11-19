@@ -48,9 +48,9 @@
             .print-half { width: 50%; padding: 0; }
             .print-half:first-child { border-right: 1px solid black; }
             
-            .print-info-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-            .print-info-table th { background-color: #f3f3f3 !important; text-align: center; padding: 5px; border: 1px solid black; width: 20%; font-weight: bold; -webkit-print-color-adjust: exact; }
-            .print-info-table td { padding: 5px 8px; border: 1px solid black; height: 28px; overflow: hidden; white-space: nowrap; }
+            .print-info-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;}
+            .print-info-table th { background-color: #f3f3f3 !important; text-align: center; padding: 5px; border: 1px solid black; width: 20%; font-weight: bold; height: 30px; -webkit-print-color-adjust: exact; }
+            .print-info-table td { padding: 2px 5px; border: 1px solid black; height: 30px; /* [중요] 내용 칸 높이 30px로 강제 고정 */ word-break: break-all; /* 긴 주소 줄바꿈 */ vertical-align: middle; /* 세로 중앙 정렬 */ font-size: 11px;}
             .print-header-cell { text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid black; font-size: 14px; background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; }
 
             .print-items-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
@@ -107,28 +107,36 @@
             </div>
 
             <div class="print-grid-box">
-                <div class="print-half">
-                    <div class="print-header-cell" id="p_left_role">공 급 받 는 자</div>
-                    <table class="print-info-table" style="border: none;">
-                        <tr><th>상호</th><td id="p_left_name"></td></tr>
-                        <tr><th>주소</th><td id="p_left_addr" style="height: 40px; vertical-align: top;"></td></tr>
-                        <tr><th>담당자</th><td id="p_left_manager"></td></tr>
-                        <tr><th>TEL</th><td id="p_left_phone"></td></tr>
-                        <tr><th>E-mail</th><td id="p_left_email"></td></tr>
-                    </table>
-                </div>
-
-                <div class="print-half">
-                    <div class="print-header-cell" id="p_right_role">공 급 자</div>
-                    <table class="print-info-table" style="border: none;">
-                        <tr><th>상호</th><td id="p_right_name">아스펙 (ASPEC)</td></tr>
-                        <tr><th>주소</th><td style="font-size: 10px; letter-spacing: -0.5px;">경기도 화성시 메타폴리스로 42, 9층 902호<br>(반송동, 디앤씨빌딩)</td></tr>                        
-                        <tr><th>담당자</th><td id="p_right_manager"></td></tr>
-                        <tr><th>TEL</th><td id="p_right_mp"></td></tr>
-                        <tr><th>E-mail</th><td id="p_right_email"></td></tr>
-                    </table>
-                </div>
+            <div class="print-half">
+                <div class="print-header-cell" id="p_left_role">공 급 받 는 자</div>
+                <table class="print-info-table">
+                    <colgroup>
+                        <col style="width: 20%;">
+                        <col style="width: 80%;">
+                    </colgroup>
+                    <tr><th>상호</th><td id="p_left_name"></td></tr>
+                    <tr><th>주소</th><td id="p_left_addr"></td></tr>
+                    <tr><th>담당자</th><td id="p_left_manager"></td></tr>
+                    <tr><th>TEL</th><td id="p_left_phone"></td></tr>
+                    <tr><th>E-mail</th><td id="p_left_email"></td></tr>
+                </table>
             </div>
+        
+            <div class="print-half">
+                <div class="print-header-cell" id="p_right_role">공 급 자</div>
+                <table class="print-info-table">
+                    <colgroup>
+                        <col style="width: 20%;">
+                        <col style="width: 80%;">
+                    </colgroup>
+                    <tr><th>상호</th><td id="p_right_name">아스펙 (ASPEC)</td></tr>
+                    <tr><th>주소</th><td style="font-size: 10px;">경기도 화성시 메타폴리스로 42, 9층 902호 (반송동, 디앤씨빌딩)</td></tr>                        
+                    <tr><th>담당자</th><td id="p_right_manager"></td></tr>
+                    <tr><th>TEL</th><td id="p_right_mp"></td></tr>
+                    <tr><th>E-mail</th><td id="p_right_email"></td></tr>
+                </table>
+            </div>
+        </div>
 
             <table class="print-items-table">
                 <thead>
