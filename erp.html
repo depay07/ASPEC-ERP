@@ -26,13 +26,15 @@
         .search-panel { background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .search-label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 6px; display: block; text-transform: uppercase; }
 
-        /* 인쇄 전용 스타일 */
+        /* [수정] 인쇄 전용 스타일 (헤더/푸터 삭제 및 레이아웃 정밀 조정) */
         @media print {
-            @page { size: A4; margin: 10mm; }
+            @page { 
+                size: A4; 
+                margin: 0; /* [해결 1,2] 브라우저 기본 헤더(날짜, 제목) 및 푸터(URL) 제거 */
+            }
             body { margin: 0; padding: 0; background: white; }
             body * { visibility: hidden; }
             
-            /* 인쇄 영역 보이기 및 박스 크기 계산 고정 */
             #printContainer, #printContainer * { 
                 visibility: visible; 
                 box-sizing: border-box; 
@@ -43,14 +45,15 @@
                 font-family: "Malgun Gothic", dotum, sans-serif; color: black !important;
             }
             
-            .print-wrap { width: 100%; margin: 0 auto; }
+            /* 여백을 margin 대신 padding으로 주어 짤림 방지 */
+            .print-wrap { width: 100%; padding: 15mm; margin: 0 auto; }
             
             .print-title-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom: 5px; }
             .print-title-main { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
             .print-title-sub { font-size: 16px; font-weight: normal; font-style: italic; margin-left: 10px; }
             .print-meta { text-align: right; font-size: 11px; line-height: 1.4; }
         
-            /* 상단 그리드 박스 (공급자/받는자) */
+            /* 상단 그리드 박스 */
             .print-grid-box { 
                 display: flex; 
                 width: 100%; 
@@ -64,12 +67,12 @@
                 flex: 1;
             }
         
-            /* 중앙 세로선 (칸막이 역할) */
+            /* 중앙 세로선 */
             .print-half:first-child { 
                 border-right: 1px solid black; 
             }
         
-            /* 정보 테이블 (내부) */
+            /* 정보 테이블 */
             .print-info-table { 
                 width: 100%; 
                 border-collapse: collapse; 
@@ -99,6 +102,12 @@
                 word-break: break-all;
                 overflow: hidden;
             }
+
+            /* [해결 4] 마지막 줄의 테두리를 없애서 바깥 박스 테두리와 겹치지 않게 함 (선 두께 정상화) */
+            .print-info-table tr:last-child th, 
+            .print-info-table tr:last-child td {
+                border-bottom: none;
+            }
         
             .print-header-cell { 
                 text-align: center; font-weight: bold; padding: 5px; 
@@ -123,16 +132,17 @@
                 -webkit-print-color-adjust: exact; 
             }
         
+            /* [해결 3] 품목 칸 높이 통일 및 자동 줄바꿈 */
             .print-items-table td { 
                 border: 1px solid black; 
                 padding: 5px; 
-                min-height: 25px; 
+                height: 35px; /* 기본 높이를 35px로 고정 (빈 칸도 이 높이 유지) */
                 word-break: keep-all;
-                white-space: normal;
+                white-space: normal; /* 내용 많으면 줄바꿈 */
                 vertical-align: middle;
             }
             
-            /* [중요] 주소 칸 높이 강제 고정 (좌우 대칭용) */
+            /* 주소 칸 높이 강제 고정 */
             .addr-cell {
                 height: 55px !important; 
                 vertical-align: top !important;
@@ -198,7 +208,7 @@
                         <tr><th>주소</th><td id="p_left_addr" class="addr-cell"></td></tr>
                         <tr><th>담당자</th><td id="p_left_manager"></td></tr>
                         <tr><th>TEL</th><td id="p_left_phone"></td></tr>
-                        <tr><th>E-mail</th><td id="p_left_email" style="border-bottom: none;"></td></tr>
+                        <tr><th>E-mail</th><td id="p_left_email"></td></tr>
                     </table>
                 </div>
             
@@ -210,7 +220,7 @@
                         <tr><th>주소</th><td class="addr-cell" style="font-size: 10px;">경기도 화성시 메타폴리스로 42, 9층 902호<br>(반송동, 디앤씨빌딩)</td></tr>                        
                         <tr><th>담당자</th><td id="p_right_manager"></td></tr>
                         <tr><th>TEL</th><td id="p_right_mp"></td></tr>
-                        <tr><th>E-mail</th><td id="p_right_email" style="border-bottom: none;"></td></tr>
+                        <tr><th>E-mail</th><td id="p_right_email"></td></tr>
                     </table>
                 </div>
             </div>
@@ -254,12 +264,8 @@
     </div>
 
     <script>
-        // ==========================================
-        // [설정] Supabase URL / KEY 입력
-        // ==========================================
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
-        // ==========================================
 
         if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_URL')) alert("API 키를 설정해주세요.");
 
@@ -273,16 +279,14 @@
         let globalDataStore = {};
 
         window.onload = async () => { 
-        try { 
-            const { data: { user } } = await supabase.auth.getUser();
-            if(user) currentUserEmail = user.email;
-            await fetchData(); 
-            switchTab('partners'); 
-        } 
-        catch (e) { 
-            console.error("초기화 오류 (일시적일 수 있음): ", e); 
-        }
-    };
+            try { 
+                const { data: { user } } = await supabase.auth.getUser();
+                if(user) currentUserEmail = user.email;
+                await fetchData(); 
+                switchTab('partners'); 
+            } 
+            catch (e) { console.error(e); }
+        };
 
         async function fetchData() {
             const pRes = await supabase.from('partners').select('*');
@@ -707,7 +711,7 @@
                 
                 document.getElementById('p_right_role').innerText = "공 급 자";
                 document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
-                document.getElementById('p_right_manager').innerText = row.manager || '이창현';
+                document.getElementById('p_right_manager').innerText = "이창현";
                 document.getElementById('p_right_email').innerText = currentUserEmail;
                 document.getElementById('p_right_mp').innerText = "010-5919-1810"; 
             }
@@ -842,6 +846,26 @@
                 fetchData().then(() => loadInventoryData(true));
             }
         }
+        async function deleteItem(table, id) { if(!confirm("정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return; const { error } = await supabase.from(table).delete().eq('id', id); if(error) alert("삭제 실패"); else { runSearch(table); } }
+        async function openLoadModal(srcTab) { document.getElementById('loadDataModal').classList.add('active'); document.getElementById('loadModalTitle').innerText = (srcTab === 'quotes' ? '견적서' : '주문서') + ' 불러오기'; const tbody = document.getElementById('loadDataBody'); tbody.innerHTML = '<tr><td colspan="4">로딩중...</td></tr>'; const { data } = await supabase.from(srcTab).select('*').order('created_at', {ascending:false}); tbody.innerHTML = ''; if(!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4">데이터 없음</td></tr>'; return; } data.forEach(row => { tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td>${row.date}</td><td>${row.partner_name}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td><button onclick='applyDataById("${storeRowData(row)}")' class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600">선택</button></td></tr>`; }); }
+        function applyDataById(id) { const row = getRowData(id); applyData(row); }
+        function applyData(row) { 
+            document.getElementById('sPartner').value = row.partner_name || ''; 
+            document.getElementById('sManager').value = row.manager || ''; 
+            
+            if(row.partner_address || row.phone || row.partner_manager) {
+                if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
+                if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
+                if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || '';
+                if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || '';
+            } else {
+                fillPart(row.partner_name); 
+            }
+
+            if(row.items) { tempItems = row.items; renderGrid(); } 
+            document.getElementById('loadDataModal').classList.remove('active'); 
+        }
+        function logout() { supabase.auth.signOut().then(()=>window.location.href='index.html'); }
         function renderComplexForm(tab, container) {
             const today = new Date().toISOString().split('T')[0];
             let loadBtn = '';
