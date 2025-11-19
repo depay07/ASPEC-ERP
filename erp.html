@@ -434,8 +434,8 @@ async function savePurchase() {
             manufacturer: item.manufacturer, // 제조사 저장
             qty: item.qty,
             unit_price: item.unit_price,
-            supply_price: item.unit_price * item.qty, // 공급가 (간이 계산)
-            vat: Math.floor(item.unit_price * item.qty * 0.1), // 부가세 (간이 계산)
+            supply_price: item.unit_price * item.qty,
+            vat: Math.floor(item.unit_price * item.qty * 0.1),
             total_amount: item.total_amount,
             serial_no: item.serial_no,
             note: noteVal
@@ -448,12 +448,16 @@ async function savePurchase() {
             // 품목 재고 및 정보 업데이트
             const prod = productList.find(p => p.name === item.name);
             if (prod) {
+                // [핵심 수정] DB에 업데이트하기 전에, 현재 메모리에 있는 재고도 즉시 늘려준다.
+                // 그래야 다음 루프에서 늘어난 재고를 기준으로 더하기를 할 수 있음.
+                prod.stock = prod.stock + item.qty; 
+
                 await supabase.from('products').update({
-                    stock: prod.stock + item.qty,
+                    stock: prod.stock, // 늘어난 재고로 저장
                     last_vendor: partnerVal,
                     last_price: item.unit_price,
                     last_serial_no: item.serial_no,
-                    manufacturer: item.manufacturer || prod.manufacturer // 새 제조사가 있으면 업데이트
+                    manufacturer: item.manufacturer || prod.manufacturer 
                 }).eq('id', prod.id);
             }
         }
