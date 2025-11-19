@@ -27,66 +27,119 @@
         .search-label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 6px; display: block; text-transform: uppercase; }
 
         /* 인쇄 전용 스타일 */
-        @media print {
-            @page { size: A4; margin: 0; }
-            body { margin: 0; padding: 0; background: white; }
-            body * { visibility: hidden; }
-            #printContainer, #printContainer * { visibility: visible; }
-            #printContainer { 
-                position: absolute; left: 0; top: 0; width: 210mm; min-height: 297mm; 
-                background: white; padding: 15mm; box-sizing: border-box;
-                font-family: "Malgun Gothic", dotum, sans-serif; color: black !important;
-            }
-            
-            .print-wrap { width: 100%; max-width: 210mm; margin: 0 auto; }
-            .print-title-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
-            .print-title-main { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
-            .print-title-sub { font-size: 16px; font-weight: normal; font-style: italic; margin-left: 10px; }
-            .print-meta { text-align: right; font-size: 11px; line-height: 1.4; }
+        /* [수정] 인쇄 스타일 전체 교체 권장 */
+@media print {
+    @page { size: A4; margin: 10mm; } /* 여백 조정 */
+    body { margin: 0; padding: 0; background: white; }
+    body * { visibility: hidden; }
+    
+    /* 모든 요소에 보더 포함 크기 계산 적용 (너비 틀어짐 방지) */
+    #printContainer, #printContainer * { 
+        visibility: visible; 
+        box-sizing: border-box; 
+    }
 
-            /* [수정] 인쇄 레이아웃 강력 고정 */
-.print-grid-box { 
-    display: flex; 
-    border: 1px solid black; 
-    margin-bottom: 10px; 
-    width: 100%;
-}
+    #printContainer { 
+        position: absolute; left: 0; top: 0; width: 100%;
+        font-family: "Malgun Gothic", dotum, sans-serif; color: black !important;
+    }
+    
+    .print-wrap { width: 100%; margin: 0 auto; }
+    
+    /* 타이틀 영역 */
+    .print-title-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom: 5px; }
+    .print-title-main { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
+    .print-title-sub { font-size: 16px; font-weight: normal; font-style: italic; margin-left: 10px; }
+    .print-meta { text-align: right; font-size: 11px; line-height: 1.4; }
 
-.print-half { 
-    flex: 1; /* 너비를 50:50으로 정확히 배분 */
-    width: 50%;
-    padding: 0; 
-}
+    /* 상단 그리드 박스 (공급받는자/공급자) */
+    .print-grid-box { 
+        display: flex; 
+        width: 100%; /* 아래 테이블과 너비 맞춤 */
+        border: 1px solid black; /* 외곽 테두리 */
+        margin-bottom: 10px;
+    }
 
-.print-half:first-child { 
-    border-right: 1px solid black; /* 중앙 세로선 강제 적용 */
-}
+    .print-half { 
+        width: 50%; 
+        padding: 0;
+    }
 
-.print-info-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    font-size: 11px; 
-    table-layout: fixed; /* 셀 너비 고정 */
-}
+    /* 중앙 세로선 (칸막이) 생성 */
+    .print-half:first-child { 
+        border-right: 1px solid black; 
+    }
 
-.print-info-table th { 
-    background-color: #f3f3f3 !important; 
-    text-align: center; 
-    padding: 5px; 
-    border: 1px solid black; 
-    width: 20%; 
-    font-weight: bold; 
-    height: 30px; 
-    -webkit-print-color-adjust: exact; 
-}
+    /* 상단 정보 테이블 */
+    .print-info-table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        font-size: 11px; 
+        table-layout: fixed; 
+        border: none; /* 테이블 자체 테두리 제거 (박스가 대신함) */
+    }
 
-.print-info-table td { 
-    padding: 2px 5px; 
-    border: 1px solid black; 
-    height: 30px; /* 기본 높이 */
-    vertical-align: middle; 
-    font-size: 11px;
-    overflow: hidden;
+    .print-info-table th { 
+        background-color: #f3f3f3 !important; 
+        text-align: center; 
+        padding: 5px; 
+        border-bottom: 1px solid black; 
+        border-right: 1px solid black;
+        width: 20%; 
+        font-weight: bold; 
+        height: 30px; 
+        -webkit-print-color-adjust: exact; 
+    }
+
+    .print-info-table td { 
+        padding: 2px 5px; 
+        border-bottom: 1px solid black; 
+        height: 30px; 
+        vertical-align: middle; 
+        font-size: 11px;
+        word-break: break-all; /* 긴 내용 줄바꿈 */
+    }
+    
+    /* 주소 칸 높이 고정 */
+    .addr-cell {
+        height: 55px !important; 
+        vertical-align: top !important;
+        padding-top: 5px !important;
+        line-height: 1.4;
+    }
+
+    /* 헤더 셀 (공급받는자/공급자 제목) */
+    .print-header-cell { 
+        text-align: center; font-weight: bold; padding: 5px; 
+        border-bottom: 1px solid black; font-size: 14px; 
+        background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; 
+    }
+
+    /* 하단 품목 테이블 */
+    .print-items-table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-top: 10px; 
+        font-size: 11px; 
+        table-layout: fixed; /* 컬럼 너비 고정 필수 */
+    }
+
+    .print-items-table th { 
+        border: 1px solid black; 
+        background-color: #f3f3f3 !important; 
+        padding: 5px; 
+        text-align: center; 
+        -webkit-print-color-adjust: exact; 
+    }
+
+    .print-items-table td { 
+        border: 1px solid black; 
+        padding: 5px; 
+        min-height: 25px; 
+        word-break: keep-all; /* 단어 단위 줄바꿈 */
+        white-space: normal; /* 줄바꿈 허용 */
+        vertical-align: middle;
+    }
 }
 
 /* [추가] 주소 칸 전용 스타일: 높이를 55px로 강제 고정하여 좌우 대칭 유지 */
@@ -138,80 +191,78 @@
     <div id="genericModal" class="modal no-print"><div class="modal-content"><div class="flex justify-between items-center mb-6 border-b pb-4"><h2 id="modalTitle" class="text-2xl font-bold text-slate-800">입력</h2><button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-2xl"></i></button></div><div id="modalBody"></div></div></div>
     <div id="loadDataModal" class="modal no-print" style="z-index: 60;"><div class="modal-content" style="max-width: 800px;"><h3 class="text-xl font-bold mb-4" id="loadModalTitle">데이터 불러오기</h3><div class="overflow-y-auto max-h-96 border rounded"><table class="w-full text-left text-sm"><thead class="bg-slate-50"><tr><th class="p-3">날짜</th><th class="p-3">거래처</th><th class="p-3">총액</th><th class="p-3">선택</th></tr></thead><tbody id="loadDataBody"></tbody></table></div><div class="mt-6 text-right"><button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="px-6 py-2 bg-slate-200 rounded text-sm font-bold">닫기</button></div></div></div>
 
-    <div id="printContainer" class="hidden">
-        <div class="print-wrap">
-            <div class="print-title-area">
-                <div>
-                    <span id="p_title_ko" class="print-title-main">견 적 서</span>
-                    <span id="p_title_en" class="print-title-sub">QUOTATION</span>
-                </div>
-                <div class="print-meta">
-                    <div>문서번호: <span id="p_no"></span></div>
-                    <div>작성일자: <span id="p_date"></span></div>
-                    <div id="p_valid_date_row">유효기간: <span id="p_valid_date"></span></div>
-                </div>
+    document.getElementById('printContainer').innerHTML = `
+    <div class="print-wrap">
+        <div class="print-title-area">
+            <div>
+                <span id="p_title_ko" class="print-title-main">견 적 서</span>
+                <span id="p_title_en" class="print-title-sub">QUOTATION</span>
             </div>
+            <div class="print-meta">
+                <div>문서번호: <span id="p_no"></span></div>
+                <div>작성일자: <span id="p_date"></span></div>
+                <div id="p_valid_date_row">유효기간: <span id="p_valid_date"></span></div>
+            </div>
+        </div>
 
-            <div class="print-grid-box">
+        <div class="print-grid-box">
             <div class="print-half">
                 <div class="print-header-cell" id="p_left_role">공 급 받 는 자</div>
                 <table class="print-info-table">
-                    <colgroup>
-                        <col style="width: 20%;">
-                        <col style="width: 80%;">
-                    </colgroup>
+                    <colgroup><col style="width: 20%;"><col style="width: 80%;"></colgroup>
                     <tr><th>상호</th><td id="p_left_name"></td></tr>
                     <tr><th>주소</th><td id="p_left_addr" class="addr-cell"></td></tr>
                     <tr><th>담당자</th><td id="p_left_manager"></td></tr>
                     <tr><th>TEL</th><td id="p_left_phone"></td></tr>
-                    <tr><th>E-mail</th><td id="p_left_email"></td></tr>
+                    <tr><th>E-mail</th><td id="p_left_email" style="border-bottom: none;"></td></tr>
                 </table>
             </div>
         
             <div class="print-half">
                 <div class="print-header-cell" id="p_right_role">공 급 자</div>
                 <table class="print-info-table">
-                    <colgroup>
-                        <col style="width: 20%;">
-                        <col style="width: 80%;">
-                    </colgroup>
+                    <colgroup><col style="width: 20%;"><col style="width: 80%;"></colgroup>
                     <tr><th>상호</th><td id="p_right_name">아스펙 (ASPEC)</td></tr>
-                    <tr><th>주소</th><td class="addr-cell" style="font-size: 10px;">경기도 화성시 메타폴리스로 42, 9층 902호 (반송동, 디앤씨빌딩)</td></tr>                        
+                    <tr><th>주소</th><td class="addr-cell" style="font-size: 10px;">경기도 화성시 메타폴리스로 42, 9층 902호<br>(반송동, 디앤씨빌딩)</td></tr>                        
                     <tr><th>담당자</th><td id="p_right_manager"></td></tr>
                     <tr><th>TEL</th><td id="p_right_mp"></td></tr>
-                    <tr><th>E-mail</th><td id="p_right_email"></td></tr>
+                    <tr><th>E-mail</th><td id="p_right_email" style="border-bottom: none;"></td></tr>
                 </table>
             </div>
         </div>
 
-            <table class="print-items-table">
-                <thead>
-                    <tr>
-                        <th style="width: 5%">No</th>
-                        <th>품명</th>
-                        <th>규격</th>
-                        <th style="width: 8%">단위</th>
-                        <th style="width: 8%">수량</th>
-                        <th style="width: 12%">단가</th>
-                        <th style="width: 15%">공급가액</th>
-                    </tr>
-                </thead>
-                <tbody id="p_tbody"></tbody>
-                <tfoot>
-                    <tr style="background: #f8f8f8; font-weight: bold;">
-                        <td colspan="4" style="text-align: center;">합 계 (Total)</td>
-                        <td style="text-align: center;" id="p_total_qty"></td>
-                        <td style="text-align: right;">VAT 포함</td>
-                        <td style="text-align: right;" id="p_total_amt"></td>
-                    </tr>
-                    <tr style="background: #fff; border-top: 2px double black;">
-                        <td colspan="7" style="padding: 10px;">
-                            <strong>[비고]</strong> <span id="p_note"></span>
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+        <table class="print-items-table">
+            <colgroup>
+                <col style="width: 5%;">  <col style="width: 25%;"> <col style="width: 30%;"> <col style="width: 8%;">  <col style="width: 8%;">  <col style="width: 12%;"> <col style="width: 12%;"> </colgroup>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>품명</th>
+                    <th>규격</th>
+                    <th>단위</th>
+                    <th>수량</th>
+                    <th>단가</th>
+                    <th>공급가액</th>
+                </tr>
+            </thead>
+            <tbody id="p_tbody"></tbody>
+            <tfoot>
+                <tr style="background: #f8f8f8; font-weight: bold;">
+                    <td colspan="4" style="text-align: center; border-right: 1px solid black;">합 계 (Total)</td>
+                    <td style="text-align: center; border-right: 1px solid black;" id="p_total_qty"></td>
+                    <td style="text-align: right; border-right: 1px solid black;">VAT 포함</td>
+                    <td style="text-align: right;" id="p_total_amt"></td>
+                </tr>
+                <tr style="background: #fff; border-top: 2px double black;">
+                    <td colspan="7" style="padding: 10px; text-align: left;">
+                        <strong>[비고]</strong> <span id="p_note"></span>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+        
         </div>
+`;
     </div>
 
     <script>
