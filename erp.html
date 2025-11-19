@@ -485,7 +485,7 @@
                     
                     // Supabase Storage에 업로드 ('erp-files'는 1단계에서 만든 버킷 이름)
                     const { data: uploadData, error: uploadError } = await supabase.storage
-                        .from('ERP-FILES')
+                        .from('erp')
                         .upload(fileName, file);
         
                     if (uploadError) {
@@ -495,7 +495,7 @@
         
                     // 업로드된 파일의 공개 URL 가져오기
                     const { data: publicUrlData } = supabase.storage
-                        .from('ERP-FILES')
+                        .from('erp')
                         .getPublicUrl(fileName);
                     
                     data.biz_file_url = publicUrlData.publicUrl; // DB에 저장할 URL
