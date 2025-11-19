@@ -248,7 +248,18 @@
             else if (tab === 'products') html += `<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'purchase_orders') html += `<thead><tr><th style="width:12%">PO#</th><th style="width:15%">납품업체</th><th style="width:15%">EndUser</th><th>품목요약</th><th style="width:12%">총액</th><th style="width:10%">일자</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'purchases') html += `<thead><tr><th style="width:10%">일자</th><th style="width:10%">제조사</th><th style="width:15%">매입처</th><th>품목명</th><th style="width:6%">수량</th><th style="width:10%">단가</th><th style="width:10%">합계</th><th style="width:10%">시리얼</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
-            else if (tab === 'inventory') html += `<thead><tr><th>품목명</th><th style="width:10%">제조사</th><th style="width:12%">최근입고처</th><th style="width:10%">입고단가</th><th style="width:10%">시리얼</th><th style="width:8%">총재고</th><th style="width:8%">가용재고</th><th>비고</th><th style="width:8%">예약</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'inventory') html += `<thead>
+    <tr>
+        <th>품목명</th>
+        <th style="width:10%">제조사</th>
+        <th style="width:12%">입고처</th>
+        <th style="width:10%">입고단가</th>
+        <th style="width:8%">총재고</th>
+        <th style="width:8%">가용재고</th>
+        <th>비고</th>
+        <th style="width:10%">예약</th>
+        <th style="width:10%">관리</th>
+    </tr></thead><tbody id="listBody"></tbody>`;
             else html += `<thead><tr><th style="width:10%">일자</th><th style="width:18%">거래처</th><th style="width:12%">담당자</th><th style="width:12%">공급가액</th><th style="width:10%">부가세</th><th style="width:12%">합계</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             
             html += `</table></div>`;
@@ -576,74 +587,137 @@ async function savePurchase() {
         function fillProd(val) { const f = productList.find(x=>x.name===val); if(f) { if(document.getElementById('iSpec')) document.getElementById('iSpec').value = f.spec || ''; } }
         
         async function loadInventoryData(isSearch = false) {
-            const tbody = document.getElementById('listBody'); 
-            const ordersRes = await supabase.from('orders').select('*'); 
-            const allOrders = ordersRes.data || []; 
-            tbody.innerHTML = '';
-            
-            let filteredProducts = productList;
-            if (isSearch) {
-                const sName = document.getElementById('search_sName').value.toLowerCase(); 
-                const sCode = document.getElementById('search_sCode').value.toLowerCase();
-                filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true));
-            }
-            
-            filteredProducts.forEach(prod => {
-                let reservedOrders = [];
-                let reservedQty = 0; 
-                
-                allOrders.forEach(ord => { 
-                    if(ord.items) { 
-                        ord.items.forEach(item => { 
-                            if(item.name === prod.name) { 
-                                reservedQty += item.qty; 
-                                reservedOrders.push({ date: ord.date, partner: ord.partner_name, qty: item.qty });
-                            } 
-                        }); 
-                    } 
-                });
-                
-                const availableStock = prod.stock - reservedQty;
-                const stockClass = availableStock < 0 ? 'text-red-600' : 'text-blue-600';
-                let reservedText = reservedQty > 0 ? `<span class="text-red-500 font-bold">(${reservedQty}개 예약)</span>` : '<span class="text-gray-300">-</span>';
+    const tbody = document.getElementById('listBody'); 
+    const ordersRes = await supabase.from('orders').select('*'); 
+    const allOrders = ordersRes.data || []; 
+    tbody.innerHTML = '';
+    
+    let filteredProducts = productList;
+    if (isSearch) {
+        const sName = document.getElementById('search_sName').value.toLowerCase(); 
+        const sCode = document.getElementById('search_sCode').value.toLowerCase();
+        filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true));
+    }
+    
+    filteredProducts.forEach(prod => {
+        let reservedQty = 0; 
         
-                tbody.innerHTML += `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="font-bold">${prod.name}</td>
-                    <td class="text-center text-xs">${prod.manufacturer||'-'}</td>
-                    <td class="text-center text-xs text-gray-500">${prod.last_vendor||'-'}</td>
-                    <td class="text-right text-xs">${(prod.last_price||0).toLocaleString()}</td>
-                    <td class="text-center text-xs font-mono text-gray-500">${prod.last_serial_no||'-'}</td>
-                    <td class="text-center"><input type="number" id="stock_${prod.id}" value="${prod.stock}" class="border rounded px-2 py-1 w-16 text-center font-bold"></td>
-                    <td class="text-center font-bold ${stockClass}">${availableStock}</td>
-                    <td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td>
-                    <td class="text-xs text-center">${reservedText}</td>
-                    <td class="text-center flex gap-1 justify-center">
-                        <button onclick='openInventoryDetailModal(${JSON.stringify(reservedOrders)}, "${prod.name}")' class="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600">상세</button>
-                        <button onclick="updateInventory(${prod.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">저장</button>
-                    </td>
-                </tr>`;
-            });
-        }
+        // 예약 수량 계산
+        allOrders.forEach(ord => { 
+            if(ord.items) { 
+                ord.items.forEach(item => { 
+                    if(item.name === prod.name) { 
+                        reservedQty += item.qty; 
+                    } 
+                }); 
+            } 
+        });
+        
+        const availableStock = prod.stock - reservedQty;
+        const stockClass = availableStock < 0 ? 'text-red-600' : 'text-blue-600';
+        
+        let reservedText = reservedQty > 0 
+            ? `<span class="text-red-500 font-bold">(${reservedQty}개)</span>` 
+            : '<span class="text-gray-300">-</span>';
 
-        function openInventoryDetailModal(orders, prodName) {
-            const modal = document.getElementById('genericModal');
-            document.getElementById('modalTitle').innerText = `[${prodName}] 예약 상세 현황`;
-            const body = document.getElementById('modalBody');
-            modal.classList.add('active');
+        // [수정됨] 시리얼 제외, 순서 변경, 상세 버튼 연결(openInventoryDetailModal)
+        tbody.innerHTML += `
+        <tr class="border-b hover:bg-slate-50">
+            <td class="font-bold">${prod.name}</td>
+            <td class="text-center text-xs">${prod.manufacturer||'-'}</td>
+            <td class="text-center text-xs text-gray-500">${prod.last_vendor||'-'}</td>
+            <td class="text-right text-xs">${(prod.last_price||0).toLocaleString()}</td>
             
-            let html = `<div class="overflow-y-auto max-h-96"><table class="w-full text-sm text-left border-collapse"><thead class="bg-slate-100"><tr><th class="p-2 border">수주일자</th><th class="p-2 border">거래처</th><th class="p-2 border text-right">예약수량</th></tr></thead><tbody>`;
+            <td class="text-center">
+                <input type="number" id="stock_${prod.id}" value="${prod.stock}" class="border rounded px-2 py-1 w-16 text-center font-bold">
+            </td>
             
-            if (orders.length === 0) {
-                html += `<tr><td colspan="3" class="p-4 text-center text-gray-400">예약된 내역이 없습니다.</td></tr>`;
-            } else {
-                orders.forEach(o => {
-                    html += `<tr><td class="p-2 border">${o.date}</td><td class="p-2 border">${o.partner}</td><td class="p-2 border text-right font-bold text-red-500">${o.qty}</td></tr>`;
+            <td class="text-center font-bold ${stockClass}">${availableStock}</td>
+            
+            <td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td>
+            
+            <td class="text-xs text-center">${reservedText}</td>
+            
+            <td class="text-center flex gap-1 justify-center">
+                <button onclick="openInventoryDetailModal('${prod.name}')" class="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600">상세</button>
+                <button onclick="updateInventory(${prod.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">저장</button>
+            </td>
+        </tr>`;
+    });
+}
+
+        // [수정됨] 상세 보기: 입고(시리얼) 내역 + 예약 내역 통합 표시
+async function openInventoryDetailModal(prodName) {
+    const modal = document.getElementById('genericModal');
+    document.getElementById('modalTitle').innerText = `[${prodName}] 상세 현황`;
+    const body = document.getElementById('modalBody');
+    modal.classList.add('active');
+    
+    body.innerHTML = '<div class="p-4 text-center">데이터 로딩중...</div>';
+
+    // 1. 입고 내역(시리얼) 조회
+    const { data: purchases } = await supabase.from('purchases').select('*').eq('item_name', prodName).order('date', { ascending: false });
+    
+    // 2. 예약 내역 조회
+    const { data: orders } = await supabase.from('orders').select('*').order('date', { ascending: false });
+    let reservedList = [];
+    if (orders) {
+        orders.forEach(ord => {
+            if (ord.items) {
+                ord.items.forEach(item => {
+                    if (item.name === prodName) {
+                        reservedList.push({ date: ord.date, partner: ord.partner_name, qty: item.qty });
+                    }
                 });
             }
-            html += `</tbody></table></div><div class="mt-4 text-right"><button onclick="closeModal()" class="bg-slate-500 text-white px-4 py-2 rounded">닫기</button></div>`;
-            body.innerHTML = html;
-        }
+        });
+    }
+
+    // 3. 입고 내역 정렬 (시리얼 있는 것을 위로)
+    const sortedPurchases = (purchases || []).sort((a, b) => {
+        const aHasSerial = a.serial_no && a.serial_no.trim() !== '' ? 1 : 0;
+        const bHasSerial = b.serial_no && b.serial_no.trim() !== '' ? 1 : 0;
+        return bHasSerial - aHasSerial; // 내림차순 (있는 게 위로)
+    });
+
+    // 4. HTML 생성 (스크롤 적용: max-h-96 overflow-y-auto)
+    let html = `<div class="grid grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">`;
+
+    // 왼쪽: 입고 및 시리얼 현황
+    html += `<div>
+        <h3 class="font-bold text-sm mb-2 text-blue-700"><i class="fa-solid fa-box-open"></i> 입고 및 시리얼 현황</h3>
+        <table class="w-full text-xs text-left border-collapse border">
+            <thead class="bg-blue-50"><tr><th class="p-2 border">입고일</th><th class="p-2 border">시리얼번호</th><th class="p-2 border text-right">수량</th></tr></thead>
+            <tbody>`;
+    
+    if (sortedPurchases.length === 0) html += `<tr><td colspan="3" class="p-2 text-center text-gray-400">입고 내역 없음</td></tr>`;
+    else {
+        sortedPurchases.forEach(p => {
+            const serialDisplay = p.serial_no ? `<span class="font-bold text-blue-600">${p.serial_no}</span>` : '<span class="text-gray-300">-</span>';
+            html += `<tr><td class="p-2 border">${p.date}</td><td class="p-2 border">${serialDisplay}</td><td class="p-2 border text-right">${p.qty}</td></tr>`;
+        });
+    }
+    html += `</tbody></table></div>`;
+
+    // 오른쪽: 출고 예약 현황
+    html += `<div>
+        <h3 class="font-bold text-sm mb-2 text-red-700"><i class="fa-solid fa-truck-ramp-box"></i> 출고 예약 현황</h3>
+        <table class="w-full text-xs text-left border-collapse border">
+            <thead class="bg-red-50"><tr><th class="p-2 border">수주일자</th><th class="p-2 border">거래처</th><th class="p-2 border text-right">예약</th></tr></thead>
+            <tbody>`;
+            
+    if (reservedList.length === 0) html += `<tr><td colspan="3" class="p-2 text-center text-gray-400">예약 내역 없음</td></tr>`;
+    else {
+        reservedList.forEach(r => {
+            html += `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border">${r.partner}</td><td class="p-2 border text-right font-bold text-red-500">${r.qty}</td></tr>`;
+        });
+    }
+    html += `</tbody></table></div></div>`;
+    
+    html += `<div class="mt-6 text-right"><button onclick="closeModal()" class="bg-slate-600 text-white px-6 py-2 rounded font-bold hover:bg-slate-700">닫기</button></div>`;
+    
+    body.innerHTML = html;
+}
         
         async function updateInventory(id) { 
             const note = document.getElementById(`note_${id}`).value; 
