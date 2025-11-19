@@ -817,26 +817,23 @@
             <button onclick="saveComplexData('${tab}')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg">문서 저장</button>
             <datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`; 
         }
+        function addItemToGrid(tab) {
             const name = el('iName'); 
             const qty = parseInt(el('iQty'))||0; 
             const price = parseInt(el('iPrice'))||0;
-            const spec = el('iSpec');
+            const spec = el('iSpec').value; // [수정] .value를 붙여야 값을 가져옵니다.
             
             if(!name || qty <= 0) return alert("품목명과 수량을 확인해주세요.");
         
             // 품목 리스트에 있는지 확인 (정보 가져오기 용도)
             const prod = productList.find(p => p.name === name);
             
-            // [삭제됨] 재고 체크 및 미등록 차단 코드 제거 완료
-            
             const supply = qty * price; 
             const vat = Math.floor(supply * 0.1); 
             const total = supply + vat;
             
             // 품목 정보가 있으면 가져오고, 없으면 빈칸이나 EA로 기본 설정
-            //const spec = prod ? prod.spec : '';
             const unit = prod ? prod.unit : 'EA';
-            
         
             tempItems.push({ name, qty, price, supply, vat, total, spec, unit });
             
