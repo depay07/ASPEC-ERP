@@ -97,7 +97,7 @@
     line-height: 1.4;
     word-break: keep-all;
 }
-            .print-header-cell { text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid black; font-size: 14px; background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; }-weigh
+            .print-header-cell { text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid black; font-size: 14px; background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; }
 
             .print-items-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
             .print-items-table th { border: 1px solid black; background-color: #f3f3f3 !important; padding: 5px; text-align: center; -webkit-print-color-adjust: exact; }
@@ -337,7 +337,7 @@
             else if (tab === 'products') html += `<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'purchase_orders') html += `<thead><tr><th style="width:12%">PO#</th><th style="width:15%">납품업체</th><th style="width:15%">EndUser</th><th>품목요약</th><th style="width:12%">총액</th><th style="width:10%">일자</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'purchases') html += `<thead><tr><th style="width:10%">일자</th><th style="width:15%">매입처</th><th>품목명</th><th style="width:6%">수량</th><th style="width:10%">단가</th><th style="width:10%">합계</th><th style="width:10%">시리얼</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
-            else if (tab === 'inventory') html += `<thead><tr><th style="width:12%">품목코드</th><th style="width:20%">품목명</th><th>규격</th><th style="width:6%">단위</th><th style="width:8%">실재고</th><th style="width:10%">최근입고</th><th style="width:10%">시리얼</th><th>비고</th><th style="width:12%">예약</th><th style="width:6%">저장</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'inventory') html += `<thead><tr><th style="width:12%">품목코드</th><th style="width:20%">품목명</th><th>규격</th><th style="width:6%">단위</th><th style="width:8%">총재고</th><th style="width:8%">가용재고</th><th>비고</th><th style="width:15%">예약현황</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else html += `<thead><tr><th style="width:10%">일자</th><th style="width:18%">거래처</th><th style="width:12%">담당자</th><th style="width:12%">공급가액</th><th style="width:10%">부가세</th><th style="width:12%">합계</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             
             html += `</table></div>`;
