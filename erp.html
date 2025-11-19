@@ -158,9 +158,7 @@
                 </tfoot>
             </table>
 
-            <div style="margin-top: 30px; text-align: center; font-size: 14px;">
-                위와 같이 <span id="p_end_text">견적</span>합니다.
-            </div>
+            
         </div>
     </div>
 
@@ -446,80 +444,145 @@
             }
         }
 
-        function printDocument(tab, dataId) {
-            const row = getRowData(dataId);
-            if(!row) return alert('데이터 오류');
-            
-            const isPO = (tab === 'purchase_orders');
-            
-            let titleKo = "거 래 명 세 서", titleEn = "TRANSACTION STATEMENT", endText = "거래";
-            if(tab === 'quotes') { titleKo = "견 적 서"; titleEn = "QUOTATION"; endText = "견적"; }
-            else if(tab === 'orders') { titleKo = "주 문 서"; titleEn = "ORDER SHEET"; endText = "주문"; }
-            else if(tab === 'purchase_orders') { titleKo = "발 주 서"; titleEn = "PURCHASE ORDER"; endText = "발주"; }
+        // [중요] async 키워드가 추가되었습니다.
+async function printDocument(tab, dataId) {
+    const row = getRowData(dataId);
+    if (!row) return alert('데이터 오류');
 
-            document.getElementById('p_title_ko').innerText = titleKo;
-            document.getElementById('p_title_en').innerText = titleEn;
-            document.getElementById('p_end_text').innerText = endText;
-            document.getElementById('p_date').innerText = row.date;
-            
-            const d = new Date(row.date);
-            const yymmdd = d.getFullYear().toString().slice(2) + (d.getMonth()+1).toString().padStart(2,'0') + d.getDate().toString().padStart(2,'0');
-            document.getElementById('p_no').innerText = isPO ? (row.po_number || '') : `ASPEC-${yymmdd}-${String(row.id).padStart(2,'0')}`;
-            
-            if(tab === 'quotes') {
-                const validDate = new Date(d); validDate.setDate(d.getDate()+14);
-                document.getElementById('p_valid_date').innerText = validDate.toISOString().split('T')[0];
-                document.getElementById('p_valid_date_row').style.display = 'block';
-            } else {
-                document.getElementById('p_valid_date_row').style.display = 'none';
-            }
+    const isPO = (tab === 'purchase_orders');
+    
+    // 1. 타이틀 및 접두어 설정
+    let titleKo = "거 래 명 세 서", titleEn = "TRANSACTION STATEMENT";
+    let prefix = "T"; // 기본값
 
-            if (isPO) {
-                document.getElementById('p_left_role').innerText = "공 급 받 는 자";
-                document.getElementById('p_left_name').innerText = row.partner_name;
-                document.getElementById('p_left_manager').innerText = row.manager || ''; 
-                document.getElementById('p_left_email').innerText = ""; 
-                document.getElementById('p_left_phone').innerText = "";
-                // [수정됨] 에러 유발 코드 제거 (p_left_tel)
-                document.getElementById('p_left_addr').innerText = "";
-                
-                document.getElementById('p_right_role').innerText = "공 급 자";
-                document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
-                document.getElementById('p_right_manager').innerText = "이창현";
-                document.getElementById('p_right_email').innerText = currentUserEmail;
-                document.getElementById('p_right_mp').innerText = "";
-            } else {
-                document.getElementById('p_left_role').innerText = "공 급 받 는 자";
-                document.getElementById('p_left_name').innerText = row.partner_name;
-                // [수정됨] 저장된 담당자와 연락처, 주소 표시
-                document.getElementById('p_left_manager').innerText = row.partner_manager || '';
-                document.getElementById('p_left_email').innerText = row.email || ''; 
-                document.getElementById('p_left_phone').innerText = row.phone || '';
-                document.getElementById('p_left_addr').innerText = row.partner_address || ''; 
-                
-                document.getElementById('p_right_role').innerText = "공 급 자";
-                document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
-                document.getElementById('p_right_manager').innerText = row.manager || '이창현';
-                document.getElementById('p_right_email').innerText = currentUserEmail;
-                document.getElementById('p_right_mp').innerText = "010-5919-1810"; 
-            }
+    if (tab === 'quotes') { 
+        titleKo = "견 적 서"; titleEn = "QUOTATION"; 
+        prefix = "Q"; // 견적서 접두어
+    } else if (tab === 'orders') { 
+        titleKo = "주 문 서"; titleEn = "ORDER SHEET"; 
+        prefix = "d"; // 주문서 접두어
+    } else if (tab === 'sales') {
+        titleKo = "거 래 명 세 서"; titleEn = "TRANSACTION STATEMENT";
+        prefix = "t"; // 판매관리(거래명세서) 접두어
+    } else if (tab === 'purchase_orders') { 
+        titleKo = "발 주 서"; titleEn = "PURCHASE ORDER"; 
+        prefix = "P"; // 발주서 접두어 (필요시 수정)
+    }
 
-            const tbody = document.getElementById('p_tbody'); tbody.innerHTML = '';
-            let sumQty=0, sumAmt=0;
-            if(row.items) {
-                row.items.forEach((item, idx) => {
-                    sumQty += parseInt(item.qty)||0; sumAmt += parseInt(item.supply)||0;
-                    tbody.innerHTML += `<tr class="items-row"><td style="text-align:center">${idx+1}</td><td>${item.name}</td><td style="font-size:10px">${item.spec||'-'}</td><td style="text-align:center">${item.unit||'EA'}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${(item.price||0).toLocaleString()}</td><td style="text-align:right">${(item.supply||0).toLocaleString()}</td></tr>`;
-                });
-            }
-            for(let i=0; i < 10 - (row.items?.length||0); i++) { tbody.innerHTML += `<tr class="items-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`; }
-            document.getElementById('p_total_qty').innerText = sumQty.toLocaleString();
-            document.getElementById('p_total_amt').innerText = "₩ " + (row.total_amount||0).toLocaleString();
-            document.getElementById('p_note').innerText = row.note || '';
+    document.getElementById('p_title_ko').innerText = titleKo;
+    document.getElementById('p_title_en').innerText = titleEn;
+    document.getElementById('p_date').innerText = row.date;
 
-            document.getElementById('printContainer').classList.remove('hidden');
-            setTimeout(() => { window.print(); document.getElementById('printContainer').classList.add('hidden'); }, 100);
+    // 2. 문서 번호 생성 로직 (일련번호 계산)
+    // 발주서(purchase_orders)는 기존 번호가 있으면 유지, 나머지는 날짜별 순번 계산
+    if (isPO && row.po_number && row.po_number.startsWith('ASPEC')) {
+        document.getElementById('p_no').innerText = row.po_number;
+    } else {
+        // [핵심 로직] 해당 날짜(row.date)에 생성된 데이터 중, 현재 ID보다 작거나 같은 개수를 셉니다.
+        // 예: 오늘 3개를 만들었고 이게 3번째면 count는 3이 됩니다.
+        const { count, error } = await supabase
+            .from(tab)
+            .select('*', { count: 'exact', head: true })
+            .eq('date', row.date)
+            .lte('id', row.id); // 내 ID보다 작거나 같은 것들의 수
+
+        if (error) {
+            alert("문서 번호 생성 중 오류 발생");
+            return;
         }
+
+        // 날짜 포맷 (YYMMDD)
+        const d = new Date(row.date);
+        const yymmdd = d.getFullYear().toString().slice(2) + 
+                       (d.getMonth() + 1).toString().padStart(2, '0') + 
+                       d.getDate().toString().padStart(2, '0');
+        
+        // 순번 포맷 (01, 02...)
+        const sequence = String(count).padStart(2, '0');
+        
+        // 최종 문서번호 조합: ASPEC-251119-Q01
+        document.getElementById('p_no').innerText = `ASPEC-${yymmdd}-${prefix}${sequence}`;
+    }
+
+    // 3. 유효기간 표시 여부
+    if (tab === 'quotes') {
+        const d = new Date(row.date);
+        const validDate = new Date(d); 
+        validDate.setDate(d.getDate() + 14);
+        document.getElementById('p_valid_date').innerText = validDate.toISOString().split('T')[0];
+        document.getElementById('p_valid_date_row').style.display = 'block';
+    } else {
+        document.getElementById('p_valid_date_row').style.display = 'none';
+    }
+
+    // 4. 공급받는자 / 공급자 정보 채우기
+    if (isPO) {
+        document.getElementById('p_left_role').innerText = "공 급 받 는 자";
+        document.getElementById('p_left_name').innerText = row.partner_name;
+        document.getElementById('p_left_manager').innerText = row.manager || ''; 
+        document.getElementById('p_left_email').innerText = ""; 
+        document.getElementById('p_left_phone').innerText = "";
+        document.getElementById('p_left_addr').innerText = "";
+        
+        document.getElementById('p_right_role').innerText = "공 급 자";
+        document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
+        document.getElementById('p_right_manager').innerText = "이창현";
+        document.getElementById('p_right_email').innerText = currentUserEmail;
+        document.getElementById('p_right_mp').innerText = "";
+    } else {
+        document.getElementById('p_left_role').innerText = "공 급 받 는 자";
+        document.getElementById('p_left_name').innerText = row.partner_name;
+        document.getElementById('p_left_manager').innerText = row.partner_manager || '';
+        document.getElementById('p_left_email').innerText = row.email || ''; 
+        document.getElementById('p_left_phone').innerText = row.phone || '';
+        document.getElementById('p_left_addr').innerText = row.partner_address || ''; 
+        
+        document.getElementById('p_right_role').innerText = "공 급 자";
+        document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
+        document.getElementById('p_right_manager').innerText = row.manager || '이창현';
+        document.getElementById('p_right_email').innerText = currentUserEmail;
+        document.getElementById('p_right_mp').innerText = "010-3795-2048"; 
+    }
+
+    // 5. 품목 테이블 렌더링
+    const tbody = document.getElementById('p_tbody'); 
+    tbody.innerHTML = '';
+    let sumQty = 0, sumAmt = 0;
+    
+    if (row.items) {
+        row.items.forEach((item, idx) => {
+            sumQty += parseInt(item.qty) || 0; 
+            sumAmt += parseInt(item.supply) || 0;
+            tbody.innerHTML += `
+                <tr class="items-row">
+                    <td style="text-align:center">${idx + 1}</td>
+                    <td>${item.name}</td>
+                    <td style="font-size:10px">${item.spec || '-'}</td>
+                    <td style="text-align:center">${item.unit || 'EA'}</td>
+                    <td style="text-align:center">${item.qty}</td>
+                    <td style="text-align:right">${(item.price || 0).toLocaleString()}</td>
+                    <td style="text-align:right">${(item.supply || 0).toLocaleString()}</td>
+                </tr>`;
+        });
+    }
+    
+    // 빈 줄 채우기 (총 10줄 유지)
+    for (let i = 0; i < 10 - (row.items?.length || 0); i++) { 
+        tbody.innerHTML += `<tr class="items-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`; 
+    }
+
+    document.getElementById('p_total_qty').innerText = sumQty.toLocaleString();
+    document.getElementById('p_total_amt').innerText = "₩ " + (row.total_amount || 0).toLocaleString();
+    document.getElementById('p_note').innerText = row.note || '';
+
+    // 6. 인쇄 실행
+    document.getElementById('printContainer').classList.remove('hidden');
+    // 렌더링 시간을 위해 약간의 지연 후 인쇄
+    setTimeout(() => { 
+        window.print(); 
+        document.getElementById('printContainer').classList.add('hidden'); 
+    }, 100);
+}
 
         function getTitle(tab) { const map = {'partners':'거래처','products':'품목','purchase_orders':'발주','purchases':'구매(입고)','quotes':'견적','orders':'주문','sales':'판매'}; return map[tab] || ''; }
         function closeModal() { document.getElementById('genericModal').classList.remove('active'); }
