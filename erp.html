@@ -32,14 +32,15 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
 
-        /* [추가] 달력 스타일 커스텀 */
+        /* [수정] 달력 스타일 - 화면 높이에 맞춤 */
         .fc-event { cursor: pointer; font-size: 12px; border: none; padding: 2px; }
-        .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 800 !important; color: #1e293b; }
+        .fc-toolbar-title { font-size: 1.2rem !important; font-weight: 800 !important; color: #1e293b; }
         .fc-daygrid-day-number { font-size: 13px; color: #333; text-decoration: none; padding: 4px 8px; }
         .fc-col-header-cell-cushion { text-decoration: none; color: #64748b; font-weight: bold; padding: 8px 0; }
         .fc .fc-button-primary { background-color: #2563eb; border-color: #2563eb; }
         .fc .fc-button-primary:hover { background-color: #1d4ed8; border-color: #1d4ed8; }
-        #calendar { min-height: 700px; }
+        /* 높이를 화면 크기에 맞춰 자동 조절 (스크롤 방지) */
+        #calendar { height: calc(100vh - 140px); }
 
         /* 인쇄 전용 스타일 */
         @media print {
@@ -84,7 +85,7 @@
             <nav class="flex-1 py-4 overflow-y-auto text-base">
                 <button onclick="switchTab('dashboard')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3 bg-slate-800 text-white font-bold"><i class="fa-solid fa-house w-5"></i> 홈 화면</button>
                 
-                <!-- [추가] 일정 관리 메뉴 -->
+                <!-- 일정 관리 메뉴 -->
                 <button onclick="switchTab('schedule')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-regular fa-calendar-check w-5"></i> 일정 관리</button>
 
                 <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">기초 등록</div>
@@ -219,7 +220,7 @@
             if (tab === 'purchase_orders') html += `<div><span class="search-label">납품업체</span><input type="text" id="search_sPartner" class="input-box" placeholder="업체명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">EndUser</span><input type="text" id="search_sEndUser" class="input-box" placeholder="EndUser" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'purchases') html += `<div><span class="search-label">매입처</span><input type="text" id="search_sPartner" class="input-box" placeholder="매입처" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'partners') html += `<div><span class="search-label">상호명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
-            else if (tab === 'products' || tab === 'inventory') html += `<div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+            else if (tab === 'products') html += `<div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             html += `<div class="ml-auto"><button onclick="runSearch('${tab}')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded font-bold shadow transition flex items-center gap-2 text-sm"><i class="fa-solid fa-magnifying-glass"></i> 조회</button></div></div></div>`;
             panel.innerHTML = html;
@@ -259,11 +260,10 @@
                 return;
             }
 
-            // [추가] 일정 관리 탭
+            // [추가] 일정 관리 탭 (화면 높이에 맞게 자동 조절)
             if (tab === 'schedule') {
-                renderSearchPanel(tab); // 검색바 숨김
-                container.innerHTML = `<div id='calendar' class="bg-white p-4 rounded shadow h-full min-h-[600px]"></div>`;
-                // FullCalendar 렌더링 (DOM이 생성된 후 실행)
+                renderSearchPanel(tab);
+                container.innerHTML = `<div id='calendar' class="bg-white p-4 rounded shadow"></div>`;
                 setTimeout(renderCalendar, 100);
                 return;
             }
@@ -399,7 +399,7 @@
                 const fileInput = document.getElementById('pFile');
                 if (fileInput && fileInput.files.length > 0) {
                     const file = fileInput.files[0]; const fileName = `biz_${Date.now()}.${file.name.split('.').pop()}`; 
-                    // [수정] 버킷 이름을 'erp'로 확정
+                    // [수정] 버킷 이름을 'erp'로 확정 (고객 요청)
                     const { data: uploadData, error: uploadError } = await supabase.storage.from('erp').upload(fileName, file);
                     if (uploadError) { alert("파일 업로드 실패: " + uploadError.message); return; }
                     const { data: publicUrlData } = supabase.storage.from('erp').getPublicUrl(fileName);
@@ -647,10 +647,8 @@
         // [추가] 일정 관리 로직 (FullCalendar v6)
         async function renderCalendar() {
             const calendarEl = document.getElementById('calendar');
-            // schedules 테이블에서 일정 조회
             const { data: events } = await supabase.from('schedules').select('*');
 
-            // FullCalendar 이벤트 포맷으로 변환
             const fcEvents = (events || []).map(e => ({
                 id: e.id,
                 title: e.title,
@@ -661,7 +659,6 @@
                 extendedProps: { memo: e.memo }
             }));
 
-            // 달력 초기화
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'ko', // 한글 설정
@@ -694,7 +691,9 @@
                          start_date: info.event.startStr,
                          end_date: info.event.endStr 
                      }).eq('id', info.event.id);
-                }
+                },
+                // [추가] 화면 높이에 맞춰 캘린더 자동 조정
+                height: '100%' 
             });
             calendar.render();
         }
