@@ -26,115 +26,119 @@
         .search-panel { background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .search-label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 6px; display: block; text-transform: uppercase; }
 
+        /* 인쇄 전용 스타일 */
         @media print {
-    @page { size: A4; margin: 10mm; }
-    body { margin: 0; padding: 0; background: white; }
-    body * { visibility: hidden; }
-    
-    #printContainer, #printContainer * { 
-        visibility: visible; 
-        box-sizing: border-box; 
-    }
-
-    #printContainer { 
-        position: absolute; left: 0; top: 0; width: 100%;
-        font-family: "Malgun Gothic", dotum, sans-serif; color: black !important;
-    }
-    
-    .print-wrap { width: 100%; margin: 0 auto; }
-    
-    .print-title-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom: 5px; }
-    .print-title-main { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
-    .print-title-sub { font-size: 16px; font-weight: normal; font-style: italic; margin-left: 10px; }
-    .print-meta { text-align: right; font-size: 11px; line-height: 1.4; }
-
-    /* 상단 그리드 박스 */
-    .print-grid-box { 
-        display: flex; 
-        width: 100%; 
-        border: 1px solid black; 
-        margin-bottom: 10px;
-    }
-
-    .print-half { 
-        width: 50%; 
-        padding: 0;
-        flex: 1;
-    }
-
-    /* 중앙 세로선 */
-    .print-half:first-child { 
-        border-right: 1px solid black; 
-    }
-
-    /* 정보 테이블 */
-    .print-info-table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        font-size: 11px; 
-        table-layout: fixed; 
-        border: none;
-    }
-
-    .print-info-table th { 
-        background-color: #f3f3f3 !important; 
-        text-align: center; 
-        padding: 5px; 
-        border-bottom: 1px solid black; 
-        border-right: 1px solid black;
-        width: 20%; 
-        font-weight: bold; 
-        height: 30px; 
-        -webkit-print-color-adjust: exact; 
-    }
-
-    .print-info-table td { 
-        padding: 2px 5px; 
-        border-bottom: 1px solid black; 
-        height: 30px; 
-        vertical-align: middle; 
-        font-size: 11px;
-        word-break: break-all;
-        overflow: hidden;
-    }
-
-    .print-header-cell { 
-        text-align: center; font-weight: bold; padding: 5px; 
-        border-bottom: 1px solid black; font-size: 14px; 
-        background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; 
-    }
-
-    /* 품목 테이블 */
-    .print-items-table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        margin-top: 10px; 
-        font-size: 11px; 
-        table-layout: fixed; 
-    }
-
-    .print-items-table th { 
-        border: 1px solid black; 
-        background-color: #f3f3f3 !important; 
-        padding: 5px; 
-        text-align: center; 
-        -webkit-print-color-adjust: exact; 
-    }
-
-    .print-items-table td { 
-        border: 1px solid black; 
-        padding: 5px; 
-        min-height: 25px; 
-        word-break: keep-all;
-        white-space: normal;
-        vertical-align: middle;
-    }
-}
-            .print-header-cell { text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid black; font-size: 14px; background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; }
-
-            .print-items-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-            .print-items-table th { border: 1px solid black; background-color: #f3f3f3 !important; padding: 5px; text-align: center; -webkit-print-color-adjust: exact; }
-            .print-items-table td { border: 1px solid black; padding: 5px; height: 25px; }
+            @page { size: A4; margin: 10mm; }
+            body { margin: 0; padding: 0; background: white; }
+            body * { visibility: hidden; }
+            
+            /* 인쇄 영역 보이기 및 박스 크기 계산 고정 */
+            #printContainer, #printContainer * { 
+                visibility: visible; 
+                box-sizing: border-box; 
+            }
+        
+            #printContainer { 
+                position: absolute; left: 0; top: 0; width: 100%;
+                font-family: "Malgun Gothic", dotum, sans-serif; color: black !important;
+            }
+            
+            .print-wrap { width: 100%; margin: 0 auto; }
+            
+            .print-title-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom: 5px; }
+            .print-title-main { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
+            .print-title-sub { font-size: 16px; font-weight: normal; font-style: italic; margin-left: 10px; }
+            .print-meta { text-align: right; font-size: 11px; line-height: 1.4; }
+        
+            /* 상단 그리드 박스 (공급자/받는자) */
+            .print-grid-box { 
+                display: flex; 
+                width: 100%; 
+                border: 1px solid black; 
+                margin-bottom: 10px;
+            }
+        
+            .print-half { 
+                width: 50%; 
+                padding: 0;
+                flex: 1;
+            }
+        
+            /* 중앙 세로선 (칸막이 역할) */
+            .print-half:first-child { 
+                border-right: 1px solid black; 
+            }
+        
+            /* 정보 테이블 (내부) */
+            .print-info-table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                font-size: 11px; 
+                table-layout: fixed; 
+                border: none;
+            }
+        
+            .print-info-table th { 
+                background-color: #f3f3f3 !important; 
+                text-align: center; 
+                padding: 5px; 
+                border-bottom: 1px solid black; 
+                border-right: 1px solid black;
+                width: 20%; 
+                font-weight: bold; 
+                height: 30px; 
+                -webkit-print-color-adjust: exact; 
+            }
+        
+            .print-info-table td { 
+                padding: 2px 5px; 
+                border-bottom: 1px solid black; 
+                height: 30px; 
+                vertical-align: middle; 
+                font-size: 11px;
+                word-break: break-all;
+                overflow: hidden;
+            }
+        
+            .print-header-cell { 
+                text-align: center; font-weight: bold; padding: 5px; 
+                border-bottom: 1px solid black; font-size: 14px; 
+                background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; 
+            }
+        
+            /* 품목 테이블 */
+            .print-items-table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin-top: 10px; 
+                font-size: 11px; 
+                table-layout: fixed; 
+            }
+        
+            .print-items-table th { 
+                border: 1px solid black; 
+                background-color: #f3f3f3 !important; 
+                padding: 5px; 
+                text-align: center; 
+                -webkit-print-color-adjust: exact; 
+            }
+        
+            .print-items-table td { 
+                border: 1px solid black; 
+                padding: 5px; 
+                min-height: 25px; 
+                word-break: keep-all;
+                white-space: normal;
+                vertical-align: middle;
+            }
+            
+            /* [중요] 주소 칸 높이 강제 고정 (좌우 대칭용) */
+            .addr-cell {
+                height: 55px !important; 
+                vertical-align: top !important;
+                padding-top: 5px !important;
+                line-height: 1.4;
+            }
         }
     </style>
 </head>
@@ -171,11 +175,91 @@
     <div id="genericModal" class="modal no-print"><div class="modal-content"><div class="flex justify-between items-center mb-6 border-b pb-4"><h2 id="modalTitle" class="text-2xl font-bold text-slate-800">입력</h2><button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-2xl"></i></button></div><div id="modalBody"></div></div></div>
     <div id="loadDataModal" class="modal no-print" style="z-index: 60;"><div class="modal-content" style="max-width: 800px;"><h3 class="text-xl font-bold mb-4" id="loadModalTitle">데이터 불러오기</h3><div class="overflow-y-auto max-h-96 border rounded"><table class="w-full text-left text-sm"><thead class="bg-slate-50"><tr><th class="p-3">날짜</th><th class="p-3">거래처</th><th class="p-3">총액</th><th class="p-3">선택</th></tr></thead><tbody id="loadDataBody"></tbody></table></div><div class="mt-6 text-right"><button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="px-6 py-2 bg-slate-200 rounded text-sm font-bold">닫기</button></div></div></div>
 
+    <div id="printContainer" class="hidden">
+        <div class="print-wrap">
+            <div class="print-title-area">
+                <div>
+                    <span id="p_title_ko" class="print-title-main">견 적 서</span>
+                    <span id="p_title_en" class="print-title-sub">QUOTATION</span>
+                </div>
+                <div class="print-meta">
+                    <div>문서번호: <span id="p_no"></span></div>
+                    <div>작성일자: <span id="p_date"></span></div>
+                    <div id="p_valid_date_row">유효기간: <span id="p_valid_date"></span></div>
+                </div>
+            </div>
     
+            <div class="print-grid-box">
+                <div class="print-half">
+                    <div class="print-header-cell" id="p_left_role">공 급 받 는 자</div>
+                    <table class="print-info-table">
+                        <colgroup><col style="width: 20%;"><col style="width: 80%;"></colgroup>
+                        <tr><th>상호</th><td id="p_left_name"></td></tr>
+                        <tr><th>주소</th><td id="p_left_addr" class="addr-cell"></td></tr>
+                        <tr><th>담당자</th><td id="p_left_manager"></td></tr>
+                        <tr><th>TEL</th><td id="p_left_phone"></td></tr>
+                        <tr><th>E-mail</th><td id="p_left_email" style="border-bottom: none;"></td></tr>
+                    </table>
+                </div>
+            
+                <div class="print-half">
+                    <div class="print-header-cell" id="p_right_role">공 급 자</div>
+                    <table class="print-info-table">
+                        <colgroup><col style="width: 20%;"><col style="width: 80%;"></colgroup>
+                        <tr><th>상호</th><td id="p_right_name">아스펙 (ASPEC)</td></tr>
+                        <tr><th>주소</th><td class="addr-cell" style="font-size: 10px;">경기도 화성시 메타폴리스로 42, 9층 902호<br>(반송동, 디앤씨빌딩)</td></tr>                        
+                        <tr><th>담당자</th><td id="p_right_manager"></td></tr>
+                        <tr><th>TEL</th><td id="p_right_mp"></td></tr>
+                        <tr><th>E-mail</th><td id="p_right_email" style="border-bottom: none;"></td></tr>
+                    </table>
+                </div>
+            </div>
+    
+            <table class="print-items-table">
+                <colgroup>
+                    <col style="width: 5%;"> 
+                    <col style="width: 25%;"> 
+                    <col style="width: 30%;"> <col style="width: 8%;"> 
+                    <col style="width: 8%;"> 
+                    <col style="width: 12%;"> 
+                    <col style="width: 12%;"> 
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>품명</th>
+                        <th>규격</th>
+                        <th>단위</th>
+                        <th>수량</th>
+                        <th>단가</th>
+                        <th>공급가액</th>
+                    </tr>
+                </thead>
+                <tbody id="p_tbody"></tbody>
+                <tfoot>
+                    <tr style="background: #f8f8f8; font-weight: bold;">
+                        <td colspan="4" style="text-align: center; border-right: 1px solid black;">합 계 (Total)</td>
+                        <td style="text-align: center; border-right: 1px solid black;" id="p_total_qty"></td>
+                        <td style="text-align: right; border-right: 1px solid black;">VAT 포함</td>
+                        <td style="text-align: right;" id="p_total_amt"></td>
+                    </tr>
+                    <tr style="background: #fff; border-top: 2px double black;">
+                        <td colspan="7" style="padding: 10px; text-align: left;">
+                            <strong>[비고]</strong> <span id="p_note"></span>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
 
     <script>
+        // ==========================================
+        // [설정] Supabase URL / KEY 입력
+        // ==========================================
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
+        // ==========================================
 
         if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_URL')) alert("API 키를 설정해주세요.");
 
@@ -196,7 +280,6 @@
             switchTab('partners'); 
         } 
         catch (e) { 
-            // [수정됨] alert 대신 console.error 사용 (사용자에게 팝업 안 띄움)
             console.error("초기화 오류 (일시적일 수 있음): ", e); 
         }
     };
@@ -331,12 +414,9 @@
                 actions += '</div>';
 
                 if (tab === 'partners') {
-                    // 1. 파일 URL이 있으면 아이콘 HTML 생성, 없으면 빈 문자열
                     const fileIcon = row.biz_file_url 
                         ? `<a href="${row.biz_file_url}" target="_blank" class="text-green-600 hover:text-green-800 ml-2" title="사업자등록증 보기"><i class="fa-solid fa-file-pdf"></i></a>` 
                         : '';
-                
-                    // 2. 상호명 옆에 ${fileIcon}을 추가하여 표시
                     tr += `<td>${row.name} ${fileIcon}</td><td class="text-center">${row.manager_name||'-'}</td><td class="text-center">${row.phone||'-'}</td><td>${row.note||''}</td><td>${actions}</td>`;
                 }
                 else if (tab === 'products') tr += `<td class="font-mono text-center text-cyan-600">${row.code}</td><td>${row.name}</td><td>${row.spec||'-'}</td><td class="text-center font-bold text-slate-600">${row.unit||'EA'}</td><td>${actions}</td>`;
@@ -368,7 +448,6 @@
                     document.getElementById('pEmail').value = row.email||''; 
                     document.getElementById('pAddr').value = row.address||'';
                     document.getElementById('pNote').value = row.note||''; 
-                    // [추가됨] 저장된 파일이 있으면 '보기' 링크 표시
                     const linkDiv = document.getElementById('pCurrentFileLink');
                     if(row.biz_file_url) {
                         linkDiv.innerHTML = `<a href="${row.biz_file_url}" target="_blank" class="text-blue-600 hover:underline font-bold ml-2">[기존 파일 보기]</a>`;
@@ -406,7 +485,6 @@
             }, 50);
         }
 
-        // [수정됨] async 함수로 변경하고 PO 번호 생성 로직 수정
         async function openNewModal(tab, isEdit = false) {
             if(!isEdit) { currentEditId = null; tempItems = []; }
             const modal = document.getElementById('genericModal');
@@ -425,7 +503,6 @@
                     autoPO = `ASPEC-${yymmdd}-P${seqStr}`;
                 }
                 
-                // [수정됨] 이메일과 비고를 한 줄에 배치, 주소 영역 조정
                 html = `<div class="bg-slate-50 p-4 rounded mb-4 border">
                     <div class="grid grid-cols-3 gap-3 mb-2">
                         <div><label class="text-xs text-slate-500">PO# (자동생성)</label><input id="poNum" class="input-box bg-gray-100" value="${autoPO}"></div>
@@ -486,27 +563,22 @@
             return true;
         }
 
-        // [수정 위치] saveSimpleData 함수 전체를 아래 코드로 교체하세요. (async 처리 필요)
-
         async function saveSimpleData(tab) {
             let data = {};
         
             if(tab === 'partners') {
-                // 1. 기본 데이터 수집
                 data = { 
                     name: el('pName'), biz_num: el('pBiz'), owner_name: el('pOwner'), 
                     manager_name: el('pManager'), phone: el('pPhone'), email: el('pEmail'), 
                     address: el('pAddr'), note: el('pNote') 
                 };
         
-                // 2. 파일 업로드 로직 추가
                 const fileInput = document.getElementById('pFile');
                 if (fileInput && fileInput.files.length > 0) {
                     const file = fileInput.files[0];
                     const fileExt = file.name.split('.').pop();
-                    const fileName = `biz_${Date.now()}.${fileExt}`; // 파일명 중복 방지
+                    const fileName = `biz_${Date.now()}.${fileExt}`; 
                     
-                    // Supabase Storage에 업로드 ('erp-files'는 1단계에서 만든 버킷 이름)
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('erp')
                         .upload(fileName, file);
@@ -516,19 +588,17 @@
                         return;
                     }
         
-                    // 업로드된 파일의 공개 URL 가져오기
                     const { data: publicUrlData } = supabase.storage
                         .from('erp')
                         .getPublicUrl(fileName);
                     
-                    data.biz_file_url = publicUrlData.publicUrl; // DB에 저장할 URL
+                    data.biz_file_url = publicUrlData.publicUrl; 
                 }
             }
             else if(tab === 'products') {
                 data = { name: el('prodName'), code: el('prodCode'), spec: el('prodSpec'), unit: el('prodUnit') };
             }
         
-            // 데이터 저장
             if(await saveData(tab, data)) { 
                 closeModal(); 
                 runSearch(tab); 
@@ -687,11 +757,11 @@
 
         function fillProd(val) { 
             const f = productList.find(x=>x.name===val); 
-            // [수정됨] 품목 선택 시 규격(iSpec) 자동 입력
             if(f) {
                 if(document.getElementById('iSpec')) document.getElementById('iSpec').value = f.spec || '';
             }
         }
+        
         async function loadInventoryData(isSearch = false) {
             const tbody = document.getElementById('listBody'); 
             const ordersRes = await supabase.from('orders').select('*'); 
@@ -704,11 +774,6 @@
                 const sCode = document.getElementById('search_sCode').value.toLowerCase();
                 filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true));
             }
-            
-            // 헤더 변경이 필요하므로 HTML의 inventory 탭 <thead> 부분도 수정해야 하지만,
-            // 일단 스크립트에서 테이블을 그릴 때 처리하겠습니다.
-            // HTML의 switchTab 함수 내 inventory thead 부분을 아래와 같이 컬럼을 맞춰주세요.
-            // <th>품목코드</th><th>품목명</th><th>규격</th><th>단위</th><th>총재고</th><th>가용재고</th><th>비고</th><th>예약현황</th><th>관리</th>
             
             filteredProducts.forEach(prod => {
                 let reservedQty = 0; 
@@ -725,7 +790,6 @@
                     } 
                 });
                 
-                // 가용재고 계산 (총재고 - 예약된 수량)
                 const availableStock = prod.stock - reservedQty;
                 const stockClass = availableStock < 0 ? 'text-red-600' : 'text-blue-600';
                 
@@ -739,17 +803,12 @@
                     <td class="font-bold">${prod.name}</td>
                     <td>${prod.spec||''}</td>
                     <td class="text-center text-xs">${prod.unit||'EA'}</td>
-                    
                     <td class="text-center">
                         <input type="number" id="stock_${prod.id}" value="${prod.stock}" class="border rounded px-2 py-1 w-16 text-center font-bold">
                     </td>
-                    
                     <td class="text-center font-bold ${stockClass}">${availableStock}</td>
-                    
                     <td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td>
-                    
                     <td class="text-xs text-center">${reservedText}</td>
-                    
                     <td class="text-center flex gap-1 justify-center">
                         <button onclick="showInventoryDetail(${prod.id})" class="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600">상세</button>
                         <button onclick="updateInventory(${prod.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">저장</button>
@@ -758,24 +817,21 @@
             });
         }
         
-        // [추가] 상세보기 버튼 클릭 시 실행될 함수
         function showInventoryDetail(id) {
             const prod = productList.find(p => p.id === id);
             if(!prod) return;
-            
             alert(`[ ${prod.name} 상세 정보 ]\n\n- 최근 입고일: ${prod.last_incoming_date || '기록 없음'}\n- 시리얼 번호: ${prod.last_serial_no || '없음'}\n- 규격: ${prod.spec || '-'}`);
         }
         
-        // [수정] 비고(Note)뿐만 아니라 재고(Stock)도 같이 업데이트
         async function updateInventory(id) { 
             const note = document.getElementById(`note_${id}`).value; 
-            const newStock = parseInt(document.getElementById(`stock_${id}`).value) || 0; // 입력된 재고 값 가져오기
+            const newStock = parseInt(document.getElementById(`stock_${id}`).value) || 0; 
         
             const { error } = await supabase
                 .from('products')
                 .update({ 
                     inventory_note: note,
-                    stock: newStock  // 재고 수량 업데이트 추가
+                    stock: newStock
                 })
                 .eq('id', id); 
                 
@@ -783,30 +839,9 @@
                 alert("저장 실패: " + error.message); 
             } else {
                 alert("재고 및 비고가 수정되었습니다.");
-                // 데이터 갱신을 위해 새로고침 (선택사항)
                 fetchData().then(() => loadInventoryData(true));
             }
         }
-        async function deleteItem(table, id) { if(!confirm("정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return; const { error } = await supabase.from(table).delete().eq('id', id); if(error) alert("삭제 실패"); else { runSearch(table); } }
-        async function openLoadModal(srcTab) { document.getElementById('loadDataModal').classList.add('active'); document.getElementById('loadModalTitle').innerText = (srcTab === 'quotes' ? '견적서' : '주문서') + ' 불러오기'; const tbody = document.getElementById('loadDataBody'); tbody.innerHTML = '<tr><td colspan="4">로딩중...</td></tr>'; const { data } = await supabase.from(srcTab).select('*').order('created_at', {ascending:false}); tbody.innerHTML = ''; if(!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4">데이터 없음</td></tr>'; return; } data.forEach(row => { tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td>${row.date}</td><td>${row.partner_name}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td><button onclick='applyDataById("${storeRowData(row)}")' class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600">선택</button></td></tr>`; }); }
-        function applyDataById(id) { const row = getRowData(id); applyData(row); }
-        function applyData(row) { 
-            document.getElementById('sPartner').value = row.partner_name || ''; 
-            document.getElementById('sManager').value = row.manager || ''; 
-            
-            if(row.partner_address || row.phone || row.partner_manager) {
-                if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
-                if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
-                if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || '';
-                if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || '';
-            } else {
-                fillPart(row.partner_name); 
-            }
-
-            if(row.items) { tempItems = row.items; renderGrid(); } 
-            document.getElementById('loadDataModal').classList.remove('active'); 
-        }
-        function logout() { supabase.auth.signOut().then(()=>window.location.href='index.html'); }
         function renderComplexForm(tab, container) {
             const today = new Date().toISOString().split('T')[0];
             let loadBtn = '';
@@ -834,7 +869,6 @@
             fillDL('dl_part', partnerList); fillDL('dl_prod', productList);
         }
         function renderItemInputArea(tab) { 
-            // [수정됨] 규격(Spec) 입력칸 추가. w-1/4, grow(나머지 채움), w-20 등 비율 조정
             return `
             <div class="bg-white border p-3 rounded mb-4 shadow-sm">
                 <div class="flex gap-2 items-end">
@@ -867,18 +901,16 @@
             const name = el('iName'); 
             const qty = parseInt(el('iQty'))||0; 
             const price = parseInt(el('iPrice'))||0;
-            const spec = el('iSpec').value; // [수정] .value를 붙여야 값을 가져옵니다.
+            const spec = el('iSpec').value; 
             
             if(!name || qty <= 0) return alert("품목명과 수량을 확인해주세요.");
         
-            // 품목 리스트에 있는지 확인 (정보 가져오기 용도)
             const prod = productList.find(p => p.name === name);
             
             const supply = qty * price; 
             const vat = Math.floor(supply * 0.1); 
             const total = supply + vat;
             
-            // 품목 정보가 있으면 가져오고, 없으면 빈칸이나 EA로 기본 설정
             const unit = prod ? prod.unit : 'EA';
         
             tempItems.push({ name, qty, price, supply, vat, total, spec, unit });
@@ -886,26 +918,16 @@
             renderGrid(); 
             document.getElementById('iName').value=''; 
             document.getElementById('iQty').value='1';
-            document.getElementById('iSpec').value=''; // 규격 칸 초기화
+            document.getElementById('iSpec').value=''; 
         }
         function renderGrid() {
-        const tbody = document.getElementById('itemGrid'); tbody.innerHTML = ''; let grandTotal = 0;
-        tempItems.forEach((item, idx) => {
-            grandTotal += item.total;
-            // [수정됨] 규격(item.spec) 컬럼 추가
-            tbody.innerHTML += `<tr>
-                <td>${item.name}</td>
-                <td class="text-left px-2 text-slate-600 text-xs">${item.spec||''}</td>
-                <td>${item.qty}</td>
-                <td>${item.price.toLocaleString()}</td>
-                <td>${item.supply.toLocaleString()}</td>
-                <td>${item.vat.toLocaleString()}</td>
-                <td class="font-bold">${item.total.toLocaleString()}</td>
-                <td onclick="tempItems.splice(${idx},1); renderGrid()" class="cursor-pointer text-red-400"><i class="fa-solid fa-trash"></i></td>
-            </tr>`;
-        });
-        document.getElementById('sGrandTotal').innerText = grandTotal.toLocaleString();
-    }
+            const tbody = document.getElementById('itemGrid'); tbody.innerHTML = ''; let grandTotal = 0;
+            tempItems.forEach((item, idx) => {
+                grandTotal += item.total;
+                tbody.innerHTML += `<tr><td>${item.name}</td><td class="text-left px-2 text-slate-600 text-xs">${item.spec||''}</td><td>${item.qty}</td><td>${item.price.toLocaleString()}</td><td>${item.supply.toLocaleString()}</td><td>${item.vat.toLocaleString()}</td><td class="font-bold">${item.total.toLocaleString()}</td><td onclick="tempItems.splice(${idx},1); renderGrid()" class="cursor-pointer text-red-400"><i class="fa-solid fa-trash"></i></td></tr>`;
+            });
+            document.getElementById('sGrandTotal').innerText = grandTotal.toLocaleString();
+        }
     </script>
 </body>
 </html>
