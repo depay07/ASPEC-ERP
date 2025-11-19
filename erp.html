@@ -272,7 +272,23 @@
             html += `</div><div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden"><table class="data-table">`;
 
             if (tab === 'partners') html += `<thead><tr><th style="width:20%">상호</th><th style="width:15%">담당자</th><th style="width:20%">전화번호</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
-            else if (tab === 'products') html += `<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'products') {html += `<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+                
+                // [수정] 상단 버튼 영역을 다시 그려서 '세트(BOM) 관리' 버튼 추가
+                const headerBtnArea = container.previousElementSibling; // h2 태그가 있는 div
+                if (headerBtnArea) {
+                    headerBtnArea.innerHTML = `
+                        <h2 class="text-3xl font-bold text-slate-800 border-l-8 border-cyan-500 pl-4">품목 관리</h2>
+                        <div class="flex gap-2">
+                            <button onclick="openBOMModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-layer-group"></i> 세트(BOM) 관리
+                            </button>
+                            <button onclick="openNewModal('products')" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> 신규 등록
+                            </button>
+                        </div>`;
+                }
+            }
             else if (tab === 'purchase_orders') html += `<thead><tr><th style="width:12%">PO#</th><th style="width:15%">납품업체</th><th style="width:15%">EndUser</th><th>품목요약</th><th style="width:12%">총액</th><th style="width:10%">일자</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'purchases') html += `<thead><tr><th style="width:10%">일자</th><th style="width:10%">제조사</th><th style="width:15%">매입처</th><th>품목명</th><th style="width:6%">수량</th><th style="width:10%">단가</th><th style="width:10%">합계</th><th style="width:10%">시리얼</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'inventory') html += `<thead>
@@ -863,28 +879,115 @@ async function openInventoryDetailModal(prodName) {
         }
 
         // [신규] 구매 관리 전용: 그리드 렌더링 함수
-function renderPurchaseGrid() {
-    const tbody = document.getElementById('purItemGrid');
-    tbody.innerHTML = '';
-    let grandTotal = 0;
-
-    tempItems.forEach((item, idx) => {
-        grandTotal += item.total_amount;
-        tbody.innerHTML += `
-            <tr>
-                <td>${item.name}</td>
-                <td>${item.manufacturer || '-'}</td>
-                <td>${item.serial_no || '-'}</td>
-                <td>${item.qty}</td>
-                <td>${item.unit_price.toLocaleString()}</td>
-                <td class="font-bold">${item.total_amount.toLocaleString()}</td>
-                <td onclick="tempItems.splice(${idx},1); renderPurchaseGrid()" class="cursor-pointer text-red-400"><i class="fa-solid fa-trash"></i></td>
-            </tr>
-        `;
-    });
-    document.getElementById('purGrandTotal').innerText = grandTotal.toLocaleString();
-}
+        function renderPurchaseGrid() {
+            const tbody = document.getElementById('purItemGrid');
+            tbody.innerHTML = '';
+            let grandTotal = 0;
         
+            tempItems.forEach((item, idx) => {
+                grandTotal += item.total_amount;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.manufacturer || '-'}</td>
+                        <td>${item.serial_no || '-'}</td>
+                        <td>${item.qty}</td>
+                        <td>${item.unit_price.toLocaleString()}</td>
+                        <td class="font-bold">${item.total_amount.toLocaleString()}</td>
+                        <td onclick="tempItems.splice(${idx},1); renderPurchaseGrid()" class="cursor-pointer text-red-400"><i class="fa-solid fa-trash"></i></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('purGrandTotal').innerText = grandTotal.toLocaleString();
+        }
+        // [신규] 세트(BOM) 관리 팝업 열기
+        async function openBOMModal() {
+            const modal = document.getElementById('genericModal');
+            document.getElementById('modalTitle').innerText = "세트(BOM) 구성 관리";
+            const body = document.getElementById('modalBody');
+            modal.classList.add('active');
+        
+            // BOM 데이터 불러오기
+            const { data: bomList } = await supabase.from('bom').select('*').order('parent_name');
+        
+            let html = `
+            <div class="bg-purple-50 p-4 rounded border border-purple-200 mb-4">
+                <p class="text-sm text-purple-700 mb-2 font-bold"><i class="fa-solid fa-circle-info"></i> 세트 품목 등록 방법</p>
+                <div class="flex gap-2 items-end">
+                    <div class="flex-1">
+                        <label class="text-xs text-slate-500">세트 품목 (보여지는 것)</label>
+                        <input id="bomParent" class="input-box" list="dl_prod" placeholder="예: 머신시스템">
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-xs text-slate-500">구성 부품 (실제 나가는 것)</label>
+                        <input id="bomChild" class="input-box" list="dl_prod" placeholder="예: IS모델">
+                    </div>
+                    <div class="w-20">
+                        <label class="text-xs text-slate-500">소요 수량</label>
+                        <input type="number" id="bomQty" class="input-box" value="1">
+                    </div>
+                    <button onclick="saveBOM()" class="bg-purple-600 text-white px-4 py-2 rounded font-bold text-sm h-9 hover:bg-purple-700">추가</button>
+                </div>
+            </div>
+        
+            <div class="overflow-y-auto max-h-96">
+                <table class="w-full text-sm text-left border-collapse border">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="p-2 border">세트 품목명</th>
+                            <th class="p-2 border">구성 부품명</th>
+                            <th class="p-2 border text-center">수량</th>
+                            <th class="p-2 border text-center">삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+        
+            if (!bomList || bomList.length === 0) {
+                html += `<tr><td colspan="4" class="p-4 text-center text-gray-400">등록된 세트 구성이 없습니다.</td></tr>`;
+            } else {
+                bomList.forEach(item => {
+                    html += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2 border font-bold text-purple-700">${item.parent_name}</td>
+                        <td class="p-2 border">${item.child_name}</td>
+                        <td class="p-2 border text-center">${item.qty}</td>
+                        <td class="p-2 border text-center">
+                            <button onclick="deleteBOM(${item.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                });
+            }
+            html += `</tbody></table></div>
+            <datalist id="dl_prod">${productList.map(p => `<option value="${p.name}">`).join('')}</datalist>`; // 품목 자동완성 연결
+        
+            body.innerHTML = html;
+        }
+        
+        // [신규] BOM 저장
+        async function saveBOM() {
+            const parent = document.getElementById('bomParent').value;
+            const child = document.getElementById('bomChild').value;
+            const qty = parseInt(document.getElementById('bomQty').value) || 0;
+        
+            if (!parent || !child || qty <= 0) return alert("모든 항목을 정확히 입력해주세요.");
+        
+            const { error } = await supabase.from('bom').insert({ 
+                parent_name: parent, 
+                child_name: child, 
+                qty: qty 
+            });
+        
+            if (error) alert("저장 실패: " + error.message);
+            else openBOMModal(); // 화면 새로고침
+        }
+        
+        // [신규] BOM 삭제
+        async function deleteBOM(id) {
+            if (!confirm("이 구성을 삭제하시겠습니까?")) return;
+            const { error } = await supabase.from('bom').delete().eq('id', id);
+            if (error) alert("삭제 실패");
+            else openBOMModal(); // 화면 새로고침
+        }
     </script>
 </body>
 </html>
