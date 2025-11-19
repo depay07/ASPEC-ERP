@@ -511,23 +511,49 @@ async function savePurchase() {
 }
 
         async function saveComplexData(tab) {
-            if(tempItems.length === 0) return alert("품목 없음");
-            let tSupply=0, tVat=0, tTotal=0; tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
-            let dateVal = el(tab === 'purchase_orders' ? 'poDate' : 'sDate') || new Date().toISOString().split('T')[0];
-            let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: dateVal, partner_name: el('sPartner'), manager: el('sManager'), note: el('sNote') };
-            
-            if(tab === 'purchase_orders') { 
-                data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); 
-                data.partner_manager = el('poPManager'); data.phone = el('poPhone'); data.email = el('poEmail'); data.partner_address = el('poAddr');
-            } else { 
-                data.email = el('sEmail'); data.partner_manager = el('sPManager'); data.phone = el('sContact'); data.partner_address = el('sAddr'); if(tab === 'orders') data.po_number = 'AUTO'; 
-            }
-
-            if(await saveData(tab, data)) { 
-                if(tab === 'sales' && !currentEditId) { for(const item of tempItems) { const prod = productList.find(p => p.name === item.name); if(prod) await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); } }
-                alert("저장되었습니다."); closeModal(); runSearch(tab);
-            }
+    if(tempItems.length === 0) return alert("품목 없음");
+    
+    let tSupply=0, tVat=0, tTotal=0; 
+    tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
+    
+    // 입력된 날짜 가져오기
+    let dateVal = el(tab === 'purchase_orders' ? 'poDate' : 'sDate');
+    if (!dateVal) dateVal = new Date().toISOString().split('T')[0];
+    
+    let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: dateVal, partner_name: el('sPartner'), manager: el('sManager'), note: el('sNote') };
+    
+    if(tab === 'purchase_orders') { 
+        // [핵심 수정] 신규 등록일 때, 화면에 떠있는 번호 대신 '선택한 날짜' 기준으로 번호를 다시 생성하여 저장
+        if (!currentEditId) {
+            const { count } = await supabase.from(tab).select('*', { count: 'exact', head: true }).eq('date', dateVal);
+            const seq = (count || 0) + 1; // 그 날짜의 개수 + 1
+            const yymmdd = dateVal.slice(2).replace(/-/g, ''); // 251119 형식
+            data.po_number = `ASPEC-${yymmdd}-P${String(seq).padStart(2, '0')}`; // P01, P02...
+        } else {
+            data.po_number = el('poNum'); // 수정일 때는 기존 번호 유지
         }
+
+        data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); 
+        data.partner_manager = el('poPManager'); data.phone = el('poPhone'); data.email = el('poEmail'); data.partner_address = el('poAddr');
+    } else { 
+        data.email = el('sEmail'); 
+        data.partner_manager = el('sPManager'); 
+        data.phone = el('sContact');            
+        data.partner_address = el('sAddr');     
+        if(tab === 'orders') data.po_number = 'AUTO'; 
+    }
+
+    if(await saveData(tab, data)) { 
+        // 판매 관리에서 저장 시 재고 차감 로직
+        if(tab === 'sales' && !currentEditId) { 
+            for(const item of tempItems) { 
+                const prod = productList.find(p => p.name === item.name); 
+                if(prod) await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); 
+            } 
+        }
+        alert("저장되었습니다."); closeModal(); runSearch(tab);
+    }
+}
 
         async function deleteItem(table, id) { 
             if(!confirm("정말 삭제하시겠습니까?")) return; 
