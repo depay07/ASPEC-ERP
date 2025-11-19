@@ -19,7 +19,6 @@
         /* 테이블 */
         .data-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .data-table th { background-color: #e2e8f0; color: #475569; font-weight: 700; padding: 12px 8px; border-bottom: 2px solid #cbd5e1; text-align: center; font-size: 14px; }
-        /* [수정됨] text-align: center; 추가하여 데이터 중앙 정렬 */
         .data-table td { padding: 12px 8px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
         
         .input-box { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 4px; transition: all 0.2s; font-size: 14px; }
@@ -348,12 +347,10 @@
                     document.getElementById('poManager').value = row.manager||''; 
                     document.getElementById('poPreOrder').value = row.is_pre_order||''; 
                     document.getElementById('poNote').value = row.note||'';
-                    // [수정됨] PO 수정 시 거래처 정보 불러오기
                     document.getElementById('poPManager').value = row.partner_manager || '';
                     document.getElementById('poPhone').value = row.phone || '';
                     document.getElementById('poEmail').value = row.email || '';
                     document.getElementById('poAddr').value = row.partner_address || '';
-                    
                     tempItems = row.items || []; renderGrid(); 
                 }
                 else { 
@@ -361,7 +358,6 @@
                     document.getElementById('sPartner').value = row.partner_name; 
                     document.getElementById('sManager').value = row.manager||''; 
                     document.getElementById('sNote').value = row.note||''; 
-                    // [수정됨] 저장된 추가 정보 불러오기
                     if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || ''; 
                     if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || ''; 
                     if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || ''; 
@@ -371,7 +367,8 @@
             }, 50);
         }
 
-        function openNewModal(tab, isEdit = false) {
+        // [수정됨] async 함수로 변경하고 PO 번호 생성 로직 수정
+        async function openNewModal(tab, isEdit = false) {
             if(!isEdit) { currentEditId = null; tempItems = []; }
             const modal = document.getElementById('genericModal');
             document.getElementById('modalTitle').innerText = getTitle(tab) + (isEdit ? ' 수정' : ' 등록');
@@ -380,8 +377,16 @@
             let html = ''; const today = new Date().toISOString().split('T')[0];
             
             if (tab === 'purchase_orders') {
-                const autoPO = isEdit ? '' : `ASPEC-${today.slice(2).replace(/-/g,'')}-P${Math.floor(Math.random()*90+10)}`;
-                // [수정됨] 발주관리(PO)에 거래처 상세 정보 입력란 추가 (자동 채움 및 저장용)
+                let autoPO = '';
+                if (!isEdit) {
+                    // [수정됨] 발주 등록 시에도 DB에서 개수 확인 후 순차 번호 생성 (P01, P02...)
+                    const { count } = await supabase.from('purchase_orders').select('*', { count: 'exact', head: true }).eq('date', today);
+                    const nextSeq = (count || 0) + 1;
+                    const seqStr = String(nextSeq).padStart(2, '0');
+                    const yymmdd = today.slice(2).replace(/-/g,'');
+                    autoPO = `ASPEC-${yymmdd}-P${seqStr}`;
+                }
+                
                 html = `<div class="bg-slate-50 p-4 rounded mb-4 border">
                     <div class="grid grid-cols-3 gap-3 mb-2">
                         <div><label class="text-xs text-slate-500">PO# (자동생성)</label><input id="poNum" class="input-box bg-gray-100" value="${autoPO}"></div>
@@ -456,18 +461,15 @@
             
             if(tab === 'purchase_orders') { 
                 data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); 
-                // [수정됨] 발주관리도 거래처 상세정보 저장
                 data.partner_manager = el('poPManager');
                 data.phone = el('poPhone');
                 data.email = el('poEmail');
                 data.partner_address = el('poAddr');
             } else { 
-                // [수정됨] 주문/견적 저장 시 주소, 담당자, 연락처도 같이 저장
                 data.email = el('sEmail'); 
                 data.partner_manager = el('sPManager'); 
                 data.phone = el('sContact');            
                 data.partner_address = el('sAddr');     
-                
                 if(tab === 'orders') data.po_number = 'AUTO'; 
             }
 
@@ -477,95 +479,93 @@
             }
         }
 
-async function printDocument(tab, dataId) {
-    const row = getRowData(dataId);
-    if (!row) return alert('데이터 오류');
+        async function printDocument(tab, dataId) {
+            const row = getRowData(dataId);
+            if (!row) return alert('데이터 오류');
 
-    const isPO = (tab === 'purchase_orders');
-    
-    let titleKo = "거 래 명 세 서", titleEn = "TRANSACTION STATEMENT";
-    let prefix = "T"; 
+            const isPO = (tab === 'purchase_orders');
+            
+            let titleKo = "거 래 명 세 서", titleEn = "TRANSACTION STATEMENT";
+            let prefix = "T"; 
 
-    if (tab === 'quotes') { 
-        titleKo = "견 적 서"; titleEn = "QUOTATION"; prefix = "Q";
-    } else if (tab === 'orders') { 
-        titleKo = "주 문 서"; titleEn = "ORDER SHEET"; prefix = "d";
-    } else if (tab === 'sales') {
-        titleKo = "거 래 명 세 서"; titleEn = "TRANSACTION STATEMENT"; prefix = "t";
-    } else if (tab === 'purchase_orders') { 
-        titleKo = "발 주 서"; titleEn = "PURCHASE ORDER"; prefix = "P";
-    }
+            if (tab === 'quotes') { 
+                titleKo = "견 적 서"; titleEn = "QUOTATION"; prefix = "Q";
+            } else if (tab === 'orders') { 
+                titleKo = "주 문 서"; titleEn = "ORDER SHEET"; prefix = "d";
+            } else if (tab === 'sales') {
+                titleKo = "거 래 명 세 서"; titleEn = "TRANSACTION STATEMENT"; prefix = "t";
+            } else if (tab === 'purchase_orders') { 
+                titleKo = "발 주 서"; titleEn = "PURCHASE ORDER"; prefix = "P";
+            }
 
-    document.getElementById('p_title_ko').innerText = titleKo;
-    document.getElementById('p_title_en').innerText = titleEn;
-    document.getElementById('p_date').innerText = row.date;
+            document.getElementById('p_title_ko').innerText = titleKo;
+            document.getElementById('p_title_en').innerText = titleEn;
+            document.getElementById('p_date').innerText = row.date;
 
-    if (isPO && row.po_number && row.po_number.startsWith('ASPEC')) {
-        document.getElementById('p_no').innerText = row.po_number;
-    } else {
-        const { count, error } = await supabase.from(tab).select('*', { count: 'exact', head: true }).eq('date', row.date).lte('id', row.id);
-        if (error) { alert("문서 번호 생성 중 오류 발생"); return; }
-        const d = new Date(row.date);
-        const yymmdd = d.getFullYear().toString().slice(2) + (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0');
-        const sequence = String(count).padStart(2, '0');
-        document.getElementById('p_no').innerText = `ASPEC-${yymmdd}-${prefix}${sequence}`;
-    }
+            if (isPO && row.po_number && row.po_number.startsWith('ASPEC')) {
+                document.getElementById('p_no').innerText = row.po_number;
+            } else {
+                const { count, error } = await supabase.from(tab).select('*', { count: 'exact', head: true }).eq('date', row.date).lte('id', row.id);
+                if (error) { alert("문서 번호 생성 중 오류 발생"); return; }
+                const d = new Date(row.date);
+                const yymmdd = d.getFullYear().toString().slice(2) + (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0');
+                const sequence = String(count).padStart(2, '0');
+                document.getElementById('p_no').innerText = `ASPEC-${yymmdd}-${prefix}${sequence}`;
+            }
 
-    if (tab === 'quotes') {
-        const d = new Date(row.date);
-        const validDate = new Date(d); validDate.setDate(d.getDate() + 14);
-        document.getElementById('p_valid_date').innerText = validDate.toISOString().split('T')[0];
-        document.getElementById('p_valid_date_row').style.display = 'block';
-    } else {
-        document.getElementById('p_valid_date_row').style.display = 'none';
-    }
+            if (tab === 'quotes') {
+                const d = new Date(row.date);
+                const validDate = new Date(d); validDate.setDate(d.getDate() + 14);
+                document.getElementById('p_valid_date').innerText = validDate.toISOString().split('T')[0];
+                document.getElementById('p_valid_date_row').style.display = 'block';
+            } else {
+                document.getElementById('p_valid_date_row').style.display = 'none';
+            }
 
-    if (isPO) {
-        document.getElementById('p_left_role').innerText = "공 급 받 는 자";
-        document.getElementById('p_left_name').innerText = row.partner_name;
-        // [수정됨] 발주관리 인쇄 시 저장된 거래처 정보 표시
-        document.getElementById('p_left_manager').innerText = row.partner_manager || ''; 
-        document.getElementById('p_left_email').innerText = row.email || ''; 
-        document.getElementById('p_left_phone').innerText = row.phone || '';
-        document.getElementById('p_left_addr').innerText = row.partner_address || '';
-        
-        document.getElementById('p_right_role').innerText = "공 급 자";
-        document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
-        document.getElementById('p_right_manager').innerText = "이창현";
-        document.getElementById('p_right_email').innerText = currentUserEmail;
-        // [수정됨] 발주관리 공급자 전화번호 고정
-        document.getElementById('p_right_mp').innerText = "010-5919-1810";
-    } else {
-        document.getElementById('p_left_role').innerText = "공 급 받 는 자";
-        document.getElementById('p_left_name').innerText = row.partner_name;
-        document.getElementById('p_left_manager').innerText = row.partner_manager || '';
-        document.getElementById('p_left_email').innerText = row.email || ''; 
-        document.getElementById('p_left_phone').innerText = row.phone || '';
-        document.getElementById('p_left_addr').innerText = row.partner_address || ''; 
-        
-        document.getElementById('p_right_role').innerText = "공 급 자";
-        document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
-        document.getElementById('p_right_manager').innerText = row.manager || '이창현';
-        document.getElementById('p_right_email').innerText = currentUserEmail;
-        document.getElementById('p_right_mp').innerText = "010-3795-2048"; 
-    }
+            if (isPO) {
+                document.getElementById('p_left_role').innerText = "공 급 받 는 자";
+                document.getElementById('p_left_name').innerText = row.partner_name;
+                document.getElementById('p_left_manager').innerText = row.partner_manager || ''; 
+                document.getElementById('p_left_email').innerText = row.email || ''; 
+                document.getElementById('p_left_phone').innerText = row.phone || '';
+                document.getElementById('p_left_addr').innerText = row.partner_address || '';
+                
+                document.getElementById('p_right_role').innerText = "공 급 자";
+                document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
+                document.getElementById('p_right_manager').innerText = "이창현";
+                document.getElementById('p_right_email').innerText = currentUserEmail;
+                document.getElementById('p_right_mp').innerText = "010-5919-1810";
+            } else {
+                document.getElementById('p_left_role').innerText = "공 급 받 는 자";
+                document.getElementById('p_left_name').innerText = row.partner_name;
+                document.getElementById('p_left_manager').innerText = row.partner_manager || '';
+                document.getElementById('p_left_email').innerText = row.email || ''; 
+                document.getElementById('p_left_phone').innerText = row.phone || '';
+                document.getElementById('p_left_addr').innerText = row.partner_address || ''; 
+                
+                document.getElementById('p_right_role').innerText = "공 급 자";
+                document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
+                document.getElementById('p_right_manager').innerText = row.manager || '이창현';
+                document.getElementById('p_right_email').innerText = currentUserEmail;
+                document.getElementById('p_right_mp').innerText = "010-3795-2048"; 
+            }
 
-    const tbody = document.getElementById('p_tbody'); tbody.innerHTML = '';
-    let sumQty = 0, sumAmt = 0;
-    if (row.items) {
-        row.items.forEach((item, idx) => {
-            sumQty += parseInt(item.qty) || 0; sumAmt += parseInt(item.supply) || 0;
-            tbody.innerHTML += `<tr class="items-row"><td style="text-align:center">${idx + 1}</td><td>${item.name}</td><td style="font-size:10px">${item.spec || '-'}</td><td style="text-align:center">${item.unit || 'EA'}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${(item.price || 0).toLocaleString()}</td><td style="text-align:right">${(item.supply || 0).toLocaleString()}</td></tr>`;
-        });
-    }
-    for (let i = 0; i < 10 - (row.items?.length || 0); i++) { tbody.innerHTML += `<tr class="items-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`; }
-    document.getElementById('p_total_qty').innerText = sumQty.toLocaleString();
-    document.getElementById('p_total_amt').innerText = "₩ " + (row.total_amount || 0).toLocaleString();
-    document.getElementById('p_note').innerText = row.note || '';
+            const tbody = document.getElementById('p_tbody'); tbody.innerHTML = '';
+            let sumQty = 0, sumAmt = 0;
+            if (row.items) {
+                row.items.forEach((item, idx) => {
+                    sumQty += parseInt(item.qty) || 0; sumAmt += parseInt(item.supply) || 0;
+                    tbody.innerHTML += `<tr class="items-row"><td style="text-align:center">${idx + 1}</td><td>${item.name}</td><td style="font-size:10px">${item.spec || '-'}</td><td style="text-align:center">${item.unit || 'EA'}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${(item.price || 0).toLocaleString()}</td><td style="text-align:right">${(item.supply || 0).toLocaleString()}</td></tr>`;
+                });
+            }
+            for (let i = 0; i < 10 - (row.items?.length || 0); i++) { tbody.innerHTML += `<tr class="items-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`; }
+            document.getElementById('p_total_qty').innerText = sumQty.toLocaleString();
+            document.getElementById('p_total_amt').innerText = "₩ " + (row.total_amount || 0).toLocaleString();
+            document.getElementById('p_note').innerText = row.note || '';
 
-    document.getElementById('printContainer').classList.remove('hidden');
-    setTimeout(() => { window.print(); document.getElementById('printContainer').classList.add('hidden'); }, 100);
-}
+            document.getElementById('printContainer').classList.remove('hidden');
+            setTimeout(() => { window.print(); document.getElementById('printContainer').classList.add('hidden'); }, 100);
+        }
 
         function getTitle(tab) { const map = {'partners':'거래처','products':'품목','purchase_orders':'발주','purchases':'구매(입고)','quotes':'견적','orders':'주문','sales':'판매'}; return map[tab] || ''; }
         function closeModal() { document.getElementById('genericModal').classList.remove('active'); }
@@ -583,7 +583,6 @@ async function printDocument(tab, dataId) {
             } 
         }
 
-        // [수정됨] 발주관리(PO) 전용 거래처 정보 채우기
         function fillPOPart(val) {
             const f = partnerList.find(x=>x.name===val);
             if(f) {
@@ -613,19 +612,17 @@ async function printDocument(tab, dataId) {
         async function deleteItem(table, id) { if(!confirm("정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return; const { error } = await supabase.from(table).delete().eq('id', id); if(error) alert("삭제 실패"); else { runSearch(table); } }
         async function openLoadModal(srcTab) { document.getElementById('loadDataModal').classList.add('active'); document.getElementById('loadModalTitle').innerText = (srcTab === 'quotes' ? '견적서' : '주문서') + ' 불러오기'; const tbody = document.getElementById('loadDataBody'); tbody.innerHTML = '<tr><td colspan="4">로딩중...</td></tr>'; const { data } = await supabase.from(srcTab).select('*').order('created_at', {ascending:false}); tbody.innerHTML = ''; if(!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4">데이터 없음</td></tr>'; return; } data.forEach(row => { tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td>${row.date}</td><td>${row.partner_name}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td><button onclick='applyDataById("${storeRowData(row)}")' class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600">선택</button></td></tr>`; }); }
         function applyDataById(id) { const row = getRowData(id); applyData(row); }
-        // [수정됨] 불러오기 시 저장된 거래처 정보(주소,담당자 등)도 같이 채우기
         function applyData(row) { 
             document.getElementById('sPartner').value = row.partner_name || ''; 
             document.getElementById('sManager').value = row.manager || ''; 
             
-            // 견적서 등에 저장된 정보가 있으면 쓰고, 없으면 거래처 목록에서 다시 검색
             if(row.partner_address || row.phone || row.partner_manager) {
                 if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
                 if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
                 if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || '';
                 if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || '';
             } else {
-                fillPart(row.partner_name); // 정보가 비어있으면 파트너 이름으로 재검색
+                fillPart(row.partner_name); 
             }
 
             if(row.items) { tempItems = row.items; renderGrid(); } 
