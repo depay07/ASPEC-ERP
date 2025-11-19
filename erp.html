@@ -44,14 +44,60 @@
             .print-title-sub { font-size: 16px; font-weight: normal; font-style: italic; margin-left: 10px; }
             .print-meta { text-align: right; font-size: 11px; line-height: 1.4; }
 
-            .print-grid-box { display: flex; border: 1px solid black; margin-bottom: 10px; }
-            .print-half { width: 50%; padding: 0; }
-            .print-half:first-child { border-right: 1px solid black; }
-            
-            .print-info-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;}
-            .print-info-table th { background-color: #f3f3f3 !important; text-align: center; padding: 5px; border: 1px solid black; width: 20%; font-weight: bold; height: 30px; -webkit-print-color-adjust: exact; }
-            .print-info-table td { padding: 2px 5px; border: 1px solid black; height: 30px; /* [중요] 내용 칸 높이 30px로 강제 고정 */ word-break: break-all; /* 긴 주소 줄바꿈 */ vertical-align: middle; /* 세로 중앙 정렬 */ font-size: 11px;}
-            .print-header-cell { text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid black; font-size: 14px; background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; }
+            /* [수정] 인쇄 레이아웃 강력 고정 */
+.print-grid-box { 
+    display: flex; 
+    border: 1px solid black; 
+    margin-bottom: 10px; 
+    width: 100%;
+}
+
+.print-half { 
+    flex: 1; /* 너비를 50:50으로 정확히 배분 */
+    width: 50%;
+    padding: 0; 
+}
+
+.print-half:first-child { 
+    border-right: 1px solid black; /* 중앙 세로선 강제 적용 */
+}
+
+.print-info-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 11px; 
+    table-layout: fixed; /* 셀 너비 고정 */
+}
+
+.print-info-table th { 
+    background-color: #f3f3f3 !important; 
+    text-align: center; 
+    padding: 5px; 
+    border: 1px solid black; 
+    width: 20%; 
+    font-weight: bold; 
+    height: 30px; 
+    -webkit-print-color-adjust: exact; 
+}
+
+.print-info-table td { 
+    padding: 2px 5px; 
+    border: 1px solid black; 
+    height: 30px; /* 기본 높이 */
+    vertical-align: middle; 
+    font-size: 11px;
+    overflow: hidden;
+}
+
+/* [추가] 주소 칸 전용 스타일: 높이를 55px로 강제 고정하여 좌우 대칭 유지 */
+.addr-cell {
+    height: 55px !important; 
+    vertical-align: top !important;
+    padding-top: 5px !important;
+    line-height: 1.4;
+    word-break: keep-all;
+}
+            .print-header-cell { text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid black; font-size: 14px; background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; }-weigh
 
             .print-items-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
             .print-items-table th { border: 1px solid black; background-color: #f3f3f3 !important; padding: 5px; text-align: center; -webkit-print-color-adjust: exact; }
@@ -115,7 +161,7 @@
                         <col style="width: 80%;">
                     </colgroup>
                     <tr><th>상호</th><td id="p_left_name"></td></tr>
-                    <tr><th>주소</th><td id="p_left_addr"></td></tr>
+                    <tr><th>주소</th><td id="p_left_addr" class="addr-cell"></td></tr>
                     <tr><th>담당자</th><td id="p_left_manager"></td></tr>
                     <tr><th>TEL</th><td id="p_left_phone"></td></tr>
                     <tr><th>E-mail</th><td id="p_left_email"></td></tr>
@@ -130,7 +176,7 @@
                         <col style="width: 80%;">
                     </colgroup>
                     <tr><th>상호</th><td id="p_right_name">아스펙 (ASPEC)</td></tr>
-                    <tr><th>주소</th><td style="font-size: 10px;">경기도 화성시 메타폴리스로 42, 9층 902호 (반송동, 디앤씨빌딩)</td></tr>                        
+                    <tr><th>주소</th><td class="addr-cell" style="font-size: 10px;">경기도 화성시 메타폴리스로 42, 9층 902호 (반송동, 디앤씨빌딩)</td></tr>                        
                     <tr><th>담당자</th><td id="p_right_manager"></td></tr>
                     <tr><th>TEL</th><td id="p_right_mp"></td></tr>
                     <tr><th>E-mail</th><td id="p_right_email"></td></tr>
@@ -626,7 +672,7 @@
                 document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
                 document.getElementById('p_right_manager').innerText = row.manager || '이창현';
                 document.getElementById('p_right_email').innerText = currentUserEmail;
-                document.getElementById('p_right_mp').innerText = "010-3795-2048"; 
+                document.getElementById('p_right_mp').innerText = "010-5919-1810"; 
             }
 
             const tbody = document.getElementById('p_tbody'); tbody.innerHTML = '';
@@ -692,6 +738,11 @@
                 filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true));
             }
             
+            // 헤더 변경이 필요하므로 HTML의 inventory 탭 <thead> 부분도 수정해야 하지만,
+            // 일단 스크립트에서 테이블을 그릴 때 처리하겠습니다.
+            // HTML의 switchTab 함수 내 inventory thead 부분을 아래와 같이 컬럼을 맞춰주세요.
+            // <th>품목코드</th><th>품목명</th><th>규격</th><th>단위</th><th>총재고</th><th>가용재고</th><th>비고</th><th>예약현황</th><th>관리</th>
+            
             filteredProducts.forEach(prod => {
                 let reservedQty = 0; 
                 let partners = [];
@@ -707,27 +758,47 @@
                     } 
                 });
                 
-                let reservedText = reservedQty > 0 ? `<span class="text-red-500 font-bold">(${reservedQty}개 예정)</span> <span class="text-xs text-gray-500 ml-1">- ${partners.join(', ')} 등</span>` : '<span class="text-gray-300">-</span>';
+                // 가용재고 계산 (총재고 - 예약된 수량)
+                const availableStock = prod.stock - reservedQty;
+                const stockClass = availableStock < 0 ? 'text-red-600' : 'text-blue-600';
                 
-                // [변경됨] 5번째 td: prod.stock 텍스트 -> input 태그로 변경 (id="stock_...")
-                // [변경됨] 저장 버튼: updateInventoryNote -> updateInventory 로 함수명 변경
+                let reservedText = reservedQty > 0 
+                    ? `<span class="text-red-500 font-bold">(${reservedQty}개 예약)</span>` 
+                    : '<span class="text-gray-300">-</span>';
+        
                 tbody.innerHTML += `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="font-mono text-center text-slate-500">${prod.code}</td>
                     <td class="font-bold">${prod.name}</td>
                     <td>${prod.spec||''}</td>
                     <td class="text-center text-xs">${prod.unit||'EA'}</td>
+                    
                     <td class="text-center">
-                        <input type="number" id="stock_${prod.id}" value="${prod.stock}" class="border rounded px-2 py-1 w-20 text-center font-bold text-blue-600">
+                        <input type="number" id="stock_${prod.id}" value="${prod.stock}" class="border rounded px-2 py-1 w-16 text-center font-bold">
                     </td>
-                    <td class="text-center text-sm">${prod.last_incoming_date||'-'}</td>
-                    <td class="text-center text-sm text-gray-600">${prod.last_serial_no||'-'}</td>
+                    
+                    <td class="text-center font-bold ${stockClass}">${availableStock}</td>
+                    
                     <td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td>
-                    <td class="text-xs">${reservedText}</td>
-                    <td class="text-center"><button onclick="updateInventory(${prod.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600">수정</button></td>
+                    
+                    <td class="text-xs text-center">${reservedText}</td>
+                    
+                    <td class="text-center flex gap-1 justify-center">
+                        <button onclick="showInventoryDetail(${prod.id})" class="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600">상세</button>
+                        <button onclick="updateInventory(${prod.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">저장</button>
+                    </td>
                 </tr>`;
             });
         }
+        
+        // [추가] 상세보기 버튼 클릭 시 실행될 함수
+        function showInventoryDetail(id) {
+            const prod = productList.find(p => p.id === id);
+            if(!prod) return;
+            
+            alert(`[ ${prod.name} 상세 정보 ]\n\n- 최근 입고일: ${prod.last_incoming_date || '기록 없음'}\n- 시리얼 번호: ${prod.last_serial_no || '없음'}\n- 규격: ${prod.spec || '-'}`);
+        }
+        
         // [수정] 비고(Note)뿐만 아니라 재고(Stock)도 같이 업데이트
         async function updateInventory(id) { 
             const note = document.getElementById(`note_${id}`).value; 
