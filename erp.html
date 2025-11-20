@@ -5,7 +5,7 @@
     <title>ASPEC ERP System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- [추가] 달력 라이브러리 (FullCalendar v6) -->
+    <!-- [필수] 달력 라이브러리 -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -32,15 +32,16 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
 
-        /* [수정] 달력 스타일 - 화면 높이에 맞춤 */
-        .fc-event { cursor: pointer; font-size: 12px; border: none; padding: 2px; }
-        .fc-toolbar-title { font-size: 1.2rem !important; font-weight: 800 !important; color: #1e293b; }
-        .fc-daygrid-day-number { font-size: 13px; color: #333; text-decoration: none; padding: 4px 8px; }
-        .fc-col-header-cell-cushion { text-decoration: none; color: #64748b; font-weight: bold; padding: 8px 0; }
-        .fc .fc-button-primary { background-color: #2563eb; border-color: #2563eb; }
+        /* [수정] 달력 스타일 */
+        .fc-event { cursor: pointer; font-size: 12px; border: none; padding: 2px 4px; margin-bottom: 2px; border-radius: 4px; }
+        .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 800 !important; color: #1e293b; }
+        .fc-daygrid-day-number { font-size: 13px; color: #333; text-decoration: none; padding: 8px; }
+        .fc-col-header-cell-cushion { text-decoration: none; color: #64748b; font-weight: bold; padding: 10px 0; }
+        .fc .fc-button-primary { background-color: #2563eb; border-color: #2563eb; font-weight: bold; padding: 6px 16px; }
         .fc .fc-button-primary:hover { background-color: #1d4ed8; border-color: #1d4ed8; }
-        /* 높이를 화면 크기에 맞춰 자동 조절 (스크롤 방지) */
-        #calendar { height: calc(100vh - 140px); }
+        
+        /* 캘린더 높이 최적화: 화면 전체 높이에서 상단 여백 등을 뺀 만큼 꽉 채움 */
+        #calendar { height: calc(100vh - 100px); }
 
         /* 인쇄 전용 스타일 */
         @media print {
@@ -78,14 +79,15 @@
 <body class="bg-slate-100 text-slate-800">
 
     <div class="flex h-screen overflow-hidden no-print">
-        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shadow-xl z-20">
+        <!-- [수정] 사이드바 너비 w-64 -> w-52로 줄임 -->
+        <aside class="w-52 bg-slate-900 text-slate-300 flex flex-col shadow-xl z-20 transition-all duration-300">
             <div class="p-6 border-b border-slate-800">
                 <a href="erp.html" class="block cursor-pointer hover:opacity-80 transition"><h1 class="text-2xl font-bold text-white">ASPEC <span class="text-cyan-400 text-sm">ERP</span></h1></a>
             </div>
             <nav class="flex-1 py-4 overflow-y-auto text-base">
                 <button onclick="switchTab('dashboard')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3 bg-slate-800 text-white font-bold"><i class="fa-solid fa-house w-5"></i> 홈 화면</button>
                 
-                <!-- 일정 관리 메뉴 -->
+                <!-- 일정 관리 -->
                 <button onclick="switchTab('schedule')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-regular fa-calendar-check w-5"></i> 일정 관리</button>
 
                 <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">기초 등록</div>
@@ -104,12 +106,15 @@
             </nav>
             <div class="p-6 border-t border-slate-800"><button onclick="logout()" class="w-full bg-slate-800 py-3 rounded text-sm hover:text-white font-bold">로그아웃</button></div>
         </aside>
-        <main class="flex-1 overflow-y-auto p-8" id="mainContent">
+        
+        <!-- [수정] 본문 패딩 p-8 -> p-4로 줄임 -->
+        <main class="flex-1 overflow-y-auto p-4" id="mainContent">
             <div id="searchContainer"></div>
             <div id="contentArea"></div>
         </main>
     </div>
 
+    <!-- 모달 및 인쇄 영역 -->
     <div id="genericModal" class="modal no-print"><div class="modal-content"><div class="flex justify-between items-center mb-6 border-b pb-4"><h2 id="modalTitle" class="text-2xl font-bold text-slate-800">입력</h2><button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-2xl"></i></button></div><div id="modalBody"></div></div></div>
     <div id="loadDataModal" class="modal no-print" style="z-index: 60;"><div class="modal-content" style="max-width: 800px;"><h3 class="text-xl font-bold mb-4" id="loadModalTitle">데이터 불러오기</h3><div class="overflow-y-auto max-h-96 border rounded"><table class="w-full text-left text-sm"><thead class="bg-slate-50"><tr><th class="p-3">날짜</th><th class="p-3">거래처</th><th class="p-3">총액</th><th class="p-3">선택</th></tr></thead><tbody id="loadDataBody"></tbody></table></div><div class="mt-6 text-right"><button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="px-6 py-2 bg-slate-200 rounded text-sm font-bold">닫기</button></div></div></div>
 
@@ -156,6 +161,7 @@
     </div>
 
     <script>
+        // [필수] Supabase 설정
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
         if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_URL')) alert("API 키를 설정해주세요.");
@@ -260,7 +266,6 @@
                 return;
             }
 
-            // [추가] 일정 관리 탭 (화면 높이에 맞게 자동 조절)
             if (tab === 'schedule') {
                 renderSearchPanel(tab);
                 container.innerHTML = `<div id='calendar' class="bg-white p-4 rounded shadow"></div>`;
