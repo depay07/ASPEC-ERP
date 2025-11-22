@@ -340,7 +340,7 @@
             else if (tab === 'products' || tab === 'inventory') {
                 html += `<div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
                 if (tab === 'inventory') {
-                    html += `<div><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="hideZeroStock" class="w-4 h-4"><span class="text-sm font-semibold text-slate-700">재고0개품목제외</span></label></div>`;
+                    html += `<div><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="hideZeroStock" class="w-4 h-4" checked><span class="text-sm font-semibold text-slate-700">재고0개품목제외</span></label></div>`;
                 }
             }
             else html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
