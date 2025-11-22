@@ -35,14 +35,18 @@
         .calendar-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #e2e8f0; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
         .calendar-day-header { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; text-align: center; font-weight: 600; color: #64748b; font-size: 12px; }
-        .calendar-day { border: 1px solid #e2e8f0; min-height: 120px; padding: 4px; background: white; cursor: pointer; transition: background 0.2s; position: relative; }
+        .calendar-day { border: 1px solid #e2e8f0; min-height: 120px; padding: 4px; background: white; cursor: pointer; transition: background 0.2s; position: relative; overflow: hidden; }
         .calendar-day:hover { background: #f8fafc; }
         .calendar-day.other-month { background: #f1f5f9; color: #94a3b8; }
+        .calendar-day.today { background: #eff6ff; border: 2px solid #3b82f6; }
         .calendar-day-number { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #1e293b; }
         .calendar-day.other-month .calendar-day-number { color: #94a3b8; }
-        .calendar-event { font-size: 11px; padding: 2px 6px; margin: 2px 0; border-radius: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; transition: opacity 0.2s; }
+        .calendar-day.today .calendar-day-number { color: #2563eb; font-weight: 700; }
+        .calendar-event { font-size: 11px; padding: 2px 6px; margin: 2px 0; border-radius: 3px; cursor: pointer; transition: opacity 0.2s; word-wrap: break-word; white-space: normal; line-height: 1.3; }
         .calendar-event:hover { opacity: 0.8; }
         .calendar-event.allday { font-weight: 600; }
+        .calendar-more-events { font-size: 11px; color: #64748b; cursor: pointer; padding: 2px 6px; margin: 2px 0; text-align: center; font-weight: 600; }
+        .calendar-more-events:hover { background: #f1f5f9; border-radius: 3px; }
         
         /* 이벤트 색상 */
         .event-red { background-color: #fee2e2; color: #991b1b; }
@@ -190,6 +194,22 @@
         </div>
     </div>
 
+    <!-- 일정 더보기 모달 -->
+    <div id="allEventsModal" class="modal no-print">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 id="allEventsModalTitle" class="text-2xl font-bold text-slate-800">일정 목록</h2>
+                <button onclick="closeAllEventsModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-2xl"></i></button>
+            </div>
+            <div id="allEventsModalBody" class="max-h-96 overflow-y-auto">
+                <!-- 일정 목록이 여기에 표시됩니다 -->
+            </div>
+            <div class="mt-6 text-right">
+                <button onclick="closeAllEventsModal()" class="px-6 py-3 bg-slate-200 rounded font-bold hover:bg-slate-300">닫기</button>
+            </div>
+        </div>
+    </div>
+
     <div id="printContainer" class="hidden">
         <div class="print-wrap">
             <div class="print-title-area">
@@ -317,7 +337,12 @@
             if (tab === 'purchase_orders') html += `<div><span class="search-label">납품업체</span><input type="text" id="search_sPartner" class="input-box" placeholder="업체명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">EndUser</span><input type="text" id="search_sEndUser" class="input-box" placeholder="EndUser" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'purchases') html += `<div><span class="search-label">매입처</span><input type="text" id="search_sPartner" class="input-box" placeholder="매입처" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'partners') html += `<div><span class="search-label">상호명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
-            else if (tab === 'products' || tab === 'inventory') html += `<div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+            else if (tab === 'products' || tab === 'inventory') {
+                html += `<div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+                if (tab === 'inventory') {
+                    html += `<div><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="hideZeroStock" class="w-4 h-4"><span class="text-sm font-semibold text-slate-700">재고0개품목제외</span></label></div>`;
+                }
+            }
             else html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             html += `<div class="ml-auto"><button onclick="runSearch('${tab}')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded font-bold shadow transition flex items-center gap-2 text-sm"><i class="fa-solid fa-magnifying-glass"></i> 조회</button></div></div></div>`;
             panel.innerHTML = html;
@@ -801,6 +826,12 @@
         filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true));
     }
     
+    // 재고0개품목제외 체크박스 확인
+    const hideZeroStock = document.getElementById('hideZeroStock')?.checked;
+    if (hideZeroStock) {
+        filteredProducts = filteredProducts.filter(p => (p.stock || 0) > 0);
+    }
+    
     filteredProducts.forEach(prod => {
         let reservedQty = 0; 
         
@@ -1273,6 +1304,10 @@ function renderComplexForm(tab, container) {
             const lastDate = lastDay.getDate();
             const prevLastDate = prevLastDay.getDate();
             
+            // 오늘 날짜 계산
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            
             let html = '';
             
             // 이전 달 날짜
@@ -1286,19 +1321,34 @@ function renderComplexForm(tab, container) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
                 const dayEvents = getEventsForDate(dateStr);
                 
+                // 오늘 날짜 강조 클래스
+                const isToday = dateStr === todayStr;
+                const todayClass = isToday ? 'today' : '';
+                
+                // 일정 표시 로직 (최대 2개, 나머지는 "N개 더보기")
+                const maxVisible = 2;
+                const visibleEvents = dayEvents.slice(0, maxVisible);
+                const hiddenCount = dayEvents.length - maxVisible;
+                
                 html += `
-                    <div class="calendar-day" ondblclick="openEventModal('${dateStr}')">
+                    <div class="calendar-day ${todayClass}" ondblclick="openEventModal('${dateStr}')">
                         <div class="calendar-day-number">${date}</div>
-                        ${dayEvents.map(evt => {
+                        ${visibleEvents.map(evt => {
                             const timeStr = evt.all_day ? '' : evt.start_time ? evt.start_time.substring(0, 5) + ' ' : '';
-                            // [변경 포인트] ondblclick -> onclick 으로 변경 (클릭 한 번으로 수정창 열기)
-                            // event.stopPropagation()은 부모(날짜칸)의 더블클릭 이벤트가 발생하지 않도록 막아줍니다.
+                            
+                            // [핵심 수정] ondblclick -> onclick 변경 (한 번 클릭으로 수정)
+                            // event.stopPropagation()은 클릭 시 부모(날짜 칸)의 더블클릭 이벤트가 발동되는 것을 막아줍니다.
                             return `<div class="calendar-event event-${evt.color} ${evt.all_day ? 'allday' : ''}" 
                                     onclick="editEvent(${evt.id}); event.stopPropagation();"
                                     title="${evt.title}">
                                         ${timeStr}${evt.title}
                                    </div>`;
                         }).join('')}
+                        
+                        ${hiddenCount > 0 ? 
+                            `<div class="calendar-more-events" onclick="showAllEvents('${dateStr}'); event.stopPropagation();">
+                                +${hiddenCount}개 더보기
+                            </div>` : ''}
                     </div>
                 `;
             }
@@ -1508,6 +1558,40 @@ function renderComplexForm(tab, container) {
         function closeEventModal() {
             document.getElementById('eventModal').classList.remove('active');
             editingEventId = null;
+        }
+
+        // 특정 날짜의 모든 일정 표시
+        function showAllEvents(dateStr) {
+            const events = getEventsForDate(dateStr);
+            const modal = document.getElementById('allEventsModal');
+            const body = document.getElementById('allEventsModalBody');
+            const title = document.getElementById('allEventsModalTitle');
+            
+            // 날짜 포맷
+            const [year, month, day] = dateStr.split('-');
+            title.innerText = `${year}년 ${parseInt(month)}월 ${parseInt(day)}일 일정`;
+            
+            if (events.length === 0) {
+                body.innerHTML = '<p class="text-center text-slate-500 py-8">일정이 없습니다.</p>';
+            } else {
+                body.innerHTML = events.map(evt => {
+                    const timeStr = evt.all_day ? '하루 종일' : evt.start_time ? evt.start_time.substring(0, 5) : '';
+                    return `
+                        <div class="calendar-event event-${evt.color} mb-2 cursor-pointer" ondblclick="editEvent('${evt.id}'); closeAllEventsModal();" style="padding: 8px; font-size: 13px;">
+                            <div class="font-semibold">${evt.title}</div>
+                            ${timeStr ? `<div class="text-xs mt-1">${timeStr}</div>` : ''}
+                            ${evt.description ? `<div class="text-xs mt-1 opacity-80">${evt.description}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            modal.classList.add('active');
+        }
+
+        // 일정 더보기 모달 닫기
+        function closeAllEventsModal() {
+            document.getElementById('allEventsModal').classList.remove('active');
         }
         // ============= 캘린더 관련 함수들 끝 =============
 
