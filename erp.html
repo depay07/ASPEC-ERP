@@ -390,6 +390,23 @@
         // [수정됨] 버튼 중복 제거 및 위치 정렬, 데이터 로딩 오류 해결
         async function switchTab(tab) {
             currentTab = tab; 
+            
+            // ============================================================
+            // [추가된 기능] 사이드바 메뉴 강조(커서) 이동 로직
+            // ============================================================
+            const navBtns = document.querySelectorAll('.nav-btn'); // 모든 메뉴 버튼 선택
+            navBtns.forEach(btn => {
+                // 1. 모든 버튼에서 강조 스타일(배경색, 흰글씨, 굵게) 제거
+                btn.classList.remove('bg-slate-800', 'text-white', 'font-bold');
+                
+                // 2. 클릭된 탭(tab)에 해당하는 버튼을 찾아 강조 스타일 추가
+                // (버튼의 onclick 속성에 해당 탭 이름이 포함되어 있는지 확인)
+                if (btn.getAttribute('onclick').includes(`'${tab}'`)) {
+                    btn.classList.add('bg-slate-800', 'text-white', 'font-bold');
+                }
+            });
+            // ============================================================
+        
             const container = document.getElementById('contentArea');
             
             // 1. 대시보드 처리
@@ -418,7 +435,6 @@
             const commonBtnClass = "bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2";
             
             if (tab === 'products') {
-                // [요청사항 반영] 품목 관리: 세트(BOM) 버튼을 신규등록 버튼 왼쪽에 배치
                 buttonsHtml = `
                     <div class="flex gap-2">
                         <button onclick="openBOMModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2">
@@ -429,14 +445,12 @@
                         </button>
                     </div>`;
             } else if (tab === 'inventory') {
-                // 재고 관리: 녹색 제품 입고 버튼
                 buttonsHtml = `<button onclick="openNewModal('purchases')" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2"><i class="fa-solid fa-plus"></i> 제품 입고</button>`;
             } else {
-                // 나머지: 기본 신규 등록 버튼
                 buttonsHtml = `<button onclick="openNewModal('${tab}')" class="${commonBtnClass}"><i class="fa-solid fa-plus"></i> 신규 등록</button>`;
             }
         
-            // 4. 전체 레이아웃 조립 (헤더 + 테이블 뼈대)
+            // 4. 전체 레이아웃 조립
             let html = `
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-bold text-slate-800 border-l-8 border-cyan-500 pl-4">${titles[tab]}</h2>
@@ -445,7 +459,7 @@
                 <div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
                     <table class="data-table">`;
         
-            // 5. 테이블 헤더(thead) 설정
+            // 5. 테이블 헤더 설정
             if (tab === 'partners') html += `<thead><tr><th style="width:20%">상호</th><th style="width:15%">담당자</th><th style="width:20%">전화번호</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'products') html += `<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'purchase_orders') html += `<thead><tr><th style="width:12%">PO#</th><th style="width:15%">납품업체</th><th style="width:15%">EndUser</th><th>품목요약</th><th style="width:12%">총액</th><th style="width:10%">일자</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
