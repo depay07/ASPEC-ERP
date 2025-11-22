@@ -1291,7 +1291,7 @@ function renderComplexForm(tab, container) {
                         <div class="calendar-day-number">${date}</div>
                         ${dayEvents.map(evt => {
                             const timeStr = evt.all_day ? '' : evt.start_time ? evt.start_time.substring(0, 5) + ' ' : '';
-                            return `<div class="calendar-event event-${evt.color} ${evt.all_day ? 'allday' : ''}" onclick="editEvent('${evt.id}'); event.stopPropagation();">${timeStr}${evt.title}</div>`;
+                            return `<div class="calendar-event event-${evt.color} ${evt.all_day ? 'allday' : ''}" ondblclick="editEvent('${evt.id}'); event.stopPropagation();">${timeStr}${evt.title}</div>`;
                         }).join('')}
                     </div>
                 `;
