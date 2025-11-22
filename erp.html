@@ -30,6 +30,35 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
 
+        /* 캘린더 스타일 */
+        .calendar-container { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #e2e8f0; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .calendar-day-header { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; text-align: center; font-weight: 600; color: #64748b; font-size: 12px; }
+        .calendar-day { border: 1px solid #e2e8f0; min-height: 120px; padding: 4px; background: white; cursor: pointer; transition: background 0.2s; position: relative; }
+        .calendar-day:hover { background: #f8fafc; }
+        .calendar-day.other-month { background: #f1f5f9; color: #94a3b8; }
+        .calendar-day-number { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #1e293b; }
+        .calendar-day.other-month .calendar-day-number { color: #94a3b8; }
+        .calendar-event { font-size: 11px; padding: 2px 6px; margin: 2px 0; border-radius: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; transition: opacity 0.2s; }
+        .calendar-event:hover { opacity: 0.8; }
+        .calendar-event.allday { font-weight: 600; }
+        
+        /* 이벤트 색상 */
+        .event-red { background-color: #fee2e2; color: #991b1b; }
+        .event-orange { background-color: #fed7aa; color: #9a3412; }
+        .event-yellow { background-color: #fef08a; color: #854d0e; }
+        .event-green { background-color: #bbf7d0; color: #166534; }
+        .event-blue { background-color: #bfdbfe; color: #1e40af; }
+        .event-indigo { background-color: #c7d2fe; color: #3730a3; }
+        .event-purple { background-color: #e9d5ff; color: #6b21a8; }
+        .event-pink { background-color: #fbcfe8; color: #9f1239; }
+        
+        .color-selector { display: flex; gap: 8px; margin-top: 8px; }
+        .color-option { width: 30px; height: 30px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+        .color-option:hover { transform: scale(1.1); }
+        .color-option.selected { border-color: #1e293b; box-shadow: 0 0 0 2px white, 0 0 0 4px #1e293b; }
+
         /* 인쇄 전용 스타일 */
         @media print {
             @page { size: A4; margin: 0; }
@@ -72,6 +101,7 @@
             </div>
             <nav class="flex-1 py-4 overflow-y-auto text-base">
                 <button onclick="switchTab('dashboard')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3 bg-slate-800 text-white font-bold"><i class="fa-solid fa-house w-5"></i> 홈 화면</button>
+                <button onclick="switchTab('calendar')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-calendar-days w-5"></i> 일정 관리</button>
                 
                 <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">기초 등록</div>
                 <button onclick="switchTab('partners')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-building w-5"></i> 거래처 관리</button>
@@ -97,6 +127,68 @@
 
     <div id="genericModal" class="modal no-print"><div class="modal-content"><div class="flex justify-between items-center mb-6 border-b pb-4"><h2 id="modalTitle" class="text-2xl font-bold text-slate-800">입력</h2><button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-2xl"></i></button></div><div id="modalBody"></div></div></div>
     <div id="loadDataModal" class="modal no-print" style="z-index: 60;"><div class="modal-content" style="max-width: 800px;"><h3 class="text-xl font-bold mb-4" id="loadModalTitle">데이터 불러오기</h3><div class="overflow-y-auto max-h-96 border rounded"><table class="w-full text-left text-sm"><thead class="bg-slate-50"><tr><th class="p-3">날짜</th><th class="p-3">거래처</th><th class="p-3">총액</th><th class="p-3">선택</th></tr></thead><tbody id="loadDataBody"></tbody></table></div><div class="mt-6 text-right"><button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="px-6 py-2 bg-slate-200 rounded text-sm font-bold">닫기</button></div></div></div>
+
+    <!-- 일정 추가/수정 모달 -->
+    <div id="eventModal" class="modal no-print">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 id="eventModalTitle" class="text-2xl font-bold text-slate-800">일정 추가</h2>
+                <button onclick="closeEventModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-2xl"></i></button>
+            </div>
+            <div id="eventModalBody">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">일정 제목</label>
+                    <input type="text" id="eventTitle" class="input-box" placeholder="일정 제목을 입력하세요">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
+                        <input type="checkbox" id="eventAllDay" onchange="toggleAllDay()">
+                        <span>하루 종일</span>
+                    </label>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">시작</label>
+                        <input type="date" id="eventStartDate" class="input-box mb-2">
+                        <input type="time" id="eventStartTime" class="input-box">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">종료</label>
+                        <input type="date" id="eventEndDate" class="input-box mb-2">
+                        <input type="time" id="eventEndTime" class="input-box">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">메모</label>
+                    <textarea id="eventDescription" class="input-box" rows="3" placeholder="메모를 입력하세요"></textarea>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">색상 라벨</label>
+                    <div class="color-selector">
+                        <div class="color-option event-red" data-color="red" onclick="selectColor('red')"></div>
+                        <div class="color-option event-orange" data-color="orange" onclick="selectColor('orange')"></div>
+                        <div class="color-option event-yellow" data-color="yellow" onclick="selectColor('yellow')"></div>
+                        <div class="color-option event-green selected" data-color="green" onclick="selectColor('green')"></div>
+                        <div class="color-option event-blue" data-color="blue" onclick="selectColor('blue')"></div>
+                        <div class="color-option event-indigo" data-color="indigo" onclick="selectColor('indigo')"></div>
+                        <div class="color-option event-purple" data-color="purple" onclick="selectColor('purple')"></div>
+                        <div class="color-option event-pink" data-color="pink" onclick="selectColor('pink')"></div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between">
+                    <button id="deleteEventBtn" onclick="deleteEvent()" class="px-6 py-3 bg-red-500 text-white rounded font-bold hover:bg-red-600" style="display: none;">삭제</button>
+                    <div class="flex-1"></div>
+                    <button onclick="closeEventModal()" class="px-6 py-3 bg-slate-200 rounded font-bold hover:bg-slate-300 mr-2">취소</button>
+                    <button onclick="saveEvent()" class="px-6 py-3 bg-blue-500 text-white rounded font-bold hover:bg-blue-600">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="printContainer" class="hidden">
         <div class="print-wrap">
@@ -217,7 +309,7 @@
 
         function renderSearchPanel(tab) {
             const panel = document.getElementById('searchContainer');
-            if (tab === 'dashboard') { panel.innerHTML = ''; return; }
+            if (tab === 'dashboard' || tab === 'calendar') { panel.innerHTML = ''; return; }
             const today = new Date(); const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]; const currentDay = today.toISOString().split('T')[0];
             let html = `<div class="search-panel no-print"><div class="flex flex-wrap gap-6 items-end">`;
             if (!['partners', 'products', 'inventory'].includes(tab)) html += `<div><span class="search-label">기간 조회</span><div class="flex items-center gap-2"><input type="date" id="searchStartDate" class="input-box" value="${firstDay}"><span class="text-slate-400">~</span><input type="date" id="searchEndDate" class="input-box" value="${currentDay}"></div></div>`;
@@ -264,6 +356,13 @@
                 renderSearchPanel(tab);
                 const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
                 container.innerHTML = `<div class="flex flex-col items-center justify-center h-[80vh] animate-fade-in"><div class="bg-white p-10 rounded-2xl shadow-xl text-center border-l-8 border-blue-500 max-w-2xl"><h1 class="text-4xl font-extrabold text-slate-800 mb-6">ASPEC ERP System</h1><p class="text-2xl font-medium text-slate-600 italic leading-relaxed">"${randomQuote}"</p></div><p class="mt-8 text-slate-400 text-sm">오늘도 좋은 하루 되세요!</p></div>`;
+                return;
+            }
+            
+            // 캘린더 처리
+            if (tab === 'calendar') {
+                renderSearchPanel(tab);
+                await renderCalendar();
                 return;
             }
         
@@ -1124,6 +1223,287 @@ function renderComplexForm(tab, container) {
     fillDL('dl_part', partnerList); 
     fillDL('dl_prod', productList);
 }
+
+        // ============= 캘린더 관련 함수들 =============
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+        let calendarEvents = [];
+        let selectedColor = 'green';
+        let editingEventId = null;
+
+        // 캘린더 렌더링
+        async function renderCalendar() {
+            await loadCalendarEvents();
+            
+            const contentArea = document.getElementById('contentArea');
+            const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            
+            contentArea.innerHTML = `
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <h2 class="text-2xl font-bold text-slate-800">${currentYear}년 ${monthNames[currentMonth]}</h2>
+                        <div class="flex gap-2">
+                            <button onclick="changeMonth(-1)" class="px-4 py-2 bg-slate-200 rounded hover:bg-slate-300 font-semibold">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <button onclick="goToToday()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 font-semibold">
+                                오늘
+                            </button>
+                            <button onclick="changeMonth(1)" class="px-4 py-2 bg-slate-200 rounded hover:bg-slate-300 font-semibold">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid">
+                        ${dayNames.map(day => `<div class="calendar-day-header">${day}</div>`).join('')}
+                        ${renderCalendarDays()}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 캘린더 날짜 렌더링
+        function renderCalendarDays() {
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const prevLastDay = new Date(currentYear, currentMonth, 0);
+            
+            const firstDayOfWeek = firstDay.getDay();
+            const lastDate = lastDay.getDate();
+            const prevLastDate = prevLastDay.getDate();
+            
+            let html = '';
+            
+            // 이전 달 날짜
+            for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+                const date = prevLastDate - i;
+                html += `<div class="calendar-day other-month"><div class="calendar-day-number">${date}</div></div>`;
+            }
+            
+            // 현재 달 날짜
+            for (let date = 1; date <= lastDate; date++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                const dayEvents = getEventsForDate(dateStr);
+                
+                html += `
+                    <div class="calendar-day" ondblclick="openEventModal('${dateStr}')">
+                        <div class="calendar-day-number">${date}</div>
+                        ${dayEvents.map(evt => {
+                            const timeStr = evt.all_day ? '' : evt.start_time ? evt.start_time.substring(0, 5) + ' ' : '';
+                            return `<div class="calendar-event event-${evt.color} ${evt.all_day ? 'allday' : ''}" onclick="editEvent('${evt.id}'); event.stopPropagation();">${timeStr}${evt.title}</div>`;
+                        }).join('')}
+                    </div>
+                `;
+            }
+            
+            // 다음 달 날짜
+            const totalCells = firstDayOfWeek + lastDate;
+            const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let date = 1; date <= remainingCells; date++) {
+                html += `<div class="calendar-day other-month"><div class="calendar-day-number">${date}</div></div>`;
+            }
+            
+            return html;
+        }
+
+        // 특정 날짜의 이벤트 가져오기
+        function getEventsForDate(dateStr) {
+            return calendarEvents.filter(evt => {
+                const start = evt.start_date;
+                const end = evt.end_date;
+                return dateStr >= start && dateStr <= end;
+            }).sort((a, b) => {
+                if (a.all_day && !b.all_day) return -1;
+                if (!a.all_day && b.all_day) return 1;
+                if (a.start_time && b.start_time) return a.start_time.localeCompare(b.start_time);
+                return 0;
+            });
+        }
+
+        // 월 변경
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+        }
+
+        // 오늘로 이동
+        function goToToday() {
+            const today = new Date();
+            currentYear = today.getFullYear();
+            currentMonth = today.getMonth();
+            renderCalendar();
+        }
+
+        // 이벤트 로드
+        async function loadCalendarEvents() {
+            try {
+                const { data, error } = await supabase
+                    .from('calendar_events')
+                    .select('*')
+                    .order('start_date', { ascending: true });
+                
+                if (error) throw error;
+                calendarEvents = data || [];
+            } catch (e) {
+                console.error('일정 로드 오류:', e);
+                calendarEvents = [];
+            }
+        }
+
+        // 이벤트 모달 열기 (새 일정)
+        function openEventModal(dateStr = null) {
+            editingEventId = null;
+            selectedColor = 'green';
+            
+            const today = dateStr || new Date().toISOString().split('T')[0];
+            document.getElementById('eventModalTitle').innerText = '일정 추가';
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventAllDay').checked = false;
+            document.getElementById('eventStartDate').value = today;
+            document.getElementById('eventEndDate').value = today;
+            document.getElementById('eventStartTime').value = '09:00';
+            document.getElementById('eventEndTime').value = '10:00';
+            document.getElementById('eventDescription').value = '';
+            document.getElementById('deleteEventBtn').style.display = 'none';
+            
+            toggleAllDay();
+            selectColor('green');
+            
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        // 이벤트 편집
+        function editEvent(eventId) {
+            const event = calendarEvents.find(e => e.id === eventId);
+            if (!event) return;
+            
+            editingEventId = eventId;
+            selectedColor = event.color || 'green';
+            
+            document.getElementById('eventModalTitle').innerText = '일정 수정';
+            document.getElementById('eventTitle').value = event.title || '';
+            document.getElementById('eventAllDay').checked = event.all_day || false;
+            document.getElementById('eventStartDate').value = event.start_date || '';
+            document.getElementById('eventEndDate').value = event.end_date || '';
+            document.getElementById('eventStartTime').value = event.start_time || '09:00';
+            document.getElementById('eventEndTime').value = event.end_time || '10:00';
+            document.getElementById('eventDescription').value = event.description || '';
+            document.getElementById('deleteEventBtn').style.display = 'block';
+            
+            toggleAllDay();
+            selectColor(event.color || 'green');
+            
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        // 하루종일 토글
+        function toggleAllDay() {
+            const allDay = document.getElementById('eventAllDay').checked;
+            document.getElementById('eventStartTime').disabled = allDay;
+            document.getElementById('eventEndTime').disabled = allDay;
+            
+            if (allDay) {
+                document.getElementById('eventStartTime').style.opacity = '0.5';
+                document.getElementById('eventEndTime').style.opacity = '0.5';
+            } else {
+                document.getElementById('eventStartTime').style.opacity = '1';
+                document.getElementById('eventEndTime').style.opacity = '1';
+            }
+        }
+
+        // 색상 선택
+        function selectColor(color) {
+            selectedColor = color;
+            document.querySelectorAll('.color-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            const colorOpt = document.querySelector(`[data-color="${color}"]`);
+            if (colorOpt) colorOpt.classList.add('selected');
+        }
+
+        // 이벤트 저장
+        async function saveEvent() {
+            const title = document.getElementById('eventTitle').value.trim();
+            if (!title) {
+                alert('일정 제목을 입력해주세요.');
+                return;
+            }
+            
+            const eventData = {
+                title: title,
+                start_date: document.getElementById('eventStartDate').value,
+                end_date: document.getElementById('eventEndDate').value,
+                start_time: document.getElementById('eventAllDay').checked ? null : document.getElementById('eventStartTime').value,
+                end_time: document.getElementById('eventAllDay').checked ? null : document.getElementById('eventEndTime').value,
+                all_day: document.getElementById('eventAllDay').checked,
+                description: document.getElementById('eventDescription').value.trim(),
+                color: selectedColor
+            };
+            
+            try {
+                if (editingEventId) {
+                    // 수정
+                    const { error } = await supabase
+                        .from('calendar_events')
+                        .update(eventData)
+                        .eq('id', editingEventId);
+                    
+                    if (error) throw error;
+                    alert('일정이 수정되었습니다.');
+                } else {
+                    // 추가
+                    const { error } = await supabase
+                        .from('calendar_events')
+                        .insert([eventData]);
+                    
+                    if (error) throw error;
+                    alert('일정이 추가되었습니다.');
+                }
+                
+                closeEventModal();
+                renderCalendar();
+            } catch (e) {
+                console.error('일정 저장 오류:', e);
+                alert('일정 저장 중 오류가 발생했습니다: ' + e.message);
+            }
+        }
+
+        // 이벤트 삭제
+        async function deleteEvent() {
+            if (!editingEventId) return;
+            
+            if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('calendar_events')
+                    .delete()
+                    .eq('id', editingEventId);
+                
+                if (error) throw error;
+                alert('일정이 삭제되었습니다.');
+                closeEventModal();
+                renderCalendar();
+            } catch (e) {
+                console.error('일정 삭제 오류:', e);
+                alert('일정 삭제 중 오류가 발생했습니다: ' + e.message);
+            }
+        }
+
+        // 이벤트 모달 닫기
+        function closeEventModal() {
+            document.getElementById('eventModal').classList.remove('active');
+            editingEventId = null;
+        }
+        // ============= 캘린더 관련 함수들 끝 =============
 
         // [복구] 로그아웃 함수
     async function logout() {
