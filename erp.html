@@ -1291,7 +1291,13 @@ function renderComplexForm(tab, container) {
                         <div class="calendar-day-number">${date}</div>
                         ${dayEvents.map(evt => {
                             const timeStr = evt.all_day ? '' : evt.start_time ? evt.start_time.substring(0, 5) + ' ' : '';
-                            return `<div class="calendar-event event-${evt.color} ${evt.all_day ? 'allday' : ''}" ondblclick="editEvent('${evt.id}'); event.stopPropagation();">${timeStr}${evt.title}</div>`;
+                            // [변경 포인트] ondblclick -> onclick 으로 변경 (클릭 한 번으로 수정창 열기)
+                            // event.stopPropagation()은 부모(날짜칸)의 더블클릭 이벤트가 발생하지 않도록 막아줍니다.
+                            return `<div class="calendar-event event-${evt.color} ${evt.all_day ? 'allday' : ''}" 
+                                    onclick="editEvent(${evt.id}); event.stopPropagation();"
+                                    title="${evt.title}">
+                                        ${timeStr}${evt.title}
+                                   </div>`;
                         }).join('')}
                     </div>
                 `;
