@@ -330,21 +330,37 @@
         function renderSearchPanel(tab) {
             const panel = document.getElementById('searchContainer');
             if (tab === 'dashboard' || tab === 'calendar') { panel.innerHTML = ''; return; }
-            const today = new Date(); const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]; const currentDay = today.toISOString().split('T')[0];
-            let html = `<div class="search-panel no-print"><div class="flex flex-wrap gap-6 items-end">`;
-            if (!['partners', 'products', 'inventory'].includes(tab)) html += `<div><span class="search-label">기간 조회</span><div class="flex items-center gap-2"><input type="date" id="searchStartDate" class="input-box" value="${firstDay}"><span class="text-slate-400">~</span><input type="date" id="searchEndDate" class="input-box" value="${currentDay}"></div></div>`;
             
+            const today = new Date(); 
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]; 
+            const currentDay = today.toISOString().split('T')[0];
+            
+            let html = `<div class="search-panel no-print"><div class="flex flex-wrap gap-6 items-end">`;
+            
+            // 기간 조회 필드
+            if (!['partners', 'products', 'inventory'].includes(tab)) {
+                html += `<div><span class="search-label">기간 조회</span><div class="flex items-center gap-2"><input type="date" id="searchStartDate" class="input-box" value="${firstDay}"><span class="text-slate-400">~</span><input type="date" id="searchEndDate" class="input-box" value="${currentDay}"></div></div>`;
+            }
+            
+            // 탭별 검색 조건 입력 필드
             if (tab === 'purchase_orders') html += `<div><span class="search-label">납품업체</span><input type="text" id="search_sPartner" class="input-box" placeholder="업체명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">EndUser</span><input type="text" id="search_sEndUser" class="input-box" placeholder="EndUser" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'purchases') html += `<div><span class="search-label">매입처</span><input type="text" id="search_sPartner" class="input-box" placeholder="매입처" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'partners') html += `<div><span class="search-label">상호명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'products' || tab === 'inventory') {
                 html += `<div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
-                if (tab === 'inventory') {
-                    html += `<div><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="hideZeroStock" class="w-4 h-4" checked><span class="text-sm font-semibold text-slate-700">재고0개품목제외</span></label></div>`;
-                }
+                // (기존 위치에 있던 체크박스 코드는 삭제됨)
             }
             else html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
-            html += `<div class="ml-auto"><button onclick="runSearch('${tab}')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded font-bold shadow transition flex items-center gap-2 text-sm"><i class="fa-solid fa-magnifying-glass"></i> 조회</button></div></div></div>`;
+        
+            // [변경 포인트] 재고 탭일 경우에만 버튼 옆에 체크박스 추가 (checked 적용)
+            let extraControls = '';
+            if (tab === 'inventory') {
+                extraControls = `<label class="flex items-center gap-2 cursor-pointer mr-4"><input type="checkbox" id="hideZeroStock" class="w-4 h-4" checked><span class="text-sm font-semibold text-slate-700">재고0개품목제외</span></label>`;
+            }
+        
+            // 조회 버튼 (extraControls 변수가 버튼 바로 왼쪽에 배치됨)
+            html += `<div class="ml-auto flex items-center">${extraControls}<button onclick="runSearch('${tab}')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded font-bold shadow transition flex items-center gap-2 text-sm"><i class="fa-solid fa-magnifying-glass"></i> 조회</button></div></div></div>`;
+            
             panel.innerHTML = html;
         }
 
