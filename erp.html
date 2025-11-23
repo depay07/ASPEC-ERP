@@ -509,7 +509,11 @@
             const row = getRowData(dataId);
             if (!row) return alert('데이터 오류');
             currentEditId = row.id;
+            
+            // 모달 폼 열기
             openNewModal(tab, true);
+            
+            // 폼이 렌더링된 후 데이터를 채워넣기 위해 setTimeout 사용
             setTimeout(() => {
                 if(tab === 'partners') { 
                     document.getElementById('pName').value = row.name; 
@@ -524,21 +528,68 @@
                     if(row.biz_file_url) linkDiv.innerHTML = `<a href="${row.biz_file_url}" target="_blank" class="text-blue-600 hover:underline font-bold ml-2">[기존 파일 보기]</a>`;
                     else linkDiv.innerHTML = `<span class="text-slate-400 ml-2">(파일 없음)</span>`;
                 }
-                else if(tab === 'products') { document.getElementById('prodName').value = row.name; document.getElementById('prodCode').value = row.code; document.getElementById('prodUnit').value = row.unit||''; document.getElementById('prodSpec').value = row.spec||''; document.getElementById('prodMaker').value = row.manufacturer||''; }
-                else if(tab === 'purchases') { document.getElementById('purDate').value = row.date; document.getElementById('purPartner').value = row.partner_name; document.getElementById('purItem').value = row.item_name; document.getElementById('purQty').value = row.qty; document.getElementById('purPrice').value = row.unit_price; document.getElementById('purSerial').value = row.serial_no||''; document.getElementById('purNote').value = row.note||''; }
+                else if(tab === 'products') { 
+                    document.getElementById('prodName').value = row.name; 
+                    document.getElementById('prodCode').value = row.code; 
+                    document.getElementById('prodUnit').value = row.unit||''; 
+                    document.getElementById('prodSpec').value = row.spec||''; 
+                    document.getElementById('prodMaker').value = row.manufacturer||''; 
+                }
+                else if(tab === 'purchases') { 
+                    document.getElementById('purDate').value = row.date; 
+                    document.getElementById('purPartner').value = row.partner_name; 
+                    document.getElementById('purItem').value = row.item_name; 
+                    document.getElementById('purQty').value = row.qty; 
+                    document.getElementById('purPrice').value = row.unit_price; 
+                    document.getElementById('purSerial').value = row.serial_no||''; 
+                    document.getElementById('purNote').value = row.note||''; 
+                }
                 else if(tab === 'purchase_orders') { 
-                    document.getElementById('poNum').value = row.po_number; document.getElementById('poDate').value = row.date; document.getElementById('poPartner').value = row.partner_name; document.getElementById('poEndUser').value = row.end_user||''; document.getElementById('poManager').value = row.manager||''; document.getElementById('poPreOrder').value = row.is_pre_order||''; document.getElementById('poNote').value = row.note||'';
-                    document.getElementById('poPManager').value = row.partner_manager || ''; document.getElementById('poPhone').value = row.phone || ''; document.getElementById('poEmail').value = row.email || ''; document.getElementById('poAddr').value = row.partner_address || '';
+                    document.getElementById('poNum').value = row.po_number; 
+                    document.getElementById('poDate').value = row.date; 
+                    document.getElementById('poPartner').value = row.partner_name; 
+                    document.getElementById('poEndUser').value = row.end_user||''; 
+                    document.getElementById('poManager').value = row.manager||''; 
+                    document.getElementById('poPreOrder').value = row.is_pre_order||''; 
+                    document.getElementById('poNote').value = row.note||'';
+                    document.getElementById('poPManager').value = row.partner_manager || ''; 
+                    document.getElementById('poPhone').value = row.phone || ''; 
+                    document.getElementById('poEmail').value = row.email || ''; 
+                    document.getElementById('poAddr').value = row.partner_address || '';
+                    
                     tempItems = (row.items || []).map(item => {
-        if (!item.spec) {
-            const prod = productList.find(p => p.name === item.name);
-            if (prod) item.spec = prod.spec;
-        }
-        return item;
-    });
-    
-    renderGrid(); 
-}
+                        if (!item.spec) {
+                            const prod = productList.find(p => p.name === item.name);
+                            if (prod) item.spec = prod.spec;
+                        }
+                        return item;
+                    });
+                    renderGrid(); 
+                }
+                // [추가됨] 견적(quotes), 주문(orders), 판매(sales) 수정 로직
+                else {
+                    document.getElementById('sDate').value = row.date;
+                    document.getElementById('sPartner').value = row.partner_name;
+                    document.getElementById('sManager').value = row.manager || '';
+                    
+                    // 거래처 상세 정보
+                    if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
+                    if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
+                    if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || '';
+                    if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || '';
+                    if(document.getElementById('sNote')) document.getElementById('sNote').value = row.note || '';
+
+                    // 품목 리스트 복원
+                    tempItems = (row.items || []).map(item => {
+                        // 규격이 비어있으면 품목 마스터에서 찾아 채움
+                        if (!item.spec) {
+                            const prod = productList.find(p => p.name === item.name);
+                            if (prod) item.spec = prod.spec;
+                        }
+                        return item;
+                    });
+                    renderGrid();
+                }
             }, 50);
         }
 
