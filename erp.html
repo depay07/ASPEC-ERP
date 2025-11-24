@@ -1345,36 +1345,66 @@ function renderComplexForm(tab, container) {
 
         // 캘린더 렌더링
         async function renderCalendar() {
-            await loadCalendarEvents();
+            // 데이터가 없으면 로드 (최초 1회 혹은 필요시)
+            if(calendarEvents.length === 0) await loadCalendarEvents();
             
             const contentArea = document.getElementById('contentArea');
             const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
             const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
             
-            contentArea.innerHTML = `
-                <div class="calendar-container">
-                    <div class="calendar-header">
+            // 현재 검색어 상태 확인 (재렌더링 시 검색어 유지 여부 판단)
+            const existingSearch = document.getElementById('calendarSearchInput') ? document.getElementById('calendarSearchInput').value : '';
+        
+            let html = `
+                <div class="calendar-container h-full flex flex-col">
+                    <div class="calendar-header flex-none">
                         <h2 class="text-2xl font-bold text-slate-800">${currentYear}년 ${monthNames[currentMonth]}</h2>
-                        <div class="flex gap-2">
-                            <button onclick="changeMonth(-1)" class="px-4 py-2 bg-slate-200 rounded hover:bg-slate-300 font-semibold">
-                                <i class="fa-solid fa-chevron-left"></i>
-                            </button>
-                            <button onclick="goToToday()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 font-semibold">
-                                오늘
-                            </button>
-                            <button onclick="changeMonth(1)" class="px-4 py-2 bg-slate-200 rounded hover:bg-slate-300 font-semibold">
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </button>
+                        
+                        <div class="flex items-center gap-3">
+                            <div class="relative group">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-hover:text-blue-500 transition"></i>
+                                <input type="text" id="calendarSearchInput" value="${existingSearch}"
+                                    placeholder="일정 검색 (제목, 내용)" 
+                                    onkeyup="if(window.event.keyCode==13){ runCalendarSearch(this.value) } else if(this.value==''){ runCalendarSearch('') }"
+                                    class="pl-10 pr-4 py-2 bg-slate-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-full text-sm transition-all w-64 focus:w-80 outline-none shadow-sm"
+                                >
+                                ${existingSearch ? '<button onclick="clearCalendarSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>' : ''}
+                            </div>
+        
+                            <div class="flex gap-1 ml-2">
+                                <button onclick="changeMonth(-1)" class="px-3 py-2 bg-white border border-slate-300 text-slate-600 rounded hover:bg-slate-50 font-semibold shadow-sm">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button onclick="goToToday()" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-50 font-semibold shadow-sm text-sm">
+                                    오늘
+                                </button>
+                                <button onclick="changeMonth(1)" class="px-3 py-2 bg-white border border-slate-300 text-slate-600 rounded hover:bg-slate-50 font-semibold shadow-sm">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="calendar-grid">
-                        ${dayNames.map(day => `<div class="calendar-day-header">${day}</div>`).join('')}
+                    </div>`;
+        
+            // 검색어가 있으면 검색 결과 뷰(리스트), 없으면 달력 그리드 뷰 표시
+            if (existingSearch.trim() !== '') {
+                html += renderSearchResultsView(existingSearch); // 하단에 새로 추가할 함수
+            } else {
+                html += `
+                    <div class="calendar-grid flex-1 overflow-auto">
+                        ${dayNames.map(day => `<div class="calendar-day-header sticky top-0 bg-slate-50 z-10">${day}</div>`).join('')}
                         ${renderCalendarDays()}
-                    </div>
-                </div>
-            `;
+                    </div>`;
+            }
+        
+            html += `</div>`;
+            contentArea.innerHTML = html;
+            
+            // 검색 후 입력창에 포커스 유지
+            if(existingSearch) {
+                const input = document.getElementById('calendarSearchInput');
+                if(input) input.focus();
+            }
         }
-
         // 캘린더 날짜 렌더링
         function renderCalendarDays() {
             const firstDay = new Date(currentYear, currentMonth, 1);
