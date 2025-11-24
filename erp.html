@@ -1405,6 +1405,100 @@ function renderComplexForm(tab, container) {
                 if(input) input.focus();
             }
         }
+
+    // [신규] 캘린더 검색 실행
+    function runCalendarSearch(keyword) {
+        // renderCalendar를 호출하면 내부에서 input 값을 읽어 분기 처리함
+        // 다만, 입력값 업데이트를 위해 DOM 요소 값이 변경된 상태여야 함
+        renderCalendar();
+    }
+    
+    // [신규] 검색어 초기화
+    function clearCalendarSearch() {
+        const input = document.getElementById('calendarSearchInput');
+        if(input) input.value = '';
+        renderCalendar();
+    }
+    
+    // [신규] 구글 캘린더 스타일 리스트 뷰 렌더링 (이미지 참고)
+    function renderSearchResultsView(keyword) {
+        if (!keyword) return '';
+    
+        const lowerKey = keyword.toLowerCase();
+        // 전체 기간 데이터에서 검색 (제목 또는 내용 일치)
+        const filtered = calendarEvents.filter(e => 
+            (e.title && e.title.toLowerCase().includes(lowerKey)) || 
+            (e.description && e.description.toLowerCase().includes(lowerKey))
+        );
+    
+        // 날짜순 정렬
+        filtered.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+    
+        if (filtered.length === 0) {
+            return `<div class="flex flex-col items-center justify-center h-96 text-slate-400">
+                <i class="fa-solid fa-magnifying-glass text-4xl mb-4"></i>
+                <p>검색 결과가 없습니다.</p>
+            </div>`;
+        }
+    
+        let listHtml = `<div class="overflow-y-auto flex-1 p-4"><div class="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-slate-200 divide-y divide-slate-100">`;
+    
+        filtered.forEach(evt => {
+            // 날짜 포맷팅 (예: 24 2025년 11월, 월)
+            const dateObj = new Date(evt.start_date);
+            const dayNum = dateObj.getDate();
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            const dayStr = days[dateObj.getDay()];
+            const yearMonth = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월`;
+    
+            // 시간 포맷팅
+            let timeHtml = '';
+            if (evt.all_day) {
+                timeHtml = `<span class="inline-block w-2 h-2 rounded-full bg-${evt.color || 'blue'}-500 mr-2"></span>종일`;
+            } else {
+                // 오전/오후 변환
+                const formatTime = (t) => {
+                    if (!t) return '';
+                    const [h, m] = t.split(':');
+                    const hour = parseInt(h);
+                    const ampm = hour >= 12 ? '오후' : '오전';
+                    const showHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+                    return `${ampm} ${showHour}:${m}`;
+                };
+                const start = formatTime(evt.start_time);
+                const end = formatTime(evt.end_time);
+                timeHtml = `<span class="inline-block w-2 h-2 rounded-full bg-${evt.color || 'blue'}-500 mr-2"></span>${start} ~ ${end}`;
+            }
+    
+            // 클릭 시 수정 모달 열기
+            listHtml += `
+            <div class="flex hover:bg-slate-50 transition cursor-pointer group" onclick="editEvent(${evt.id})">
+                <div class="w-48 p-4 flex flex-col justify-center border-r border-transparent group-hover:border-slate-100 shrink-0">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-2xl font-bold text-slate-700">${dayNum}</span>
+                        <span class="text-xs text-slate-500 font-medium">${yearMonth}, ${dayStr}</span>
+                    </div>
+                </div>
+    
+                <div class="flex-1 p-4 flex flex-col justify-center">
+                    <div class="flex items-center text-sm font-bold text-slate-600 mb-1">
+                        ${timeHtml}
+                    </div>
+                    <div class="text-base font-bold text-slate-800 mb-1">${evt.title}</div>
+                    ${evt.description ? `<div class="text-sm text-slate-400 truncate">${evt.description}</div>` : ''}
+                </div>
+                
+                <div class="w-12 flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 transition">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </div>
+            `;
+        });
+    
+        listHtml += `</div></div>`;
+        return listHtml;
+    }
+        
         // 캘린더 날짜 렌더링
         function renderCalendarDays() {
             const firstDay = new Date(currentYear, currentMonth, 1);
