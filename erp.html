@@ -1606,16 +1606,20 @@ function renderComplexForm(tab, container) {
         // 이벤트 로드
         async function loadCalendarEvents() {
             try {
+                // 데이터 불러오기
                 const { data, error } = await supabase
                     .from('calendar_events')
                     .select('*')
                     .order('start_date', { ascending: true });
                 
                 if (error) throw error;
+                
+                // 전역 변수에 최신 데이터 저장
                 calendarEvents = data || [];
+                
             } catch (e) {
                 console.error('일정 로드 오류:', e);
-                calendarEvents = [];
+                calendarEvents = []; // 에러 시 빈 배열로 초기화
             }
         }
 
@@ -1737,6 +1741,7 @@ function renderComplexForm(tab, container) {
                 }
                 
                 closeEventModal();
+                await loadCalendarEvents();
                 renderCalendar();
             } catch (e) {
                 console.error('일정 저장 오류:', e);
@@ -1747,9 +1752,13 @@ function renderComplexForm(tab, container) {
 
         // 이벤트 삭제
         async function deleteEvent() {
-            if (!editingEventId) return;
+            // ID가 없는 경우(오류 방지)
+            if (!editingEventId) {
+                alert("선택된 일정이 없습니다.");
+                return;
+            }
             
-            if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+            if (!confirm('정말 이 일정을 삭제하시겠습니까?')) return;
             
             try {
                 const { error } = await supabase
@@ -1758,9 +1767,14 @@ function renderComplexForm(tab, container) {
                     .eq('id', editingEventId);
                 
                 if (error) throw error;
+                
                 alert('일정이 삭제되었습니다.');
                 closeEventModal();
+                
+                // [핵심 수정] 삭제 후 DB에서 최신 데이터를 다시 불러와야 화면에서도 사라집니다.
+                await loadCalendarEvents(); 
                 renderCalendar();
+                
             } catch (e) {
                 console.error('일정 삭제 오류:', e);
                 alert('일정 삭제 중 오류가 발생했습니다: ' + e.message);
