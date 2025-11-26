@@ -290,6 +290,8 @@
         let currentUserEmail = ""; 
         let globalDataStore = {};
         let sessionTimer;
+        let currentLoadedOrderId = null; // 불러온 주문서 ID 저장용
+        let currentLoadSource = '';      // 불러온 데이터가 견적(quotes)인지 주문(orders)인지 구분
 
         const quotes = [
             "할 수 있다고 믿는다면, 이미 절반은 해낸 것이다.",
@@ -905,6 +907,10 @@
                                 await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); 
                             }
                         }
+                        // [신규 추가] 주문서를 불러와서 판매한 경우, 원본 주문서를 '완료' 처리하여 예약 해제
+                        if (currentLoadedOrderId) {
+                            await supabase.from('orders').update({ status: 'completed' }).eq('id', currentLoadedOrderId);
+                            currentLoadedOrderId = null; // 초기화
                     } 
                 }
                 
@@ -1020,70 +1026,72 @@
         function fillProd(val) { const f = productList.find(x=>x.name===val); if(f) { if(document.getElementById('iSpec')) document.getElementById('iSpec').value = f.spec || ''; } }
         
         async function loadInventoryData(isSearch = false) {
-    const tbody = document.getElementById('listBody'); 
-    const ordersRes = await supabase.from('orders').select('*'); 
-    const allOrders = ordersRes.data || []; 
-    tbody.innerHTML = '';
-    
-    let filteredProducts = productList;
-    if (isSearch) {
-        const sName = document.getElementById('search_sName').value.toLowerCase(); 
-        const sCode = document.getElementById('search_sCode').value.toLowerCase();
-        filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true));
-    }
-    
-    // 재고0개품목제외 체크박스 확인
-    const hideZeroStock = document.getElementById('hideZeroStock')?.checked;
-    if (hideZeroStock) {
-        filteredProducts = filteredProducts.filter(p => (p.stock || 0) > 0);
-    }
-    
-    filteredProducts.forEach(prod => {
-        let reservedQty = 0; 
-        
-        // 예약 수량 계산
-        allOrders.forEach(ord => { 
-            if(ord.items) { 
-                ord.items.forEach(item => { 
-                    if(item.name === prod.name) { 
-                        reservedQty += item.qty; 
-                    } 
-                }); 
-            } 
-        });
-        
-        const availableStock = prod.stock - reservedQty;
-        const stockClass = availableStock < 0 ? 'text-red-600' : 'text-blue-600';
-        
-        let reservedText = reservedQty > 0 
-            ? `<span class="text-red-500 font-bold">(${reservedQty}개)</span>` 
-            : '<span class="text-gray-300">-</span>';
+            const tbody = document.getElementById('listBody'); 
+            const ordersRes = await supabase.from('orders').select('*'); 
+            const allOrders = ordersRes.data || [];
+            tbody.innerHTML = '';
+            
+            let filteredProducts = productList;
+            if (isSearch) {
+                const sName = document.getElementById('search_sName').value.toLowerCase(); 
+                const sCode = document.getElementById('search_sCode').value.toLowerCase();
+                filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true));
+            }
+            
+            // 재고0개품목제외 체크박스 확인
+            const hideZeroStock = document.getElementById('hideZeroStock')?.checked;
+            if (hideZeroStock) {
+                filteredProducts = filteredProducts.filter(p => (p.stock || 0) > 0);
+            }
+            
+            filteredProducts.forEach(prod => {
+                let reservedQty = 0; 
+                
+                // 예약 수량 계산
+                allOrders.forEach(ord => { 
+                    if (ord.status === 'completed') return;
 
-        // [수정됨] 시리얼 제외, 순서 변경, 상세 버튼 연결(openInventoryDetailModal)
-        tbody.innerHTML += `
-        <tr class="border-b hover:bg-slate-50">
-            <td class="font-bold">${prod.name}</td>
-            <td class="text-center text-xs">${prod.manufacturer||'-'}</td>
-            <td class="text-center text-xs text-gray-500">${prod.last_vendor||'-'}</td>
-            <td class="text-right text-xs">${(prod.last_price||0).toLocaleString()}</td>
-            
-            <td class="text-center">
-                <input type="number" id="stock_${prod.id}" value="${prod.stock}" class="border rounded px-2 py-1 w-16 text-center font-bold">
-            </td>
-            
-            <td class="text-center font-bold ${stockClass}">${availableStock}</td>
-            
-            <td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td>
-            
-            <td class="text-xs text-center">${reservedText}</td>
-            
-            <td class="text-center flex gap-1 justify-center">
-                <button onclick="openInventoryDetailModal('${prod.name}')" class="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600">상세</button>
-                <button onclick="updateInventory(${prod.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">저장</button>
-            </td>
-        </tr>`;
-    });
-}
+                    if(ord.items) { 
+                        ord.items.forEach(item => { 
+                            if(item.name === prod.name) { 
+                                reservedQty += item.qty; 
+                            } 
+                        }); 
+                    } 
+                });
+                
+                const availableStock = prod.stock - reservedQty;
+                const stockClass = availableStock < 0 ? 'text-red-600' : 'text-blue-600';
+                
+                let reservedText = reservedQty > 0 
+                    ? `<span class="text-red-500 font-bold">(${reservedQty}개)</span>` 
+                    : '<span class="text-gray-300">-</span>';
+        
+                // [수정됨] 시리얼 제외, 순서 변경, 상세 버튼 연결(openInventoryDetailModal)
+                tbody.innerHTML += `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="font-bold">${prod.name}</td>
+                    <td class="text-center text-xs">${prod.manufacturer||'-'}</td>
+                    <td class="text-center text-xs text-gray-500">${prod.last_vendor||'-'}</td>
+                    <td class="text-right text-xs">${(prod.last_price||0).toLocaleString()}</td>
+                    
+                    <td class="text-center">
+                        <input type="number" id="stock_${prod.id}" value="${prod.stock}" class="border rounded px-2 py-1 w-16 text-center font-bold">
+                    </td>
+                    
+                    <td class="text-center font-bold ${stockClass}">${availableStock}</td>
+                    
+                    <td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td>
+                    
+                    <td class="text-xs text-center">${reservedText}</td>
+                    
+                    <td class="text-center flex gap-1 justify-center">
+                        <button onclick="openInventoryDetailModal('${prod.name}')" class="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600">상세</button>
+                        <button onclick="updateInventory(${prod.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">저장</button>
+                    </td>
+                </tr>`;
+            });
+        }
 
         // [수정됨] 상세 보기: 입고(시리얼) 내역 + 예약 내역 통합 표시
 async function openInventoryDetailModal(prodName) {
@@ -1361,6 +1369,7 @@ async function openInventoryDetailModal(prodName) {
 
         // 1. 데이터 불러오기 팝업 열기 (견적/주문 불러오기)
 async function openLoadModal(srcTab) { 
+    currentLoadSource = srcTab; // [추가] 현재 불러오는 소스(orders/quotes) 저장
     const modal = document.getElementById('loadDataModal');
     if (!modal) return alert("모달창을 찾을 수 없습니다.");
     
@@ -1411,6 +1420,12 @@ function applyDataById(id) {
 
 // 3. 선택한 데이터(견적/주문)를 현재 화면에 채우기
 function applyData(row) { 
+    // [추가] 만약 불러온 것이 '주문서(orders)'라면 ID를 기억해둠
+    if (currentLoadSource === 'orders') {
+        currentLoadedOrderId = row.id;
+    } else {
+        currentLoadedOrderId = null;
+    }
     document.getElementById('sPartner').value = row.partner_name || ''; 
     document.getElementById('sManager').value = row.manager || ''; 
     
