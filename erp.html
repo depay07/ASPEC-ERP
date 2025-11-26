@@ -47,6 +47,29 @@
         .calendar-event.allday { font-weight: 600; }
         .calendar-more-events { font-size: 11px; color: #64748b; cursor: pointer; padding: 2px 6px; margin: 2px 0; text-align: center; font-weight: 600; }
         .calendar-more-events:hover { background: #f1f5f9; border-radius: 3px; }
+
+        /* 1. 요일 이름 (헤더: 일, 월, 화...) 색상 변경 */
+        /* 일요일 (매주 첫 번째 칸) -> 빨간색 */
+        .calendar-day-header:nth-child(7n+1) { 
+            color: #ef4444 !important; 
+        }
+        /* 토요일 (매주 일곱 번째 칸) -> 파란색 */
+        .calendar-day-header:nth-child(7n) { 
+            color: #3b82f6 !important; 
+        }
+        
+        /* 2. 날짜 숫자 (1, 2, 3...) 색상 변경 */
+        /* 일요일 날짜 -> 빨간색 (단, 흐린 날짜 제외) */
+        .calendar-day:nth-child(7n+1):not(.other-month) .calendar-day-number { 
+            color: #ef4444 !important; 
+        }
+        /* 토요일 날짜 -> 파란색 (단, 흐린 날짜 제외) */
+        .calendar-day:nth-child(7n):not(.other-month) .calendar-day-number { 
+            color: #3b82f6 !important; 
+        }
+
+
+        
         
         /* 이벤트 색상 */
         .event-red { background-color: #fee2e2; color: #991b1b; }
