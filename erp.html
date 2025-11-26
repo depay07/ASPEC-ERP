@@ -352,16 +352,34 @@
         function getRowData(id) { return globalDataStore[id]; }
 
         // [수정됨] 수금 관리 검색창(체크박스 포함) 처리
+        // [수정됨] 수금 관리 시 조회 기간을 5년 전부터 시작하도록 변경
         function renderSearchPanel(tab) {
             const panel = document.getElementById('searchContainer');
             if (tab === 'dashboard' || tab === 'calendar') { panel.innerHTML = ''; return; }
             
             const today = new Date(); 
-            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]; 
             const currentDay = today.toISOString().split('T')[0];
+            
+            // ============================================================
+            // [수정된 날짜 계산 로직]
+            // 기본값은 '이번 달 1일'이지만, 수금 관리(collections)일 때는 '5년 전 오늘'로 설정
+            // ============================================================
+            let startObj = new Date(today.getFullYear(), today.getMonth(), 1); // 기본: 이번 달 1일
+            
+            if (tab === 'collections') {
+                startObj = new Date(); 
+                startObj.setFullYear(today.getFullYear() - 5); // 5년 전으로 설정
+            }
+            
+            // toISOString() 사용 시 시차 문제 방지를 위한 간단한 포맷팅 (YYYY-MM-DD)
+            // (한국 시간 기준 정확도를 위해 offset 보정 또는 간단히 문자열 처리)
+            // 여기서는 기존 로직과 호환되게 ISOString 앞부분을 자릅니다.
+            const firstDay = startObj.toISOString().split('T')[0];
+            // ============================================================
             
             let html = `<div class="search-panel no-print"><div class="flex flex-wrap gap-6 items-end">`;
             
+            // 기간 조회 필드 (수금 관리도 여기서 firstDay 변수를 사용하게 됨)
             if (!['partners', 'products', 'inventory'].includes(tab)) {
                 html += `<div><span class="search-label">기간 조회</span><div class="flex items-center gap-2"><input type="date" id="searchStartDate" class="input-box" value="${firstDay}"><span class="text-slate-400">~</span><input type="date" id="searchEndDate" class="input-box" value="${currentDay}"></div></div>`;
             }
@@ -372,18 +390,15 @@
             else if (tab === 'products' || tab === 'inventory') {
                 html += `<div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             }
-            // [추가] 수금 관리용 검색창
             else if (tab === 'collections') {
                 html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             }
             else html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
         
-            // 체크박스 처리 (재고관리 & 수금관리)
             let extraControls = '';
             if (tab === 'inventory') {
                 extraControls = `<label class="flex items-center gap-2 cursor-pointer mr-4"><input type="checkbox" id="hideZeroStock" class="w-4 h-4" checked><span class="text-sm font-semibold text-slate-700">재고0개품목제외</span></label>`;
             } 
-            // [추가] 수금관리 체크박스
             else if (tab === 'collections') {
                 extraControls = `<label class="flex items-center gap-2 cursor-pointer mr-4"><input type="checkbox" id="hideZeroReceivable" class="w-4 h-4" checked><span class="text-sm font-semibold text-slate-700">채권금액 0원은 제외</span></label>`;
             }
