@@ -864,7 +864,6 @@
                 data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); 
                 data.partner_manager = el('poPManager'); data.phone = el('poPhone'); data.email = el('poEmail'); data.partner_address = el('poAddr');
                 
-                // [중요] 발주서 저장 시 신규 등록이면 번호 새로 생성 (중복 방지)
                 if (!currentEditId) {
                     const { count } = await supabase.from(tab).select('*', { count: 'exact', head: true }).eq('date', dateVal);
                     const seq = (count || 0) + 1; 
@@ -879,7 +878,7 @@
             // 데이터 저장 (Sales, Orders, Quotes 공통)
             if(await saveData(tab, data)) { 
                 
-                // [핵심 수정] 판매(Sales)일 때만 재고 차감 로직 실행
+                // [핵심 수정 1] 판매(Sales)일 때만 재고 차감 로직 실행
                 if(tab === 'sales' && !currentEditId) { 
                     
                     // 1. BOM(세트 구성) 정보를 가져옴
@@ -887,7 +886,6 @@
         
                     for(const item of tempItems) { 
                         // 이 품목이 세트(부모)인지 확인
-                        // 예: item.name이 '머신시스템'이면 relatedParts에 [IS모델, 3개] 정보가 담김
                         const relatedParts = bomList ? bomList.filter(b => b.parent_name === item.name) : [];
         
                         if (relatedParts.length > 0) {
@@ -895,9 +893,7 @@
                             for (const part of relatedParts) {
                                 const childProd = productList.find(p => p.name === part.child_name);
                                 if (childProd) {
-                                    // 차감 수량 = 판매수량(Set) * 구성비율(Qty)
-                                    const deductQty = item.qty * part.qty;
-                                    await supabase.from('products').update({ stock: childProd.stock - deductQty }).eq('id', childProd.id);
+                                    await supabase.from('products').update({ stock: childProd.stock - (item.qty * part.qty) }).eq('id', childProd.id);
                                 }
                             }
                         } else {
@@ -907,12 +903,14 @@
                                 await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); 
                             }
                         }
-                        // [신규 추가] 주문서를 불러와서 판매한 경우, 원본 주문서를 '완료' 처리하여 예약 해제
-                        if (currentLoadedOrderId) {
-                            await supabase.from('orders').update({ status: 'completed' }).eq('id', currentLoadedOrderId);
-                            currentLoadedOrderId = null; // 초기화
-                    } 
-                }
+                    } // 반복문 종료
+
+                    // [신규 추가] 주문서를 불러와서 판매한 경우, 원본 주문서를 '완료' 처리하여 예약 해제
+                    if (currentLoadedOrderId) {
+                        await supabase.from('orders').update({ status: 'completed' }).eq('id', currentLoadedOrderId);
+                        currentLoadedOrderId = null; // 초기화
+                    }
+                } // <--- [오류 원인 해결] 이 괄호가 빠져 있어서 전체 스크립트가 멈췄었습니다.
                 
                 alert("저장되었습니다."); closeModal(); runSearch(tab);
             }
