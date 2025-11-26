@@ -143,6 +143,7 @@
                 <button onclick="switchTab('quotes')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-file-invoice w-5"></i> 견적 관리</button>
                 <button onclick="switchTab('orders')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-file-signature w-5"></i> 주문 관리</button>
                 <button onclick="switchTab('sales')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-truck-fast w-5"></i> 판매 관리</button>
+                <button onclick="switchTab('collections')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-sack-dollar w-5"></i> 수금 관리</button>
             </nav>
             <div class="p-6 border-t border-slate-800"><button onclick="logout()" class="w-full bg-slate-800 py-3 rounded text-sm hover:text-white font-bold">로그아웃</button></div>
         </aside>
@@ -350,6 +351,7 @@
         function storeRowData(row) { const id = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); globalDataStore[id] = row; return id; }
         function getRowData(id) { return globalDataStore[id]; }
 
+        // [수정됨] 수금 관리 검색창(체크박스 포함) 처리
         function renderSearchPanel(tab) {
             const panel = document.getElementById('searchContainer');
             if (tab === 'dashboard' || tab === 'calendar') { panel.innerHTML = ''; return; }
@@ -360,28 +362,32 @@
             
             let html = `<div class="search-panel no-print"><div class="flex flex-wrap gap-6 items-end">`;
             
-            // 기간 조회 필드
             if (!['partners', 'products', 'inventory'].includes(tab)) {
                 html += `<div><span class="search-label">기간 조회</span><div class="flex items-center gap-2"><input type="date" id="searchStartDate" class="input-box" value="${firstDay}"><span class="text-slate-400">~</span><input type="date" id="searchEndDate" class="input-box" value="${currentDay}"></div></div>`;
             }
             
-            // 탭별 검색 조건 입력 필드
             if (tab === 'purchase_orders') html += `<div><span class="search-label">납품업체</span><input type="text" id="search_sPartner" class="input-box" placeholder="업체명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">EndUser</span><input type="text" id="search_sEndUser" class="input-box" placeholder="EndUser" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'purchases') html += `<div><span class="search-label">매입처</span><input type="text" id="search_sPartner" class="input-box" placeholder="매입처" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'partners') html += `<div><span class="search-label">상호명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             else if (tab === 'products' || tab === 'inventory') {
                 html += `<div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
-                // (기존 위치에 있던 체크박스 코드는 삭제됨)
+            }
+            // [추가] 수금 관리용 검색창
+            else if (tab === 'collections') {
+                html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             }
             else html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
         
-            // [변경 포인트] 재고 탭일 경우에만 버튼 옆에 체크박스 추가 (checked 적용)
+            // 체크박스 처리 (재고관리 & 수금관리)
             let extraControls = '';
             if (tab === 'inventory') {
                 extraControls = `<label class="flex items-center gap-2 cursor-pointer mr-4"><input type="checkbox" id="hideZeroStock" class="w-4 h-4" checked><span class="text-sm font-semibold text-slate-700">재고0개품목제외</span></label>`;
+            } 
+            // [추가] 수금관리 체크박스
+            else if (tab === 'collections') {
+                extraControls = `<label class="flex items-center gap-2 cursor-pointer mr-4"><input type="checkbox" id="hideZeroReceivable" class="w-4 h-4" checked><span class="text-sm font-semibold text-slate-700">채권금액 0원은 제외</span></label>`;
             }
         
-            // 조회 버튼 (extraControls 변수가 버튼 바로 왼쪽에 배치됨)
             html += `<div class="ml-auto flex items-center">${extraControls}<button onclick="runSearch('${tab}')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded font-bold shadow transition flex items-center gap-2 text-sm"><i class="fa-solid fa-magnifying-glass"></i> 조회</button></div></div></div>`;
             
             panel.innerHTML = html;
@@ -389,50 +395,71 @@
 
         function handleSearchKeyPress(event, tab) { if (event.key === 'Enter') runSearch(tab); }
 
+        // [수정됨] 수금 관리 로직 추가 (sales 테이블 조회 + 필터링)
         async function runSearch(tab) {
             const tbody = document.getElementById('listBody'); tbody.innerHTML = '<tr><td colspan="10" class="text-center p-8">데이터를 불러오는 중입니다...</td></tr>';
+            
             if(tab === 'inventory') { await loadInventoryData(true); return; }
-            let query = supabase.from(tab).select('*').order('created_at', { ascending: false });
+            
+            // 수금 관리는 실제로는 'sales' 테이블을 조회합니다.
+            const targetTable = (tab === 'collections') ? 'sales' : tab;
+            
+            let query = supabase.from(targetTable).select('*').order('created_at', { ascending: false });
+            
             const sDate = document.getElementById('searchStartDate')?.value;
             const eDate = document.getElementById('searchEndDate')?.value;
-            if(sDate && eDate) query = query.gte('date', sDate).lte('date', eDate);
+            if(sDate && eDate && !['partners','products'].includes(tab)) query = query.gte('date', sDate).lte('date', eDate);
 
             if(tab === 'purchase_orders') { const p = document.getElementById('search_sPartner').value; const e = document.getElementById('search_sEndUser').value; if(p) query = query.ilike('partner_name', `%${p}%`); if(e) query = query.ilike('end_user', `%${e}%`); }
             else if (tab === 'purchases') { const p = document.getElementById('search_sPartner').value; const i = document.getElementById('search_sItem').value; if(p) query = query.ilike('partner_name', `%${p}%`); if(i) query = query.ilike('item_name', `%${i}%`); }
             else if (tab === 'partners') { const n = document.getElementById('search_sName').value; const m = document.getElementById('search_sManager').value; if(n) query = query.ilike('name', `%${n}%`); if(m) query = query.ilike('manager_name', `%${m}%`); }
             else if (tab === 'products') { const n = document.getElementById('search_sName').value; const c = document.getElementById('search_sCode').value; if(n) query = query.ilike('name', `%${n}%`); if(c) query = query.ilike('code', `%${c}%`); }
-            else { const p = document.getElementById('search_sPartner').value; const m = document.getElementById('search_sManager').value; const n = document.getElementById('search_sNote').value; if(p) query = query.ilike('partner_name', `%${p}%`); if(m) query = query.ilike('manager', `%${m}%`); if(n) query = query.ilike('note', `%${n}%`); }
+            else { 
+                const p = document.getElementById('search_sPartner')?.value; 
+                const m = document.getElementById('search_sManager')?.value; 
+                const n = document.getElementById('search_sNote')?.value; 
+                if(p) query = query.ilike('partner_name', `%${p}%`); 
+                if(m && tab !== 'collections') query = query.ilike('manager', `%${m}%`); 
+                if(n && tab !== 'collections') query = query.ilike('note', `%${n}%`); 
+            }
 
             const { data, error } = await query;
             if(error) { alert("검색실패: "+error.message); return; }
+            
             let resultData = data;
-            if(tab === 'purchase_orders' || tab === 'purchases') { const sItem = document.getElementById('search_sItem') ? document.getElementById('search_sItem').value.toLowerCase() : ''; if(sItem) { if(tab === 'purchases') resultData = data.filter(r => r.item_name && r.item_name.toLowerCase().includes(sItem)); else resultData = data.filter(r => r.items && r.items.some(i => i.name.toLowerCase().includes(sItem))); } }
+
+            // [추가] 수금 관리: 체크박스 확인하여 미수금 0원 제외
+            if (tab === 'collections') {
+                const hideZero = document.getElementById('hideZeroReceivable')?.checked;
+                if (hideZero) {
+                    resultData = data.filter(row => {
+                        const total = row.total_amount || 0;
+                        const collected = row.collected_amount || 0;
+                        const balance = total - collected;
+                        return balance !== 0; // 잔액이 0이 아닌 것만 남김
+                    });
+                }
+            }
+            // 발주/구매 품목 검색 필터
+            else if(tab === 'purchase_orders' || tab === 'purchases') { const sItem = document.getElementById('search_sItem') ? document.getElementById('search_sItem').value.toLowerCase() : ''; if(sItem) { if(tab === 'purchases') resultData = data.filter(r => r.item_name && r.item_name.toLowerCase().includes(sItem)); else resultData = data.filter(r => r.items && r.items.some(i => i.name.toLowerCase().includes(sItem))); } }
+            
             renderTable(tab, resultData);
         }
 
-        // [수정됨] 버튼 중복 제거 및 위치 정렬, 데이터 로딩 오류 해결
+        // [수정됨] 수금 관리(collections) 탭 처리 추가
         async function switchTab(tab) {
             currentTab = tab; 
             
-            // ============================================================
-            // [추가된 기능] 사이드바 메뉴 강조(커서) 이동 로직
-            // ============================================================
-            const navBtns = document.querySelectorAll('.nav-btn'); // 모든 메뉴 버튼 선택
+            const navBtns = document.querySelectorAll('.nav-btn');
             navBtns.forEach(btn => {
-                // 1. 모든 버튼에서 강조 스타일(배경색, 흰글씨, 굵게) 제거
                 btn.classList.remove('bg-slate-800', 'text-white', 'font-bold');
-                
-                // 2. 클릭된 탭(tab)에 해당하는 버튼을 찾아 강조 스타일 추가
-                // (버튼의 onclick 속성에 해당 탭 이름이 포함되어 있는지 확인)
                 if (btn.getAttribute('onclick').includes(`'${tab}'`)) {
                     btn.classList.add('bg-slate-800', 'text-white', 'font-bold');
                 }
             });
-            // ============================================================
         
             const container = document.getElementById('contentArea');
             
-            // 1. 대시보드 처리
             if (tab === 'dashboard') {
                 renderSearchPanel(tab);
                 const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
@@ -440,40 +467,30 @@
                 return;
             }
             
-            // 캘린더 처리
             if (tab === 'calendar') {
                 renderSearchPanel(tab);
                 await renderCalendar();
                 return;
             }
         
-            // 2. 데이터 준비
             await fetchData(); 
             renderSearchPanel(tab);
         
-            const titles = {'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황','quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)'};
+            // [추가] 타이틀 맵에 수금 관리 추가
+            const titles = {'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황','quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)','collections':'수금 관리'};
             
-            // 3. 상단 버튼 생성 로직 (탭별로 다르게 설정)
             let buttonsHtml = '';
             const commonBtnClass = "bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2";
             
+            // 수금 관리는 '신규 등록' 버튼이 필요 없음 (판매 내역을 불러오므로)
             if (tab === 'products') {
-                buttonsHtml = `
-                    <div class="flex gap-2">
-                        <button onclick="openBOMModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-layer-group"></i> 세트(BOM) 관리
-                        </button>
-                        <button onclick="openNewModal('${tab}')" class="${commonBtnClass}">
-                            <i class="fa-solid fa-plus"></i> 신규 등록
-                        </button>
-                    </div>`;
+                buttonsHtml = `<div class="flex gap-2"><button onclick="openBOMModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2"><i class="fa-solid fa-layer-group"></i> 세트(BOM) 관리</button><button onclick="openNewModal('${tab}')" class="${commonBtnClass}"><i class="fa-solid fa-plus"></i> 신규 등록</button></div>`;
             } else if (tab === 'inventory') {
                 buttonsHtml = `<button onclick="openNewModal('purchases')" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2"><i class="fa-solid fa-plus"></i> 제품 입고</button>`;
-            } else {
+            } else if (tab !== 'collections') {
                 buttonsHtml = `<button onclick="openNewModal('${tab}')" class="${commonBtnClass}"><i class="fa-solid fa-plus"></i> 신규 등록</button>`;
             }
         
-            // 4. 전체 레이아웃 조립
             let html = `
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-bold text-slate-800 border-l-8 border-cyan-500 pl-4">${titles[tab]}</h2>
@@ -482,22 +499,23 @@
                 <div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
                     <table class="data-table">`;
         
-            // 5. 테이블 헤더 설정
             if (tab === 'partners') html += `<thead><tr><th style="width:20%">상호</th><th style="width:15%">담당자</th><th style="width:20%">전화번호</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'products') html += `<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'purchase_orders') html += `<thead><tr><th style="width:12%">PO#</th><th style="width:15%">납품업체</th><th style="width:15%">EndUser</th><th>품목요약</th><th style="width:12%">총액</th><th style="width:10%">일자</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'purchases') html += `<thead><tr><th style="width:10%">일자</th><th style="width:10%">제조사</th><th style="width:15%">매입처</th><th>품목명</th><th style="width:6%">수량</th><th style="width:10%">단가</th><th style="width:10%">합계</th><th style="width:10%">시리얼</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'inventory') html += `<thead><tr><th>품목명</th><th style="width:10%">제조사</th><th style="width:12%">입고처</th><th style="width:10%">입고단가</th><th style="width:8%">총재고</th><th style="width:8%">가용재고</th><th>비고</th><th style="width:10%">예약</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            
+            // [추가] 수금 관리 테이블 헤더
+            else if (tab === 'collections') html += `<thead><tr><th style="width:10%">판매일자</th><th style="width:15%">거래처</th><th style="width:15%">매출총액(VAT포함)</th><th style="width:15%">기수금액</th><th style="width:15%">미수금(잔액)</th><th>비고</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            
             else html += `<thead><tr><th style="width:10%">일자</th><th style="width:18%">거래처</th><th style="width:12%">담당자</th><th style="width:12%">공급가액</th><th style="width:10%">부가세</th><th style="width:12%">합계</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             
             html += `</table></div>`;
-            
             container.innerHTML = html;
-        
-            // 6. 데이터 로딩 실행
             runSearch(tab);
         }
 
+        // [수정됨] 수금 관리 테이블 렌더링 로직 추가
         function renderTable(tab, data) {
             const tbody = document.getElementById('listBody'); tbody.innerHTML = '';
             if(!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="text-center p-8 text-slate-500">데이터가 없습니다.</td></tr>'; return; }
@@ -506,9 +524,13 @@
                 let tr = `<tr class="hover:bg-slate-50 border-b transition">`;
                 const dataId = storeRowData(row);
                 let actions = '<div class="flex justify-center items-center gap-3">';
-                if(['quotes', 'orders', 'sales', 'purchase_orders'].includes(tab)) actions += `<button onclick="printDocument('${tab}', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄"><i class="fa-solid fa-print fa-lg"></i></button>`;
-                if(tab !== 'inventory') actions += `<button onclick="openEditModal('${tab}', '${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정"><i class="fa-solid fa-pen-to-square fa-lg"></i></button>`;
-                actions += `<button onclick="deleteItem('${tab}', ${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제"><i class="fa-solid fa-trash-can fa-lg"></i></button></div>`;
+                
+                // 수금 관리 외 일반 버튼들
+                if (tab !== 'collections') {
+                    if(['quotes', 'orders', 'sales', 'purchase_orders'].includes(tab)) actions += `<button onclick="printDocument('${tab}', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄"><i class="fa-solid fa-print fa-lg"></i></button>`;
+                    if(tab !== 'inventory') actions += `<button onclick="openEditModal('${tab}', '${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정"><i class="fa-solid fa-pen-to-square fa-lg"></i></button>`;
+                    actions += `<button onclick="deleteItem('${tab}', ${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제"><i class="fa-solid fa-trash-can fa-lg"></i></button></div>`;
+                }
 
                 if (tab === 'partners') {
                     const fileIcon = row.biz_file_url ? `<a href="${row.biz_file_url}" target="_blank" class="text-green-600 hover:text-green-800 ml-2"><i class="fa-solid fa-file-pdf"></i></a>` : '';
@@ -518,14 +540,63 @@
                 else if (tab === 'purchase_orders') {
                     const itemsSummary = row.items && row.items.length > 0 ? `${row.items[0].name} 외 ${row.items.length-1}건` : '-';
                     tr += `<td class="font-bold text-blue-600 text-center">${row.po_number}</td><td>${row.partner_name}</td><td class="text-center">${row.end_user||'-'}</td><td>${itemsSummary}</td><td class="font-bold text-right">${(row.total_amount||0).toLocaleString()}</td><td class="text-center">${row.date}</td><td>${actions}</td>`;
-                } else if (tab === 'purchases') {
+                } 
+                else if (tab === 'purchases') {
                     tr += `<td class="text-center">${row.date}</td><td class="text-center">${row.manufacturer||'-'}</td><td>${row.partner_name}</td><td>${row.item_name}</td><td class="text-center font-bold">${row.qty}</td><td class="text-right">${(row.unit_price||0).toLocaleString()}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td class="text-center">${row.serial_no||'-'}</td><td>${actions}</td>`;
-                } else if (tab === 'inventory') { 
-                } else {
+                } 
+                // [추가] 수금 관리 로직
+                else if (tab === 'collections') {
+                    const total = row.total_amount || 0;
+                    const collected = row.collected_amount || 0;
+                    const balance = total - collected;
+                    
+                    const balanceClass = balance > 0 ? 'text-red-600 font-bold' : 'text-slate-400';
+                    
+                    tr += `
+                        <td class="text-center">${row.date}</td>
+                        <td class="font-bold text-slate-700">${row.partner_name}</td>
+                        <td class="text-right font-bold">${total.toLocaleString()}</td>
+                        <td class="text-center">
+                            <input type="number" id="col_${row.id}" value="${collected}" class="border rounded px-2 py-1 w-24 text-right font-bold text-blue-600 bg-blue-50 focus:bg-white transition" placeholder="0">
+                        </td>
+                        <td class="text-right ${balanceClass}">${balance.toLocaleString()}</td>
+                        <td><input type="text" id="cnote_${row.id}" value="${row.collection_note || ''}" class="border rounded px-2 py-1 w-full text-xs" placeholder="메모"></td>
+                        <td class="text-center">
+                            <button onclick="updateCollection(${row.id})" class="bg-slate-700 hover:bg-slate-900 text-white px-3 py-1 rounded text-xs font-bold transition">저장</button>
+                        </td>
+                    `;
+                }
+                else if (tab === 'inventory') { } 
+                else {
                     tr += `<td class="text-center">${row.date}</td><td class="font-bold">${row.partner_name||'-'}</td><td class="text-center">${row.manager||'-'}</td><td class="text-right text-slate-600">${(row.total_supply||0).toLocaleString()}</td><td class="text-right text-slate-400 text-xs">${(row.total_vat||0).toLocaleString()}</td><td class="text-right font-bold text-cyan-700">${(row.total_amount||0).toLocaleString()}</td><td>${row.note||''}</td><td>${actions}</td>`;
                 }
+                
                 if(tab !== 'inventory') tbody.innerHTML += tr;
             });
+        }
+
+        // [신규] 수금 내역 업데이트 함수
+        async function updateCollection(id) {
+            const collectedAmount = parseInt(document.getElementById(`col_${id}`).value) || 0;
+            const note = document.getElementById(`cnote_${id}`).value;
+            
+            if (!confirm('수금 정보를 저장하시겠습니까?')) return;
+            
+            // Sales 테이블에 collected_amount와 collection_note 업데이트
+            const { error } = await supabase
+                .from('sales')
+                .update({ 
+                    collected_amount: collectedAmount,
+                    collection_note: note 
+                })
+                .eq('id', id);
+                
+            if (error) {
+                alert("저장 중 오류가 발생했습니다: " + error.message);
+            } else {
+                alert("저장되었습니다.");
+                runSearch('collections'); // 화면 새로고침
+            }
         }
 
         function openEditModal(tab, dataId) {
