@@ -1698,13 +1698,20 @@ function renderComplexForm(tab, container) {
                 return;
             }
             
+            // [수정됨] 하루 종일 여부 변수 저장
+            const isAllDay = document.getElementById('eventAllDay').checked;
+            
             const eventData = {
                 title: title,
                 start_date: document.getElementById('eventStartDate').value,
                 end_date: document.getElementById('eventEndDate').value,
-                start_time: document.getElementById('eventAllDay').checked ? null : document.getElementById('eventStartTime').value,
-                end_time: document.getElementById('eventAllDay').checked ? null : document.getElementById('eventEndTime').value,
-                all_day: document.getElementById('eventAllDay').checked,
+                
+                // [수정됨] 하루 종일(isAllDay)일 경우 null 대신 '00:00'과 '23:59'를 저장하여
+                // DB의 NOT NULL 제약 조건을 피하고 에러를 방지합니다.
+                start_time: isAllDay ? '00:00' : document.getElementById('eventStartTime').value,
+                end_time: isAllDay ? '23:59' : document.getElementById('eventEndTime').value,
+                
+                all_day: isAllDay,
                 description: document.getElementById('eventDescription').value.trim(),
                 color: selectedColor
             };
@@ -1733,6 +1740,7 @@ function renderComplexForm(tab, container) {
                 renderCalendar();
             } catch (e) {
                 console.error('일정 저장 오류:', e);
+                // 에러 메시지를 명확히 띄워줍니다.
                 alert('일정 저장 중 오류가 발생했습니다: ' + e.message);
             }
         }
