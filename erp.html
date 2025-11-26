@@ -1928,11 +1928,20 @@ function renderComplexForm(tab, container) {
             } else {
                 body.innerHTML = events.map(evt => {
                     const timeStr = evt.all_day ? '하루 종일' : evt.start_time ? evt.start_time.substring(0, 5) : '';
+                    
+                    // [수정된 부분] 
+                    // 1. ondblclick -> onclick (한 번 클릭으로 변경)
+                    // 2. editEvent('${evt.id}') -> editEvent(${evt.id}) (따옴표 제거하여 숫자로 전달)
                     return `
-                        <div class="calendar-event event-${evt.color} mb-2 cursor-pointer" ondblclick="editEvent('${evt.id}'); closeAllEventsModal();" style="padding: 8px; font-size: 13px;">
-                            <div class="font-semibold">${evt.title}</div>
-                            ${timeStr ? `<div class="text-xs mt-1">${timeStr}</div>` : ''}
-                            ${evt.description ? `<div class="text-xs mt-1 opacity-80">${evt.description}</div>` : ''}
+                        <div class="calendar-event event-${evt.color} mb-2 cursor-pointer hover:opacity-80 transition" 
+                             onclick="editEvent(${evt.id}); closeAllEventsModal();" 
+                             style="padding: 10px; font-size: 14px; border-radius: 4px;">
+                            <div class="font-bold flex justify-between">
+                                <span>${evt.title}</span>
+                                <span class="text-xs font-normal opacity-70 flex items-center"><i class="fa-solid fa-pen"></i></span>
+                            </div>
+                            ${timeStr ? `<div class="text-xs mt-1 font-semibold opacity-90">${timeStr}</div>` : ''}
+                            ${evt.description ? `<div class="text-xs mt-1 opacity-80 whitespace-pre-wrap border-t border-black/10 pt-1 mt-1">${evt.description}</div>` : ''}
                         </div>
                     `;
                 }).join('');
