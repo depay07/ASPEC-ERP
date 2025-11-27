@@ -940,17 +940,13 @@
             const row = getRowData(dataId); if (!row) return alert('데이터 오류');
             const isPO = (tab === 'purchase_orders');
             
-            // [수정됨] 견적서일 때만 주소 행(Row)을 통째로 숨김
-            // 이렇게 하면 높이값(55px)도 같이 사라져서 빈 공간 없이 딱 붙습니다.
+            // 견적서일 때만 주소 행 숨김
             const addrRow1 = document.getElementById('print_row_addr_1');
             const addrRow2 = document.getElementById('print_row_addr_2');
-            
             if (tab === 'quotes') {
-                // 견적서: 주소 행 숨김 (공간 차지 안 함)
                 if(addrRow1) addrRow1.style.display = 'none';
                 if(addrRow2) addrRow2.style.display = 'none';
             } else {
-                // 그 외(발주서, 주문서 등): 주소 행 보임
                 if(addrRow1) addrRow1.style.display = 'table-row';
                 if(addrRow2) addrRow2.style.display = 'table-row';
             }
@@ -962,6 +958,8 @@
 
             document.getElementById('p_title_ko').innerText = titleKo; document.getElementById('p_title_en').innerText = titleEn;
             document.getElementById('p_date').innerText = row.date;
+            
+            // 문서 번호 생성 로직
             if (isPO && row.po_number && row.po_number.startsWith('ASPEC')) document.getElementById('p_no').innerText = row.po_number;
             else {
                 const { count } = await supabase.from(tab).select('*', { count: 'exact', head: true }).eq('date', row.date).lte('id', row.id);
@@ -969,6 +967,7 @@
                 document.getElementById('p_no').innerText = `ASPEC-${yymmdd}-${prefix}${String(count).padStart(2,'0')}`;
             }
 
+            // 공급받는자 / 공급자 정보 채우기
             if (isPO) {
                 document.getElementById('p_left_role').innerText = "수 주 처";
                 document.getElementById('p_left_name').innerText = row.partner_name;
@@ -991,29 +990,71 @@
             document.getElementById('p_right_email').innerText = currentUserEmail;
             document.getElementById('p_right_mp').innerText = "010-5919-1810"; 
 
-            const tbody = document.getElementById('p_tbody'); tbody.innerHTML = ''; let sumQty=0, sumAmt=0;
-           if (row.items) {
-    row.items.forEach((item, idx) => {
-        // [수정] 인쇄 시 규격이 없으면 품목 리스트에서 다시 찾기
-        let spec = item.spec;
-        if (!spec) {
-            const prod = productList.find(p => p.name === item.name);
-            if (prod) spec = prod.spec;
-        }
+            // 테이블 본문 생성
+            const tableContainer = document.querySelector('.print-items-table');
+            
+            // [수정] tfoot 영역을 아예 새로 구성합니다. (공급가액, 부가세, 합계 분리)
+            tableContainer.innerHTML = `
+                <colgroup><col style="width: 5%;"><col style="width: 25%;"><col style="width: 30%;"><col style="width: 8%;"><col style="width: 8%;"><col style="width: 12%;"><col style="width: 12%;"></colgroup>
+                <thead><tr><th>No</th><th>품명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>공급가액</th></tr></thead>
+                <tbody id="p_tbody"></tbody>
+                <tfoot>
+                    <tr style="background: #f8f8f8;">
+                        <td colspan="4" style="text-align: center; border-right: 1px solid black; font-weight: bold;">합 계 (Total)</td>
+                        <td style="text-align: center; border-right: 1px solid black; font-weight: bold;" id="p_total_qty"></td>
+                        <td style="text-align: right; border-right: 1px solid black; font-size: 11px;">공급가액</td>
+                        <td style="text-align: right; font-weight: bold;" id="p_sum_supply"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="border-right: 1px solid black; border-bottom: 1px solid black;"></td>
+                        <td style="text-align: right; border-right: 1px solid black; background: #f8f8f8; font-size: 11px;">부가세 (VAT)</td>
+                        <td style="text-align: right;" id="p_sum_vat"></td>
+                    </tr>
+                    <tr style="font-weight: bold;">
+                        <td colspan="5" style="border-right: 1px solid black; border-bottom: 1px solid black;"></td>
+                        <td style="text-align: right; border-right: 1px solid black; background: #e6e6e6;">총 합계</td>
+                        <td style="text-align: right; background: #e6e6e6;" id="p_total_amt"></td>
+                    </tr>
+                    <tr style="background: #fff; border-top: 2px double black;">
+                        <td colspan="7" style="padding: 10px; text-align: left;"><strong>[비고]</strong> <span id="p_note"></span></td>
+                    </tr>
+                </tfoot>
+            `;
 
-        sumQty += parseInt(item.qty)||0; sumAmt += parseInt(item.supply)||0;
-        tbody.innerHTML += `<tr class="items-row"><td style="text-align:center">${idx+1}</td><td>${item.name}</td><td style="font-size:10px">${spec||'-'}</td><td style="text-align:center">${item.unit||'EA'}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${(item.price||0).toLocaleString()}</td><td style="text-align:right">${(item.supply||0).toLocaleString()}</td></tr>`;
-    });
-}
+            const tbody = document.getElementById('p_tbody'); 
+            tbody.innerHTML = ''; 
+            let sumQty=0, sumAmt=0;
+
+            if (row.items) {
+                row.items.forEach((item, idx) => {
+                    let spec = item.spec;
+                    if (!spec) {
+                        const prod = productList.find(p => p.name === item.name);
+                        if (prod) spec = prod.spec;
+                    }
+                    sumQty += parseInt(item.qty)||0; 
+                    sumAmt += parseInt(item.supply)||0; // 공급가액 합계
+                    tbody.innerHTML += `<tr class="items-row"><td style="text-align:center">${idx+1}</td><td>${item.name}</td><td style="font-size:10px">${spec||'-'}</td><td style="text-align:center">${item.unit||'EA'}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${(item.price||0).toLocaleString()}</td><td style="text-align:right">${(item.supply||0).toLocaleString()}</td></tr>`;
+                });
+            }
+            
+            // 빈 행 채우기
             for (let i=0; i<10-(row.items?.length||0); i++) tbody.innerHTML += `<tr class="items-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+
+            // [수정] 금액 계산 및 할당
+            const vatAmt = Math.floor(sumAmt * 0.1); // 부가세 10%
+            const totalAmt = row.total_amount || (sumAmt + vatAmt);
+
             document.getElementById('p_total_qty').innerText = sumQty.toLocaleString();
-            document.getElementById('p_total_amt').innerText = "₩ " + (row.total_amount||0).toLocaleString();
+            document.getElementById('p_sum_supply').innerText = sumAmt.toLocaleString(); // 공급가액 합계
+            document.getElementById('p_sum_vat').innerText = vatAmt.toLocaleString();   // 부가세
+            document.getElementById('p_total_amt').innerText = "₩ " + totalAmt.toLocaleString(); // 총 합계
             document.getElementById('p_note').innerText = row.note || '';
 
             document.getElementById('printContainer').classList.remove('hidden');
             setTimeout(() => { window.print(); document.getElementById('printContainer').classList.add('hidden'); }, 100);
         }
-
+        
         function getTitle(tab) { const map = {'partners':'거래처','products':'품목','purchase_orders':'발주','purchases':'구매(입고)','quotes':'견적','orders':'주문','sales':'판매'}; return map[tab] || ''; }
         function closeModal() { document.getElementById('genericModal').classList.remove('active'); }
         function autoGenCode(val) { if(val && !currentEditId) document.getElementById('prodCode').value = 'P-' + Date.now().toString().slice(-6); }
