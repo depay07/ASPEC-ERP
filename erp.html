@@ -1238,8 +1238,43 @@ async function openInventoryDetailModal(prodName) {
             fillDL('dl_part', partnerList); fillDL('dl_prod', productList);
         }
         function renderItemInputArea(tab) { 
-            return `<div class="bg-white border p-3 rounded mb-4 shadow-sm"><div class="flex gap-2 items-end"><div class="w-1/4"><label class="text-xs">품목명</label><input id="iName" class="input-box" list="dl_prod" onchange="fillProd(this.value)"></div><div class="flex-grow"><label class="text-xs">규격 (수정가능)</label><input id="iSpec" class="input-box"></div><div class="w-20"><label class="text-xs">수량</label><input type="number" id="iQty" class="input-box" value="1"></div><div class="w-28"><label class="text-xs">단가</label><input type="number" id="iPrice" class="input-box"></div><button onclick="addItemToGrid('${tab}')" class="bg-slate-700 text-white px-4 py-2 rounded font-bold text-sm h-9">추가</button></div></div><table class="w-full text-sm border-collapse border text-center mb-4"><thead class="bg-slate-100"><tr><th>품목명</th><th style="width:30%">규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>삭제</th></tr></thead><tbody id="itemGrid"></tbody></table><div class="text-right text-lg font-bold text-cyan-700">총 합계: <span id="sGrandTotal">0</span>원</div><button onclick="saveComplexData('${tab}')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg">문서 저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`; 
+            return `
+            <div class="bg-white border p-3 rounded mb-4 shadow-sm">
+                <div class="flex gap-2 items-end">
+                    <div class="w-1/4"><label class="text-xs">품목명</label><input id="iName" class="input-box" list="dl_prod" onchange="fillProd(this.value)"></div>
+                    <div class="flex-grow"><label class="text-xs">규격 (수정가능)</label><input id="iSpec" class="input-box"></div>
+                    <div class="w-20"><label class="text-xs">수량</label><input type="number" id="iQty" class="input-box" value="1"></div>
+                    <div class="w-28"><label class="text-xs">단가</label><input type="number" id="iPrice" class="input-box"></div>
+                    <button onclick="addItemToGrid('${tab}')" class="bg-slate-700 text-white px-4 py-2 rounded font-bold text-sm h-9">추가</button>
+                </div>
+            </div>
+            
+            <table class="w-full text-sm border-collapse border text-center mb-4">
+                <thead class="bg-slate-100">
+                    <tr><th>품목명</th><th style="width:30%">규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>삭제</th></tr>
+                </thead>
+                <tbody id="itemGrid"></tbody>
+            </table>
+            
+            <div class="flex flex-col items-end gap-1 mt-4 mb-6 pr-2">
+                <div class="flex justify-between w-64 text-sm">
+                    <span class="text-slate-500 font-medium">공급가액</span> 
+                    <span class="font-bold text-slate-700"><span id="sTotalSupply">0</span>원</span>
+                </div>
+                <div class="flex justify-between w-64 text-sm">
+                    <span class="text-slate-500 font-medium">부가세</span> 
+                    <span class="font-bold text-slate-700"><span id="sTotalVat">0</span>원</span>
+                </div>
+                <div class="flex justify-between w-64 border-t border-slate-300 pt-2 mt-1 text-lg text-cyan-700 font-bold">
+                    <span>총 합계</span> 
+                    <span><span id="sGrandTotal">0</span>원</span>
+                </div>
+            </div>
+
+            <button onclick="saveComplexData('${tab}')" class="w-full bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">문서 저장</button>
+            <datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`; 
         }
+        
         function addItemToGrid(tab) {
             const name = el('iName'); 
             const qty = parseInt(el('iQty'))||0; 
@@ -1265,13 +1300,41 @@ async function openInventoryDetailModal(prodName) {
             document.getElementById('iSpec').value=''; 
         }
         function renderGrid() {
-            const tbody = document.getElementById('itemGrid'); tbody.innerHTML = ''; let grandTotal = 0;
+            const tbody = document.getElementById('itemGrid'); 
+            tbody.innerHTML = ''; 
+            
+            // [수정됨] 공급가액, 부가세, 총합계 변수 각각 선언
+            let totalSupply = 0;
+            let totalVat = 0;
+            let grandTotal = 0;
+            
             tempItems.forEach((item, idx) => {
+                // 각각 누적 계산
+                totalSupply += item.supply;
+                totalVat += item.vat;
                 grandTotal += item.total;
-                tbody.innerHTML += `<tr><td>${item.name}</td><td class="text-left px-2 text-slate-600 text-xs">${item.spec||''}</td><td>${item.qty}</td><td>${item.price.toLocaleString()}</td><td>${item.supply.toLocaleString()}</td><td>${item.vat.toLocaleString()}</td><td class="font-bold">${item.total.toLocaleString()}</td><td onclick="tempItems.splice(${idx},1); renderGrid()" class="cursor-pointer text-red-400"><i class="fa-solid fa-trash"></i></td></tr>`;
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition border-b">
+                        <td class="py-2">${item.name}</td>
+                        <td class="text-left px-2 text-slate-600 text-xs">${item.spec||''}</td>
+                        <td>${item.qty}</td>
+                        <td class="text-right px-2">${item.price.toLocaleString()}</td>
+                        <td class="text-right px-2 text-slate-600">${item.supply.toLocaleString()}</td>
+                        <td class="text-right px-2 text-slate-400 text-xs">${item.vat.toLocaleString()}</td>
+                        <td class="text-right px-2 font-bold">${item.total.toLocaleString()}</td>
+                        <td onclick="tempItems.splice(${idx},1); renderGrid()" class="cursor-pointer text-red-400 hover:text-red-600">
+                            <i class="fa-solid fa-trash"></i>
+                        </td>
+                    </tr>`;
             });
+            
+            // [수정됨] 화면에 각각의 합계 표시
+            document.getElementById('sTotalSupply').innerText = totalSupply.toLocaleString();
+            document.getElementById('sTotalVat').innerText = totalVat.toLocaleString();
             document.getElementById('sGrandTotal').innerText = grandTotal.toLocaleString();
         }
+        
         // [신규] 구매 관리 전용: 품목 추가 함수
         function addPurchaseItem() {
             const name = document.getElementById('purItem').value;
