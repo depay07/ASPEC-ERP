@@ -330,12 +330,59 @@
             try { 
                 const { data: { user } } = await supabase.auth.getUser();
                 if(user) currentUserEmail = user.email;
+                setupAutoTimeSync();
                 await fetchData(); 
                 switchTab('dashboard'); 
                 startSessionTimer();
             } catch (e) { console.error("초기화 오류: ", e); }
         };
 
+        // [신규 기능] 날짜/시간 자동 동기화 설정
+function setupAutoTimeSync() {
+    const sDate = document.getElementById('eventStartDate');
+    const eDate = document.getElementById('eventEndDate');
+    const sTime = document.getElementById('eventStartTime');
+    const eTime = document.getElementById('eventEndTime');
+
+    // 1. 시작 날짜가 변경되면 -> 종료 날짜도 똑같이 변경
+    sDate.addEventListener('change', function() {
+        eDate.value = this.value;
+    });
+
+    // 2. 시작 시간이 변경되면 -> 종료 시간은 '1시간 뒤'로 자동 설정
+    sTime.addEventListener('change', function() {
+        if (!this.value) return;
+
+        // 현재 선택된 시간(HH:mm)을 가져와서 시/분으로 분리
+        const [hours, mins] = this.value.split(':').map(Number);
+        
+        // 가상의 날짜 객체를 만들어 1시간을 더함
+        const dateObj = new Date();
+        dateObj.setHours(hours + 1);
+        dateObj.setMinutes(mins);
+
+        // 시간을 HH:mm 형식으로 다시 변환
+        const newHour = String(dateObj.getHours()).padStart(2, '0');
+        const newMin = String(dateObj.getMinutes()).padStart(2, '0');
+        
+        // 종료 시간에 적용
+        eTime.value = `${newHour}:${newMin}`;
+
+        // (선택사항) 만약 23시에서 1시간 더해서 00시가 되어 날짜가 넘어가는 경우, 
+        // 종료 날짜가 시작 날짜보다 하루 늦어야 한다면 아래 주석 해제
+        /*
+        if (hours + 1 >= 24) {
+             const startDateObj = new Date(sDate.value);
+             startDateObj.setDate(startDateObj.getDate() + 1); // 하루 더하기
+             eDate.value = startDateObj.toISOString().split('T')[0];
+        } else {
+             eDate.value = sDate.value; // 같은 날이면 날짜 맞춤
+        }
+        */
+    });
+}
+
+        
         function startSessionTimer() {
             clearTimeout(sessionTimer);
             sessionTimer = setTimeout(() => {
