@@ -1885,6 +1885,14 @@ function renderComplexForm(tab, container) {
             selectColor('green');
             
             document.getElementById('eventModal').classList.add('active');
+
+            document.getElementById('eventStartDate').addEventListener('change', function() {
+                const start = this.value;
+                const endInput = document.getElementById('eventEndDate');
+                if(endInput.value < start) {
+                    endInput.value = start;
+                }
+            });
         }
 
         // 이벤트 편집
