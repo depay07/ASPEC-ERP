@@ -528,39 +528,7 @@ function setupAutoTimeSync() {
             }
             // 발주/구매 품목 검색 필터
             else if(tab === 'purchase_orders' || tab === 'purchases') { const sItem = document.getElementById('search_sItem') ? document.getElementById('search_sItem').value.toLowerCase() : ''; if(sItem) { if(tab === 'purchases') resultData = data.filter(r => r.item_name && r.item_name.toLowerCase().includes(sItem)); else resultData = data.filter(r => r.items && r.items.some(i => i.name.toLowerCase().includes(sItem))); } }
-
-                else if (tab === 'cost_management') {
-    const totalSales = row.total_amount || 0;
-    const totalCost = row.total_cost || 0;
-    const margin = totalSales - totalCost;
-    
-    // 마진율 계산 (매출이 0이면 0%)
-    const marginRate = totalSales > 0 ? ((margin / totalSales) * 100).toFixed(1) : 0;
-    
-    // 마진이 마이너스면 빨간색, 플러스면 파란색
-    const marginClass = margin < 0 ? 'text-red-600' : 'text-blue-600';
-
-    // 대표 품목명 만들기
-    let title = '-';
-    if(row.items && row.items.length > 0) {
-        title = row.items[0].name;
-        if(row.items.length > 1) title += ` 외 ${row.items.length-1}건`;
-    }
-
-    tr += `
-        <td class="text-center">${row.date}</td>
-        <td class="font-bold text-slate-700">${row.partner_name}</td>
-        <td>${title}</td>
-        <td class="text-right font-bold">${totalSales.toLocaleString()}</td>
-        <td class="text-right text-slate-600">${totalCost.toLocaleString()}</td>
-        <td class="text-right font-bold ${marginClass}">${margin.toLocaleString()}</td>
-        <td class="text-center text-xs ${marginClass}">${marginRate}%</td>
-        <td class="text-center">
-            <button onclick="openCostModal(${row.id})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-bold transition">원가입력</button>
-        </td>
-    `;
-}
-            
+                            
             else if (tab === 'bookkeeping') {
                 const cat = document.getElementById('search_sCategory').value;
                 const usage = document.getElementById('search_sUsage').value;
@@ -714,6 +682,36 @@ function setupAutoTimeSync() {
                                <td>${row.note||''}</td>
                                <td>${actions}</td>`;
                     }
+
+                else if (tab === 'cost_management') {
+                    const totalSales = row.total_amount || 0;
+                    const totalCost = row.total_cost || 0;
+                    const margin = totalSales - totalCost;
+                    
+                    // 마진율 계산
+                    const marginRate = totalSales > 0 ? ((margin / totalSales) * 100).toFixed(1) : 0;
+                    const marginClass = margin < 0 ? 'text-red-600' : 'text-blue-600';
+                
+                    // 대표 품목명 만들기
+                    let title = '-';
+                    if(row.items && row.items.length > 0) {
+                        title = row.items[0].name;
+                        if(row.items.length > 1) title += ` 외 ${row.items.length-1}건`;
+                    }
+                
+                    tr += `
+                        <td class="text-center">${row.date}</td>
+                        <td class="font-bold text-slate-700">${row.partner_name}</td>
+                        <td>${title}</td>
+                        <td class="text-right font-bold">${totalSales.toLocaleString()}</td>
+                        <td class="text-right text-slate-600">${totalCost.toLocaleString()}</td>
+                        <td class="text-right font-bold ${marginClass}">${margin.toLocaleString()}</td>
+                        <td class="text-center text-xs ${marginClass}">${marginRate}%</td>
+                        <td class="text-center">
+                            <button onclick="openCostModal(${row.id})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-bold transition">원가입력</button>
+                        </td>
+                    `;
+                }
                 else if (tab === 'inventory') { } 
                 else {
                     tr += `<td class="text-center">${row.date}</td><td class="font-bold">${row.partner_name||'-'}</td><td class="text-center">${row.manager||'-'}</td><td class="text-right text-slate-600">${(row.total_supply||0).toLocaleString()}</td><td class="text-right text-slate-400 text-xs">${(row.total_vat||0).toLocaleString()}</td><td class="text-right font-bold text-cyan-700">${(row.total_amount||0).toLocaleString()}</td><td>${row.note||''}</td><td>${actions}</td>`;
