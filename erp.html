@@ -415,7 +415,8 @@ function setupAutoTimeSync() {
             // [수정된 날짜 계산 로직]
             // 기본값은 '이번 달 1일'이지만, 수금 관리(collections)일 때는 '5년 전 오늘'로 설정
             // ============================================================
-            let startObj = new Date(today.getFullYear(), today.getMonth(), 1); // 기본: 이번 달 1일
+            let startObj = new Date(); 
+            startObj.setFullYear(today.getFullYear() - 1); // 정확히 1년 전으로 설정
             
             if (tab === 'collections') {
                 startObj = new Date(); 
