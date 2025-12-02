@@ -40,20 +40,16 @@
         .calendar-day.other-month { background: #f1f5f9; color: #94a3b8; }
         .calendar-day.today { background: #eff6ff; border: 2px solid #3b82f6; }
         .calendar-day-number { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #1e293b; }
-        .calendar-day.other-month .calendar-day-number { color: #94a3b8; }
-        .calendar-day.today .calendar-day-number { color: #2563eb; font-weight: 700; }
+        .calendar-day-header:nth-child(7n+1) { color: #ef4444 !important; }
+        .calendar-day-header:nth-child(7n) { color: #3b82f6 !important; }
+        .calendar-day:nth-child(7n+1):not(.other-month) .calendar-day-number { color: #ef4444 !important; }
+        .calendar-day:nth-child(7n):not(.other-month) .calendar-day-number { color: #3b82f6 !important; }
         .calendar-event { font-size: 11px; padding: 2px 6px; margin: 2px 0; border-radius: 3px; cursor: pointer; transition: opacity 0.2s; word-wrap: break-word; white-space: normal; line-height: 1.3; }
         .calendar-event:hover { opacity: 0.8; }
         .calendar-event.allday { font-weight: 600; }
         .calendar-more-events { font-size: 11px; color: #64748b; cursor: pointer; padding: 2px 6px; margin: 2px 0; text-align: center; font-weight: 600; }
         .calendar-more-events:hover { background: #f1f5f9; border-radius: 3px; }
-
-        .calendar-day-header:nth-child(7n+1) { color: #ef4444 !important; }
-        .calendar-day-header:nth-child(7n) { color: #3b82f6 !important; }
-        .calendar-day:nth-child(7n+1):not(.other-month) .calendar-day-number { color: #ef4444 !important; }
-        .calendar-day:nth-child(7n):not(.other-month) .calendar-day-number { color: #3b82f6 !important; }
-
-        /* 이벤트 색상 */
+        
         .event-red { background-color: #fee2e2; color: #991b1b; }
         .event-orange { background-color: #fed7aa; color: #9a3412; }
         .event-yellow { background-color: #fef08a; color: #854d0e; }
@@ -62,41 +58,33 @@
         .event-indigo { background-color: #c7d2fe; color: #3730a3; }
         .event-purple { background-color: #e9d5ff; color: #6b21a8; }
         .event-pink { background-color: #fbcfe8; color: #9f1239; }
-        
         .color-selector { display: flex; gap: 8px; margin-top: 8px; }
         .color-option { width: 30px; height: 30px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
         .color-option:hover { transform: scale(1.1); }
         .color-option.selected { border-color: #1e293b; box-shadow: 0 0 0 2px white, 0 0 0 4px #1e293b; }
 
-        /* 인쇄 전용 스타일 */
         @media print {
             @page { size: A4; margin: 0; }
             body { margin: 0; padding: 0; background: white; }
             body * { visibility: hidden; }
-            
             #printContainer, #printContainer * { visibility: visible; box-sizing: border-box; }
             #printContainer { position: absolute; left: 0; top: 0; width: 100%; font-family: "Malgun Gothic", dotum, sans-serif; color: black !important; }
-            
             .print-wrap { width: 100%; padding: 15mm; margin: 0 auto; }
             .print-title-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom: 5px; }
             .print-title-main { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
             .print-title-sub { font-size: 16px; font-weight: normal; font-style: italic; margin-left: 10px; }
             .print-meta { text-align: right; font-size: 11px; line-height: 1.4; }
-        
             .print-grid-box { display: flex; width: 100%; border: 1px solid black; margin-bottom: 10px; }
             .print-half { width: 50%; padding: 0; flex: 1; }
             .print-half:first-child { border-right: 1px solid black; }
-        
             .print-info-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; border: none; }
             .print-info-table th { background-color: #f3f3f3 !important; text-align: center; padding: 5px; border-bottom: 1px solid black; border-right: 1px solid black; width: 20%; font-weight: bold; height: 30px; -webkit-print-color-adjust: exact; }
             .print-info-table td { padding: 2px 5px; border-bottom: 1px solid black; height: 30px; vertical-align: middle; font-size: 11px; word-break: break-all; overflow: hidden; }
             .print-info-table tr:last-child th, .print-info-table tr:last-child td { border-bottom: none; }
             .print-header-cell { text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid black; font-size: 14px; background-color: #e6e6e6 !important; -webkit-print-color-adjust: exact; }
-        
             .print-items-table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 11px; table-layout: fixed; }
             .print-items-table th { border: 1px solid black; background-color: #f3f3f3 !important; padding: 5px; text-align: center; -webkit-print-color-adjust: exact; }
             .print-items-table td { border: 1px solid black; padding: 5px; height: 35px; word-break: keep-all; white-space: normal; vertical-align: middle; }
-            
             .addr-cell { height: 55px !important; vertical-align: top !important; padding-top: 5px !important; line-height: 1.4; }
         }
     </style>
@@ -108,19 +96,18 @@
             <div class="p-6 border-b border-slate-800">
                 <a href="erp.html" class="block cursor-pointer hover:opacity-80 transition"><h1 class="text-2xl font-bold text-white">ASPEC <span class="text-cyan-400 text-sm">ERP</span></h1></a>
             </div>
-            
             <nav class="flex-1 py-4 overflow-y-auto text-base">
                 <button onclick="switchTab('dashboard')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3 bg-slate-800 text-white font-bold"><i class="fa-solid fa-house w-5"></i> 홈 화면</button>
                 <button onclick="switchTab('calendar')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-calendar-days w-5"></i> 일정 관리</button>
                 
-                <button onclick="switchTab('bookkeeping')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3 text-orange-400 font-semibold"><i class="fa-solid fa-book-open w-5"></i> 기장 관리</button>
+                <button onclick="switchTab('bookkeeping')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3 text-emerald-400 font-bold"><i class="fa-solid fa-book-open w-5"></i> 기장 관리</button>
 
-                <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">영업 관리</div>
+                <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">영업 관리</div>
                 <button onclick="switchTab('quotes')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-file-invoice w-5"></i> 견적 관리</button>
                 <button onclick="switchTab('orders')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-file-signature w-5"></i> 주문 관리</button>
                 <button onclick="switchTab('sales')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-truck-fast w-5"></i> 판매 관리</button>
                 <button onclick="switchTab('collections')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-sack-dollar w-5"></i> 수금 관리</button>
-
+                
                 <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">자재/발주</div>
                 <button onclick="switchTab('purchase_orders')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-file-import w-5"></i> 발주 관리 (PO)</button>
                 <button onclick="switchTab('purchases')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-dolly w-5"></i> 구매 관리 (입고)</button>
@@ -139,7 +126,6 @@
     </div>
 
     <div id="genericModal" class="modal no-print"><div class="modal-content"><div class="flex justify-between items-center mb-6 border-b pb-4"><h2 id="modalTitle" class="text-2xl font-bold text-slate-800">입력</h2><button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-2xl"></i></button></div><div id="modalBody"></div></div></div>
-    
     <div id="loadDataModal" class="modal no-print" style="z-index: 60;"><div class="modal-content" style="max-width: 800px;"><h3 class="text-xl font-bold mb-4" id="loadModalTitle">데이터 불러오기</h3><div class="overflow-y-auto max-h-96 border rounded"><table class="w-full text-left text-sm"><thead class="bg-slate-50"><tr><th class="p-3">날짜</th><th class="p-3">거래처</th><th class="p-3">총액</th><th class="p-3">선택</th></tr></thead><tbody id="loadDataBody"></tbody></table></div><div class="mt-6 text-right"><button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="px-6 py-2 bg-slate-200 rounded text-sm font-bold">닫기</button></div></div></div>
 
     <div id="eventModal" class="modal no-print">
@@ -215,8 +201,8 @@
         <div class="print-wrap">
             <div class="print-title-area">
                 <div><span id="p_title_ko" class="print-title-main">견 적 서</span><span id="p_title_en" class="print-title-sub">QUOTATION</span></div>
-                <div class="print-meta"><div>문서번호: <span id="p_no"></span></div><div>작성일자: <span id="p_date"></span></div></div>
-            </div>
+                <div class="print-meta"><div>문서번호: <span id="p_no"></span></div><div>작성일자: <span id="p_date"></span></div>                   
+            </div> </div>
             <div class="print-grid-box">
                 <div class="print-half">
                     <div class="print-header-cell" id="p_left_role">공 급 받 는 자</div>
@@ -246,9 +232,7 @@
                 <thead><tr><th>No</th><th>품명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>공급가액</th></tr></thead>
                 <tbody id="p_tbody"></tbody>
                 <tfoot>
-                    <tr style="background: #f8f8f8; font-weight: bold;"><td colspan="4" style="text-align: center; border-right: 1px solid black;">합 계 (Total)</td><td style="text-align: center; border-right: 1px solid black;" id="p_total_qty"></td><td style="text-align: right; border-right: 1px solid black;">공급가액</td><td style="text-align: right;" id="p_sum_supply"></td></tr>
-                    <tr><td colspan="5" style="border-right: 1px solid black; border-bottom: 1px solid black;"></td><td style="text-align: right; border-right: 1px solid black; background: #f8f8f8;">부가세 (VAT)</td><td style="text-align: right;" id="p_sum_vat"></td></tr>
-                    <tr style="font-weight: bold;"><td colspan="5" style="border-right: 1px solid black; border-bottom: 1px solid black;"></td><td style="text-align: right; border-right: 1px solid black; background: #e6e6e6;">총 합계</td><td style="text-align: right; background: #e6e6e6;" id="p_total_amt"></td></tr>
+                    <tr style="background: #f8f8f8; font-weight: bold;"><td colspan="4" style="text-align: center; border-right: 1px solid black;">합 계 (Total)</td><td style="text-align: center; border-right: 1px solid black;" id="p_total_qty"></td><td style="text-align: right; border-right: 1px solid black;">VAT 포함</td><td style="text-align: right;" id="p_total_amt"></td></tr>
                     <tr style="background: #fff; border-top: 2px double black;"><td colspan="7" style="padding: 10px; text-align: left;"><strong>[비고]</strong> <span id="p_note"></span></td></tr>
                 </tfoot>
             </table>
@@ -257,4 +241,1002 @@
 
     <script>
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYX
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
+        if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_URL')) alert("API 키를 설정해주세요.");
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentTab = 'dashboard';
+        let tempItems = []; 
+        let partnerList = []; 
+        let productList = [];
+        let currentEditId = null; 
+        let currentUserEmail = ""; 
+        let globalDataStore = {};
+        let sessionTimer;
+        let currentLoadedOrderId = null; 
+        let currentLoadSource = '';
+
+        window.onload = async () => { 
+            try { 
+                const { data: { user } } = await supabase.auth.getUser();
+                if(user) currentUserEmail = user.email;
+                setupAutoTimeSync();
+                await fetchData(); 
+                switchTab('dashboard'); 
+                startSessionTimer();
+            } catch (e) { console.error("초기화 오류: ", e); }
+        };
+
+        function setupAutoTimeSync() {
+            const sDate = document.getElementById('eventStartDate');
+            const eDate = document.getElementById('eventEndDate');
+            const sTime = document.getElementById('eventStartTime');
+            const eTime = document.getElementById('eventEndTime');
+            sDate.addEventListener('change', function() { eDate.value = this.value; });
+            sTime.addEventListener('change', function() {
+                if (!this.value) return;
+                const [hours, mins] = this.value.split(':').map(Number);
+                const dateObj = new Date();
+                dateObj.setHours(hours + 1); dateObj.setMinutes(mins);
+                const newHour = String(dateObj.getHours()).padStart(2, '0');
+                const newMin = String(dateObj.getMinutes()).padStart(2, '0');
+                eTime.value = `${newHour}:${newMin}`;
+            });
+        }
+        
+        function startSessionTimer() {
+            clearTimeout(sessionTimer);
+            sessionTimer = setTimeout(() => {
+                if(confirm("로그인 시간이 30분 지났습니다. 연장하시겠습니까?")) startSessionTimer(); else logout();
+            }, 30 * 60 * 1000);
+        }
+
+        async function fetchData() {
+            const pRes = await supabase.from('partners').select('*');
+            const prodRes = await supabase.from('products').select('*').order('name');
+            if(!pRes.error) partnerList = pRes.data || [];
+            if(!prodRes.error) productList = prodRes.data || [];
+        }
+
+        function storeRowData(row) { const id = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); globalDataStore[id] = row; return id; }
+        function getRowData(id) { return globalDataStore[id]; }
+
+        function renderSearchPanel(tab) {
+            const panel = document.getElementById('searchContainer');
+            if (tab === 'dashboard' || tab === 'calendar') { panel.innerHTML = ''; return; }
+            
+            const today = new Date(); 
+            const currentDay = today.toISOString().split('T')[0];
+            let startObj = new Date(today.getFullYear(), today.getMonth(), 1); 
+            
+            if (tab === 'collections' || tab === 'bookkeeping') {
+                startObj = new Date(); 
+                startObj.setFullYear(today.getFullYear() - 1); // 1년 전으로 설정
+            }
+            
+            const firstDay = startObj.toISOString().split('T')[0];
+            let html = `<div class="search-panel no-print"><div class="flex flex-wrap gap-6 items-end">`;
+            
+            if (!['partners', 'products', 'inventory'].includes(tab)) {
+                html += `<div><span class="search-label">기간 조회</span><div class="flex items-center gap-2"><input type="date" id="searchStartDate" class="input-box" value="${firstDay}"><span class="text-slate-400">~</span><input type="date" id="searchEndDate" class="input-box" value="${currentDay}"></div></div>`;
+            }
+            
+            if (tab === 'purchase_orders') html += `<div><span class="search-label">납품업체</span><input type="text" id="search_sPartner" class="input-box" placeholder="업체명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">EndUser</span><input type="text" id="search_sEndUser" class="input-box" placeholder="EndUser" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+            else if (tab === 'purchases') html += `<div><span class="search-label">매입처</span><input type="text" id="search_sPartner" class="input-box" placeholder="매입처" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+            else if (tab === 'partners') html += `<div><span class="search-label">상호명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+            else if (tab === 'products' || tab === 'inventory') {
+                html += `<div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+            }
+            // [New] 기장 관리 검색
+            else if (tab === 'bookkeeping') {
+                html += `<div><span class="search-label">사용처/적요</span><input type="text" id="search_sVendor" class="input-box" placeholder="사용처 또는 내용" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+            }
+            else if (tab === 'collections') {
+                html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+            }
+            else html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+        
+            let extraControls = '';
+            if (tab === 'inventory') {
+                extraControls = `<label class="flex items-center gap-2 cursor-pointer mr-4"><input type="checkbox" id="hideZeroStock" class="w-4 h-4" checked><span class="text-sm font-semibold text-slate-700">재고0개품목제외</span></label>`;
+            } 
+            else if (tab === 'collections') {
+                extraControls = `<label class="flex items-center gap-2 cursor-pointer mr-4"><input type="checkbox" id="hideZeroReceivable" class="w-4 h-4" checked><span class="text-sm font-semibold text-slate-700">채권금액 0원은 제외</span></label>`;
+            }
+        
+            html += `<div class="ml-auto flex items-center">${extraControls}<button onclick="runSearch('${tab}')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded font-bold shadow transition flex items-center gap-2 text-sm"><i class="fa-solid fa-magnifying-glass"></i> 조회</button></div></div></div>`;
+            
+            panel.innerHTML = html;
+        }
+
+        function handleSearchKeyPress(event, tab) { if (event.key === 'Enter') runSearch(tab); }
+
+        async function runSearch(tab) {
+            const tbody = document.getElementById('listBody'); tbody.innerHTML = '<tr><td colspan="10" class="text-center p-8">데이터를 불러오는 중입니다...</td></tr>';
+            
+            if(tab === 'inventory') { await loadInventoryData(true); return; }
+            
+            // 테이블명 매핑 (탭 이름과 테이블 이름이 다를 경우 처리)
+            let targetTable = tab;
+            if(tab === 'collections') targetTable = 'sales';
+            else if(tab === 'bookkeeping') targetTable = 'expenses'; // 기장관리용 테이블
+
+            let query = supabase.from(targetTable).select('*').order(targetTable === 'expenses' ? 'date' : 'created_at', { ascending: false });
+            
+            const sDate = document.getElementById('searchStartDate')?.value;
+            const eDate = document.getElementById('searchEndDate')?.value;
+            if(sDate && eDate && !['partners','products'].includes(tab)) query = query.gte('date', sDate).lte('date', eDate);
+
+            if(tab === 'purchase_orders') { const p = document.getElementById('search_sPartner').value; const e = document.getElementById('search_sEndUser').value; if(p) query = query.ilike('partner_name', `%${p}%`); if(e) query = query.ilike('end_user', `%${e}%`); }
+            else if (tab === 'purchases') { const p = document.getElementById('search_sPartner').value; const i = document.getElementById('search_sItem').value; if(p) query = query.ilike('partner_name', `%${p}%`); if(i) query = query.ilike('item_name', `%${i}%`); }
+            else if (tab === 'partners') { const n = document.getElementById('search_sName').value; const m = document.getElementById('search_sManager').value; if(n) query = query.ilike('name', `%${n}%`); if(m) query = query.ilike('manager_name', `%${m}%`); }
+            else if (tab === 'products') { const n = document.getElementById('search_sName').value; const c = document.getElementById('search_sCode').value; if(n) query = query.ilike('name', `%${n}%`); if(c) query = query.ilike('code', `%${c}%`); }
+            
+            // [New] 기장관리 검색 로직
+            else if (tab === 'bookkeeping') {
+                const v = document.getElementById('search_sVendor').value;
+                if(v) query = query.or(`vendor.ilike.%${v}%,note.ilike.%${v}%`);
+            }
+            
+            else if (tab === 'collections') {
+                 const p = document.getElementById('search_sPartner')?.value; if(p) query = query.ilike('partner_name', `%${p}%`);
+            }
+            else { 
+                const p = document.getElementById('search_sPartner')?.value; 
+                const m = document.getElementById('search_sManager')?.value; 
+                const n = document.getElementById('search_sNote')?.value; 
+                if(p) query = query.ilike('partner_name', `%${p}%`); 
+                if(m) query = query.ilike('manager', `%${m}%`); 
+                if(n) query = query.ilike('note', `%${n}%`); 
+            }
+
+            const { data, error } = await query;
+            if(error) { 
+                if(tab === 'bookkeeping' && error.message.includes('relation "expenses" does not exist')) {
+                    alert("시스템 알림: 'expenses' 테이블이 없습니다. Supabase에서 테이블을 생성해주세요.");
+                } else {
+                    alert("검색실패: "+error.message); 
+                }
+                return; 
+            }
+            
+            let resultData = data;
+
+            if (tab === 'collections') {
+                const hideZero = document.getElementById('hideZeroReceivable')?.checked;
+                if (hideZero) {
+                    resultData = data.filter(row => {
+                        const total = row.total_amount || 0;
+                        const collected = row.collected_amount || 0;
+                        return (total - collected) !== 0; 
+                    });
+                }
+            }
+            else if(tab === 'purchase_orders' || tab === 'purchases') { const sItem = document.getElementById('search_sItem') ? document.getElementById('search_sItem').value.toLowerCase() : ''; if(sItem) { if(tab === 'purchases') resultData = data.filter(r => r.item_name && r.item_name.toLowerCase().includes(sItem)); else resultData = data.filter(r => r.items && r.items.some(i => i.name.toLowerCase().includes(sItem))); } }
+            
+            renderTable(tab, resultData);
+        }
+
+        async function switchTab(tab) {
+            currentTab = tab; 
+            
+            const navBtns = document.querySelectorAll('.nav-btn');
+            navBtns.forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white', 'font-bold');
+                if (btn.getAttribute('onclick').includes(`'${tab}'`)) {
+                    btn.classList.add('bg-slate-800', 'text-white', 'font-bold');
+                }
+            });
+        
+            const container = document.getElementById('contentArea');
+            
+            if (tab === 'dashboard') {
+                renderSearchPanel(tab);
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-[80vh] animate-fade-in"><div class="bg-white p-10 rounded-2xl shadow-xl text-center border-l-8 border-blue-500 max-w-2xl"><h1 class="text-4xl font-extrabold text-slate-800 mb-6">ASPEC ERP System</h1><p class="text-2xl font-medium text-slate-600 italic leading-relaxed">"오늘의 노력이 내일의 성과를 만듭니다."</p></div></div>`;
+                return;
+            }
+            if (tab === 'calendar') { renderSearchPanel(tab); await renderCalendar(); return; }
+        
+            await fetchData(); 
+            renderSearchPanel(tab);
+        
+            const titles = {
+                'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황',
+                'quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)','collections':'수금 관리',
+                'bookkeeping': '기장 관리 (지출/비용)' // [New]
+            };
+            
+            let buttonsHtml = '';
+            const commonBtnClass = "bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2";
+            
+            if (tab === 'products') {
+                buttonsHtml = `<div class="flex gap-2"><button onclick="openBOMModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2"><i class="fa-solid fa-layer-group"></i> 세트(BOM) 관리</button><button onclick="openNewModal('${tab}')" class="${commonBtnClass}"><i class="fa-solid fa-plus"></i> 신규 등록</button></div>`;
+            } else if (tab === 'inventory') {
+                buttonsHtml = `<button onclick="openNewModal('purchases')" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2"><i class="fa-solid fa-plus"></i> 제품 입고</button>`;
+            } else if (tab === 'bookkeeping') {
+                // [New] 기장 관리 버튼
+                buttonsHtml = `<button onclick="openNewModal('${tab}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2"><i class="fa-solid fa-receipt"></i> 비용 등록</button>`;
+            } else if (tab !== 'collections') {
+                buttonsHtml = `<button onclick="openNewModal('${tab}')" class="${commonBtnClass}"><i class="fa-solid fa-plus"></i> 신규 등록</button>`;
+            }
+        
+            let html = `
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold text-slate-800 border-l-8 border-cyan-500 pl-4">${titles[tab]}</h2>
+                    ${buttonsHtml}
+                </div>
+                <div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
+                    <table class="data-table">`;
+        
+            if (tab === 'partners') html += `<thead><tr><th style="width:20%">상호</th><th style="width:15%">담당자</th><th style="width:20%">전화번호</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'products') html += `<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'purchase_orders') html += `<thead><tr><th style="width:12%">PO#</th><th style="width:15%">납품업체</th><th style="width:15%">EndUser</th><th>품목요약</th><th style="width:12%">총액</th><th style="width:10%">일자</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'purchases') html += `<thead><tr><th style="width:10%">일자</th><th style="width:10%">제조사</th><th style="width:15%">매입처</th><th>품목명</th><th style="width:6%">수량</th><th style="width:10%">단가</th><th style="width:10%">합계</th><th style="width:10%">시리얼</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'inventory') html += `<thead><tr><th>품목명</th><th style="width:10%">제조사</th><th style="width:12%">입고처</th><th style="width:10%">입고단가</th><th style="width:8%">총재고</th><th style="width:8%">가용재고</th><th>비고</th><th style="width:10%">예약</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'collections') html += `<thead><tr><th style="width:10%">판매일자</th><th style="width:15%">거래처</th><th style="width:15%">매출총액(VAT포함)</th><th style="width:15%">기수금액</th><th style="width:15%">미수금(잔액)</th><th>비고</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            
+            // [New] 기장 관리 테이블 헤더
+            else if (tab === 'bookkeeping') html += `<thead><tr><th style="width:10%">날짜</th><th style="width:15%">계정과목</th><th style="width:20%">사용처 (거래처)</th><th style="width:15%">금액</th><th style="width:10%">결제수단</th><th>비고/적요</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            
+            else html += `<thead><tr><th style="width:10%">일자</th><th style="width:18%">거래처</th><th style="width:12%">담당자</th><th style="width:12%">공급가액</th><th style="width:10%">부가세</th><th style="width:12%">합계</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            
+            html += `</table></div>`;
+            container.innerHTML = html;
+            runSearch(tab);
+        }
+
+        function renderTable(tab, data) {
+            const tbody = document.getElementById('listBody'); tbody.innerHTML = '';
+            if(!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="text-center p-8 text-slate-500">데이터가 없습니다.</td></tr>'; return; }
+
+            data.forEach(row => {
+                let tr = `<tr class="hover:bg-slate-50 border-b transition">`;
+                const dataId = storeRowData(row);
+                let actions = '<div class="flex justify-center items-center gap-3">';
+                
+                if (tab !== 'collections') {
+                    if(['quotes', 'orders', 'sales', 'purchase_orders'].includes(tab)) actions += `<button onclick="printDocument('${tab}', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄"><i class="fa-solid fa-print fa-lg"></i></button>`;
+                    if(tab !== 'inventory') actions += `<button onclick="openEditModal('${tab}', '${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정"><i class="fa-solid fa-pen-to-square fa-lg"></i></button>`;
+                    actions += `<button onclick="deleteItem('${tab}', ${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제"><i class="fa-solid fa-trash-can fa-lg"></i></button></div>`;
+                }
+
+                if (tab === 'partners') {
+                    const fileIcon = row.biz_file_url ? `<a href="${row.biz_file_url}" target="_blank" class="text-green-600 hover:text-green-800 ml-2"><i class="fa-solid fa-file-pdf"></i></a>` : '';
+                    tr += `<td>${row.name} ${fileIcon}</td><td class="text-center">${row.manager_name||'-'}</td><td class="text-center">${row.phone||'-'}</td><td>${row.note||''}</td><td>${actions}</td>`;
+                }
+                else if (tab === 'products') tr += `<td class="font-mono text-center text-cyan-600">${row.code}</td><td>${row.name}</td><td>${row.spec||'-'}</td><td class="text-center font-bold text-slate-600">${row.unit||'EA'}</td><td>${actions}</td>`;
+                else if (tab === 'purchase_orders') {
+                    const itemsSummary = row.items && row.items.length > 0 ? `${row.items[0].name} 외 ${row.items.length-1}건` : '-';
+                    tr += `<td class="font-bold text-blue-600 text-center">${row.po_number}</td><td>${row.partner_name}</td><td class="text-center">${row.end_user||'-'}</td><td>${itemsSummary}</td><td class="font-bold text-right">${(row.total_amount||0).toLocaleString()}</td><td class="text-center">${row.date}</td><td>${actions}</td>`;
+                } 
+                else if (tab === 'purchases') {
+                    tr += `<td class="text-center">${row.date}</td><td class="text-center">${row.manufacturer||'-'}</td><td>${row.partner_name}</td><td>${row.item_name}</td><td class="text-center font-bold">${row.qty}</td><td class="text-right">${(row.unit_price||0).toLocaleString()}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td class="text-center">${row.serial_no||'-'}</td><td>${actions}</td>`;
+                } 
+                else if (tab === 'collections') {
+                    const total = row.total_amount || 0;
+                    const collected = row.collected_amount || 0;
+                    const balance = total - collected;
+                    const balanceClass = balance > 0 ? 'text-red-600 font-bold' : 'text-slate-400';
+                    tr += `
+                        <td class="text-center">${row.date}</td>
+                        <td class="font-bold text-slate-700">${row.partner_name}</td>
+                        <td class="text-right font-bold">${total.toLocaleString()}</td>
+                        <td class="text-center">
+                            <input type="number" id="col_${row.id}" value="${collected}" class="border rounded px-2 py-1 w-24 text-right font-bold text-blue-600 bg-blue-50 focus:bg-white transition" placeholder="0">
+                        </td>
+                        <td class="text-right ${balanceClass}">${balance.toLocaleString()}</td>
+                        <td><input type="text" id="cnote_${row.id}" value="${row.collection_note || ''}" class="border rounded px-2 py-1 w-full text-xs" placeholder="메모"></td>
+                        <td class="text-center">
+                            <button onclick="updateCollection(${row.id})" class="bg-slate-700 hover:bg-slate-900 text-white px-3 py-1 rounded text-xs font-bold transition">저장</button>
+                        </td>
+                    `;
+                }
+                // [New] 기장 관리 렌더링
+                else if (tab === 'bookkeeping') {
+                    const catColors = { '식대': 'text-green-600', '여비교통비': 'text-blue-600', '접대비': 'text-purple-600', '소모품비': 'text-orange-600' };
+                    const catClass = catColors[row.category] || 'text-slate-700';
+                    tr += `
+                        <td class="text-center">${row.date}</td>
+                        <td class="text-center font-bold ${catClass}">${row.category}</td>
+                        <td>${row.vendor||'-'}</td>
+                        <td class="text-right font-bold">${(row.amount||0).toLocaleString()}</td>
+                        <td class="text-center text-slate-500">${row.payment_method||'-'}</td>
+                        <td>${row.note||''}</td>
+                        <td>${actions}</td>
+                    `;
+                }
+                else if (tab === 'inventory') { } 
+                else {
+                    tr += `<td class="text-center">${row.date}</td><td class="font-bold">${row.partner_name||'-'}</td><td class="text-center">${row.manager||'-'}</td><td class="text-right text-slate-600">${(row.total_supply||0).toLocaleString()}</td><td class="text-right text-slate-400 text-xs">${(row.total_vat||0).toLocaleString()}</td><td class="text-right font-bold text-cyan-700">${(row.total_amount||0).toLocaleString()}</td><td>${row.note||''}</td><td>${actions}</td>`;
+                }
+                
+                if(tab !== 'inventory') tbody.innerHTML += tr;
+            });
+        }
+
+        async function updateCollection(id) {
+            const collectedAmount = parseInt(document.getElementById(`col_${id}`).value) || 0;
+            const note = document.getElementById(`cnote_${id}`).value;
+            if (!confirm('수금 정보를 저장하시겠습니까?')) return;
+            const { error } = await supabase.from('sales').update({ collected_amount: collectedAmount, collection_note: note }).eq('id', id);
+            if (error) alert("오류: " + error.message); else { alert("저장되었습니다."); runSearch('collections'); }
+        }
+
+        function openEditModal(tab, dataId) {
+            const row = getRowData(dataId);
+            if (!row) return alert('데이터 오류');
+            currentEditId = row.id;
+            openNewModal(tab, true);
+            
+            setTimeout(() => {
+                if(tab === 'partners') { 
+                    document.getElementById('pName').value = row.name; 
+                    document.getElementById('pBiz').value = row.biz_num||''; 
+                    document.getElementById('pOwner').value = row.owner_name||''; 
+                    document.getElementById('pManager').value = row.manager_name||''; 
+                    document.getElementById('pPhone').value = row.phone||''; 
+                    document.getElementById('pEmail').value = row.email||''; 
+                    document.getElementById('pAddr').value = row.address||'';
+                    document.getElementById('pNote').value = row.note||''; 
+                }
+                else if(tab === 'products') { 
+                    document.getElementById('prodName').value = row.name; 
+                    document.getElementById('prodCode').value = row.code; 
+                    document.getElementById('prodUnit').value = row.unit||''; 
+                    document.getElementById('prodSpec').value = row.spec||''; 
+                    document.getElementById('prodMaker').value = row.manufacturer||''; 
+                }
+                else if(tab === 'purchases') { /* 생략 (구매 수정은 별도 로직 필요하지만 단순화) */ }
+                else if(tab === 'purchase_orders') { 
+                    document.getElementById('poNum').value = row.po_number; 
+                    document.getElementById('poDate').value = row.date; 
+                    document.getElementById('poPartner').value = row.partner_name; 
+                    document.getElementById('poEndUser').value = row.end_user||''; 
+                    document.getElementById('poManager').value = row.manager||''; 
+                    document.getElementById('poPreOrder').value = row.is_pre_order||''; 
+                    document.getElementById('poNote').value = row.note||'';
+                    document.getElementById('poPManager').value = row.partner_manager || ''; 
+                    document.getElementById('poPhone').value = row.phone || ''; 
+                    document.getElementById('poEmail').value = row.email || ''; 
+                    document.getElementById('poAddr').value = row.partner_address || '';
+                    tempItems = (row.items || []).map(item => {
+                        if (!item.spec) { const prod = productList.find(p => p.name === item.name); if (prod) item.spec = prod.spec; }
+                        return item;
+                    });
+                    renderGrid(); 
+                }
+                // [New] 기장 관리 수정
+                else if(tab === 'bookkeeping') {
+                    document.getElementById('bkDate').value = row.date;
+                    document.getElementById('bkCategory').value = row.category;
+                    document.getElementById('bkVendor').value = row.vendor || '';
+                    document.getElementById('bkAmount').value = row.amount || 0;
+                    document.getElementById('bkMethod').value = row.payment_method || '카드';
+                    document.getElementById('bkNote').value = row.note || '';
+                }
+                else {
+                    document.getElementById('sDate').value = row.date;
+                    document.getElementById('sPartner').value = row.partner_name;
+                    document.getElementById('sManager').value = row.manager || '';
+                    if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
+                    if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
+                    if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || '';
+                    if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || '';
+                    if(document.getElementById('sNote')) document.getElementById('sNote').value = row.note || '';
+                    tempItems = (row.items || []).map(item => {
+                        if (!item.spec) { const prod = productList.find(p => p.name === item.name); if (prod) item.spec = prod.spec; }
+                        return item;
+                    });
+                    renderGrid();
+                }
+            }, 50);
+        }
+
+        async function openNewModal(tab, isEdit = false) {
+            if(!isEdit) { currentEditId = null; tempItems = []; }
+            const modal = document.getElementById('genericModal');
+            document.getElementById('modalTitle').innerText = getTitle(tab) + (isEdit ? ' 수정' : ' 등록');
+            const body = document.getElementById('modalBody');
+            modal.classList.add('active');
+            let html = ''; const today = new Date().toISOString().split('T')[0];
+            
+            if (tab === 'purchase_orders') {
+                let autoPO = '';
+                if (!isEdit) {
+                    const { count } = await supabase.from('purchase_orders').select('*', { count: 'exact', head: true }).eq('date', today);
+                    const nextSeq = (count || 0) + 1;
+                    const yymmdd = today.slice(2).replace(/-/g,'');
+                    autoPO = `ASPEC-${yymmdd}-P${String(nextSeq).padStart(2, '0')}`;
+                }
+                html = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">PO# (자동생성)</label><input id="poNum" class="input-box bg-gray-100" value="${autoPO}"></div><div><label class="text-xs text-slate-500">수주일자</label><input type="date" id="poDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500">발주업체 </label><input id="poPartner" class="input-box" list="dl_part" onchange="fillPOPart(this.value)"></div></div><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처 담당자</label><input id="poPManager" class="input-box"></div><div><label class="text-xs text-slate-500">연락처</label><input id="poPhone" class="input-box"></div><div><label class="text-xs text-slate-500">선발주여부</label><select id="poPreOrder" class="input-box"><option>N</option><option>Y</option></select></div></div><div class="mb-2"><label class="text-xs text-slate-500">주소</label><input id="poAddr" class="input-box"></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">이메일</label><input id="poEmail" class="input-box"></div><div><label class="text-xs text-slate-500">비고</label><input id="poNote" class="input-box"></div></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">EndUser</label><input id="poEndUser" class="input-box"></div><div><label class="text-xs text-slate-500">담당자(우리측)</label><input id="poManager" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
+            }
+            else if (tab === 'partners') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div><div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div><div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div><div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div><div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div><div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div><div class="col-span-2"><label class="text-xs">주소</label><input id="pAddr" class="input-box" placeholder="주소를 입력하세요"></div><div class="col-span-2 border p-2 rounded bg-slate-50"><label class="text-xs font-bold">사업자등록증 (PDF/이미지)</label><div class="flex gap-2 mt-1"><input type="file" id="pFile" class="text-xs w-full" accept=".pdf,.jpg,.png,.jpeg"><div id="pCurrentFileLink" class="text-xs flex items-center"></div></div></div><div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div></div><button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
+            else if (tab === 'products') html = `<div class="grid grid-cols-2 gap-3"><div class="col-span-2"><label class="text-xs">품목명 (필수)</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div><div><label class="text-xs">품목코드 (자동)</label><input id="prodCode" class="input-box bg-slate-100" readonly></div><div><label class="text-xs">단위</label><input id="prodUnit" class="input-box" placeholder="EA"></div><div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div><div class="col-span-2"><label class="text-xs">제조사</label><input id="prodMaker" class="input-box"></div></div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
+            else if (tab === 'purchases') {
+                html = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">입고일자</label><input type="date" id="purDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500">매입처 (공통)</label><input id="purPartner" class="input-box" list="dl_part"></div></div><div><label class="text-xs text-slate-500">비고 (공통)</label><input id="purNote" class="input-box"></div></div><div class="bg-white border p-3 rounded mb-4 shadow-sm"><div class="flex flex-wrap gap-2 items-end"><div class="w-1/4"><label class="text-xs">품목명</label><input id="purItem" class="input-box" list="dl_prod"></div><div class="w-1/6"><label class="text-xs">제조사</label><input id="purMaker" class="input-box"></div><div class="w-1/6"><label class="text-xs">시리얼</label><input id="purSerial" class="input-box"></div><div class="w-16"><label class="text-xs">수량</label><input type="number" id="purQty" class="input-box" value="1"></div><div class="w-24"><label class="text-xs">단가</label><input type="number" id="purPrice" class="input-box"></div><button onclick="addPurchaseItem()" class="bg-slate-700 text-white px-4 py-2 rounded font-bold text-sm h-9">추가</button></div></div><table class="w-full text-sm border-collapse border text-center mb-4"><thead class="bg-slate-100"><tr><th>품목명</th> <th>제조사</th> <th>시리얼</th> <th>수량</th> <th>단가</th> <th>합계</th> <th>삭제</th></tr></thead><tbody id="purItemGrid"></tbody></table><div class="text-right text-lg font-bold text-cyan-700">총 합계: <span id="purGrandTotal">0</span>원</div><button onclick="savePurchase()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg">입고 처리 (저장)</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`;
+            }
+            // [New] 기장 관리 (비용 등록) 폼
+            else if (tab === 'bookkeeping') {
+                html = `
+                <div class="p-2 mb-4 bg-emerald-50 border border-emerald-200 rounded text-sm text-emerald-800">
+                    <i class="fa-solid fa-circle-info"></i> 차량 관리 비용은 '여비교통비'를 선택하세요. 세무사 없이 간편하게 비용을 정리할 수 있습니다.
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">지출 일자</label>
+                        <input type="date" id="bkDate" class="input-box" value="${today}">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">계정 과목 (용도)</label>
+                        <select id="bkCategory" class="input-box bg-white">
+                            <option value="여비교통비">여비교통비 (차량유지/주유/출장/주차)</option>
+                            <option value="식대">식대 (직원식대/회식)</option>
+                            <option value="소모품비">소모품비 (사무용품/자재)</option>
+                            <option value="접대비">접대비 (거래처 선물/식사)</option>
+                            <option value="도서인쇄비">도서인쇄비 (책/인쇄/명함)</option>
+                            <option value="통신비">통신비 (전화/인터넷/우편)</option>
+                            <option value="수도광열비">수도광열비 (전기/가스/수도)</option>
+                            <option value="임차료">임차료 (사무실 월세)</option>
+                            <option value="지급수수료">지급수수료 (세무/법무/기타)</option>
+                            <option value="차량유지비">차량유지비 (수리/보험)</option>
+                            <option value="기타">기타 비용</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">사용처 (거래처명)</label>
+                        <input id="bkVendor" class="input-box" placeholder="예: 스타벅스, SK주유소">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">금액 (VAT 포함)</label>
+                        <input type="number" id="bkAmount" class="input-box font-bold text-right" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">결제 수단</label>
+                        <select id="bkMethod" class="input-box bg-white">
+                            <option value="법인카드">법인카드</option>
+                            <option value="개인카드">개인카드</option>
+                            <option value="현금영수증">현금영수증</option>
+                            <option value="계좌이체">계좌이체</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-xs font-bold text-slate-600">적요 / 비고 (상세내용)</label>
+                        <input id="bkNote" class="input-box" placeholder="예: 야근 식대, 부산 출장 주유비">
+                    </div>
+                </div>
+                <button onclick="saveSimpleData('bookkeeping')" class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded font-bold text-lg shadow">비용 저장</button>
+                `;
+            }
+            else { renderComplexForm(tab, body); return; }
+            body.innerHTML = html;
+            if(tab === 'purchases' || tab === 'purchase_orders') { fillDL('dl_part', partnerList); fillDL('dl_prod', productList); }
+        }
+
+        async function saveData(tab, data) {
+            // 테이블 이름 매핑
+            let target = tab;
+            if(tab === 'bookkeeping') target = 'expenses';
+            
+            let res;
+            if (currentEditId) res = await supabase.from(target).update(data).eq('id', currentEditId);
+            else res = await supabase.from(target).insert(data);
+            
+            if(res.error) { alert("오류: " + res.error.message); return false; }
+            return true;
+        }
+
+        async function saveSimpleData(tab) {
+            let data = {};
+            if(tab === 'partners') {
+                data = { name: el('pName'), biz_num: el('pBiz'), owner_name: el('pOwner'), manager_name: el('pManager'), phone: el('pPhone'), email: el('pEmail'), address: el('pAddr'), note: el('pNote') };
+                const fileInput = document.getElementById('pFile');
+                if (fileInput && fileInput.files.length > 0) {
+                    const file = fileInput.files[0]; const fileName = `biz_${Date.now()}.${file.name.split('.').pop()}`; 
+                    const { data: uploadData, error: uploadError } = await supabase.storage.from('erp').upload(fileName, file);
+                    if (uploadError) { alert("파일 업로드 실패: " + uploadError.message); return; }
+                    const { data: publicUrlData } = supabase.storage.from('erp').getPublicUrl(fileName);
+                    data.biz_file_url = publicUrlData.publicUrl; 
+                }
+            }
+            else if(tab === 'products') {
+                data = { name: el('prodName'), code: el('prodCode'), spec: el('prodSpec'), unit: el('prodUnit'), manufacturer: el('prodMaker') };
+            }
+            // [New] 기장 관리 저장
+            else if(tab === 'bookkeeping') {
+                data = {
+                    date: el('bkDate'),
+                    category: el('bkCategory'),
+                    vendor: el('bkVendor'),
+                    amount: parseInt(el('bkAmount')) || 0,
+                    payment_method: el('bkMethod'),
+                    note: el('bkNote'),
+                    manager: currentUserEmail || 'unknown'
+                };
+                if (!data.date || !data.amount) return alert("날짜와 금액은 필수입니다.");
+            }
+            
+            if(await saveData(tab, data)) { closeModal(); runSearch(tab); }
+        }
+
+        async function savePurchase() {
+            if (tempItems.length === 0) return alert("입고할 품목을 추가해주세요.");
+            const dateVal = document.getElementById('purDate').value;
+            const partnerVal = document.getElementById('purPartner').value;
+            const noteVal = document.getElementById('purNote').value;
+            if (!dateVal || !partnerVal) return alert("날짜와 매입처를 입력해주세요.");
+            let successCount = 0;
+            for (const item of tempItems) {
+                const data = { date: dateVal, partner_name: partnerVal, item_name: item.name, manufacturer: item.manufacturer, qty: item.qty, unit_price: item.unit_price, supply_price: item.unit_price * item.qty, vat: Math.floor(item.unit_price * item.qty * 0.1), total_amount: item.total_amount, serial_no: item.serial_no, note: noteVal };
+                const { error } = await supabase.from('purchases').insert(data);
+                if (!error) {
+                    successCount++;
+                    const prod = productList.find(p => p.name === item.name);
+                    if (prod) {
+                        prod.stock = prod.stock + item.qty; 
+                        await supabase.from('products').update({ stock: prod.stock, last_vendor: partnerVal, last_price: item.unit_price, last_serial_no: item.serial_no, manufacturer: item.manufacturer || prod.manufacturer }).eq('id', prod.id);
+                    }
+                }
+            }
+            if (successCount > 0) { alert(`${successCount}건의 품목이 입고 처리되었습니다.`); closeModal(); runSearch('purchases'); } else { alert("저장에 실패했습니다."); }
+        }
+
+        async function saveComplexData(tab) {
+            if(tempItems.length === 0) return alert("품목 없음");
+            let tSupply=0, tVat=0, tTotal=0; tempItems.forEach(i => { tSupply+=i.supply; tVat+=i.vat; tTotal+=i.total; });
+            let dateVal = el(tab === 'purchase_orders' ? 'poDate' : 'sDate') || new Date().toISOString().split('T')[0];
+            let data = { items: tempItems, total_supply: tSupply, total_vat: tVat, total_amount: tTotal, date: dateVal, partner_name: el('sPartner'), manager: el('sManager'), note: el('sNote') };
+            
+            if(tab === 'purchase_orders') { 
+                data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); 
+                data.partner_manager = el('poPManager'); data.phone = el('poPhone'); data.email = el('poEmail'); data.partner_address = el('poAddr');
+                if (!currentEditId) {
+                    const { count } = await supabase.from(tab).select('*', { count: 'exact', head: true }).eq('date', dateVal);
+                    const seq = (count || 0) + 1; 
+                    const yymmdd = dateVal.slice(2).replace(/-/g, ''); 
+                    data.po_number = `ASPEC-${yymmdd}-P${String(seq).padStart(2, '0')}`;
+                }
+            } else { 
+                data.email = el('sEmail'); data.partner_manager = el('sPManager'); data.phone = el('sContact'); data.partner_address = el('sAddr'); 
+                if(tab === 'orders') data.po_number = 'AUTO'; 
+            }
+            if(await saveData(tab, data)) { 
+                if(tab === 'sales' && !currentEditId) { 
+                    const { data: bomList } = await supabase.from('bom').select('*');
+                    for(const item of tempItems) { 
+                        const relatedParts = bomList ? bomList.filter(b => b.parent_name === item.name) : [];
+                        if (relatedParts.length > 0) {
+                            for (const part of relatedParts) {
+                                const childProd = productList.find(p => p.name === part.child_name);
+                                if (childProd) await supabase.from('products').update({ stock: childProd.stock - (item.qty * part.qty) }).eq('id', childProd.id);
+                            }
+                        } else {
+                            const prod = productList.find(p => p.name === item.name); 
+                            if(prod) await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); 
+                        }
+                    } 
+                    if (currentLoadedOrderId) { await supabase.from('orders').update({ status: 'completed' }).eq('id', currentLoadedOrderId); currentLoadedOrderId = null; }
+                }
+                alert("저장되었습니다."); closeModal(); runSearch(tab);
+            }
+        }
+
+        async function deleteItem(tab, id) { 
+            if(!confirm("정말 삭제하시겠습니까?")) return; 
+            
+            let target = tab;
+            if(tab === 'bookkeeping') target = 'expenses';
+
+            if (tab === 'sales') {
+                const { data: saleData } = await supabase.from('sales').select('items').eq('id', id).single();
+                if (saleData && saleData.items) {
+                    for (const item of saleData.items) {
+                        const prod = productList.find(p => p.name === item.name);
+                        if (prod) await supabase.from('products').update({ stock: prod.stock + item.qty }).eq('id', prod.id);
+                    }
+                }
+            }
+            const { error } = await supabase.from(target).delete().eq('id', id); 
+            if(error) alert("삭제 실패"); else runSearch(tab); 
+        }
+
+        async function printDocument(tab, dataId) {
+            const row = getRowData(dataId); if (!row) return alert('데이터 오류');
+            const isPO = (tab === 'purchase_orders');
+            const addrRow1 = document.getElementById('print_row_addr_1');
+            const addrRow2 = document.getElementById('print_row_addr_2');
+            if (tab === 'quotes') {
+                if(addrRow1) addrRow1.style.display = 'none';
+                if(addrRow2) addrRow2.style.display = 'none';
+            } else {
+                if(addrRow1) addrRow1.style.display = 'table-row';
+                if(addrRow2) addrRow2.style.display = 'table-row';
+            }
+
+            let titleKo="거래명세서", titleEn="TRANSACTION STATEMENT", prefix="T"; 
+            if (tab==='quotes') { titleKo="견적서"; titleEn="QUOTATION"; prefix="Q"; }
+            else if (tab==='orders') { titleKo="주문서"; titleEn="ORDER SHEET"; prefix="D"; }
+            else if (tab==='purchase_orders') { titleKo="발주서"; titleEn="PURCHASE ORDER"; prefix="P"; }
+
+            document.getElementById('p_title_ko').innerText = titleKo; document.getElementById('p_title_en').innerText = titleEn;
+            document.getElementById('p_date').innerText = row.date;
+            
+            if (isPO && row.po_number && row.po_number.startsWith('ASPEC')) document.getElementById('p_no').innerText = row.po_number;
+            else {
+                const { count } = await supabase.from(tab).select('*', { count: 'exact', head: true }).eq('date', row.date).lte('id', row.id);
+                const d = new Date(row.date); const yymmdd = d.getFullYear().toString().slice(2) + (d.getMonth()+1).toString().padStart(2,'0') + d.getDate().toString().padStart(2,'0');
+                document.getElementById('p_no').innerText = `ASPEC-${yymmdd}-${prefix}${String(count).padStart(2,'0')}`;
+            }
+
+            if (isPO) {
+                document.getElementById('p_left_role').innerText = "수 주 처";
+                document.getElementById('p_left_name').innerText = row.partner_name;
+                document.getElementById('p_left_manager').innerText = row.partner_manager||''; 
+                document.getElementById('p_left_email').innerText = row.email||''; 
+                document.getElementById('p_left_phone').innerText = row.phone||'';
+                document.getElementById('p_left_addr').innerText = row.partner_address||'';
+                document.getElementById('p_right_role').innerText = "발 주 처";
+            } else {
+                document.getElementById('p_left_role').innerText = "공 급 받 는 자";
+                document.getElementById('p_left_name').innerText = row.partner_name;
+                document.getElementById('p_left_manager').innerText = row.partner_manager||''; 
+                document.getElementById('p_left_email').innerText = row.email||''; 
+                document.getElementById('p_left_phone').innerText = row.phone||'';
+                document.getElementById('p_left_addr').innerText = row.partner_address||''; 
+                document.getElementById('p_right_role').innerText = "공 급 자";
+            }
+            document.getElementById('p_right_name').innerText = "아스펙 (ASPEC)";
+            document.getElementById('p_right_manager').innerText = "이창현 프로";
+            document.getElementById('p_right_email').innerText = currentUserEmail;
+            document.getElementById('p_right_mp').innerText = "010-5919-1810"; 
+
+            const tableContainer = document.querySelector('.print-items-table');
+            tableContainer.innerHTML = `
+                <colgroup><col style="width: 5%;"><col style="width: 25%;"><col style="width: 30%;"><col style="width: 8%;"><col style="width: 8%;"><col style="width: 12%;"><col style="width: 12%;"></colgroup>
+                <thead><tr><th>No</th><th>품명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>공급가액</th></tr></thead>
+                <tbody id="p_tbody"></tbody>
+                <tfoot>
+                    <tr style="background: #f8f8f8;">
+                        <td colspan="4" style="text-align: center; border-right: 1px solid black; font-weight: bold;">합 계 (Total)</td>
+                        <td style="text-align: center; border-right: 1px solid black; font-weight: bold;" id="p_total_qty"></td>
+                        <td style="text-align: right; border-right: 1px solid black; font-size: 11px;">공급가액</td>
+                        <td style="text-align: right; font-weight: bold;" id="p_sum_supply"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="border-right: 1px solid black; border-bottom: 1px solid black;"></td>
+                        <td style="text-align: right; border-right: 1px solid black; background: #f8f8f8; font-size: 11px;">부가세 (VAT)</td>
+                        <td style="text-align: right;" id="p_sum_vat"></td>
+                    </tr>
+                    <tr style="font-weight: bold;">
+                        <td colspan="5" style="border-right: 1px solid black; border-bottom: 1px solid black;"></td>
+                        <td style="text-align: right; border-right: 1px solid black; background: #e6e6e6;">총 합계</td>
+                        <td style="text-align: right; background: #e6e6e6;" id="p_total_amt"></td>
+                    </tr>
+                    <tr style="background: #fff; border-top: 2px double black;">
+                        <td colspan="7" style="padding: 10px; text-align: left;"><strong>[비고]</strong> <span id="p_note"></span></td>
+                    </tr>
+                </tfoot>`;
+
+            const tbody = document.getElementById('p_tbody'); tbody.innerHTML = ''; let sumQty=0, sumAmt=0;
+            if (row.items) {
+                row.items.forEach((item, idx) => {
+                    let spec = item.spec;
+                    if (!spec) { const prod = productList.find(p => p.name === item.name); if (prod) spec = prod.spec; }
+                    sumQty += parseInt(item.qty)||0; sumAmt += parseInt(item.supply)||0; 
+                    tbody.innerHTML += `<tr class="items-row"><td style="text-align:center">${idx+1}</td><td>${item.name}</td><td style="font-size:10px">${spec||'-'}</td><td style="text-align:center">${item.unit||'EA'}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${(item.price||0).toLocaleString()}</td><td style="text-align:right">${(item.supply||0).toLocaleString()}</td></tr>`;
+                });
+            }
+            for (let i=0; i<10-(row.items?.length||0); i++) tbody.innerHTML += `<tr class="items-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+
+            const vatAmt = Math.floor(sumAmt * 0.1); 
+            const totalAmt = row.total_amount || (sumAmt + vatAmt);
+            document.getElementById('p_total_qty').innerText = sumQty.toLocaleString();
+            document.getElementById('p_sum_supply').innerText = sumAmt.toLocaleString(); 
+            document.getElementById('p_sum_vat').innerText = vatAmt.toLocaleString();   
+            document.getElementById('p_total_amt').innerText = "₩ " + totalAmt.toLocaleString(); 
+            document.getElementById('p_note').innerText = row.note || '';
+
+            document.getElementById('printContainer').classList.remove('hidden');
+            setTimeout(() => { window.print(); document.getElementById('printContainer').classList.add('hidden'); }, 100);
+        }
+        
+        function getTitle(tab) { const map = {'partners':'거래처','products':'품목','purchase_orders':'발주','purchases':'구매(입고)','quotes':'견적','orders':'주문','sales':'판매','bookkeeping':'기장(비용) 관리'}; return map[tab] || ''; }
+        function closeModal() { document.getElementById('genericModal').classList.remove('active'); }
+        function autoGenCode(val) { if(val && !currentEditId) document.getElementById('prodCode').value = 'P-' + Date.now().toString().slice(-6); }
+        function el(id) { return document.getElementById(id) ? document.getElementById(id).value : ''; }
+        function fillDL(id, list) { document.getElementById(id).innerHTML = list.map(i=>`<option value="${i.name}">`).join(''); }
+        function fillPart(val) { const f = partnerList.find(x=>x.name===val); if(f) { if(document.getElementById('sPManager')) document.getElementById('sPManager').value = f.manager_name||''; if(document.getElementById('sContact')) document.getElementById('sContact').value = f.phone||''; if(document.getElementById('sAddr')) document.getElementById('sAddr').value = f.address||''; if(document.getElementById('sEmail')) document.getElementById('sEmail').value = f.email||''; } }
+        function fillPOPart(val) { const f = partnerList.find(x=>x.name===val); if(f) { if(document.getElementById('poPManager')) document.getElementById('poPManager').value = f.manager_name||''; if(document.getElementById('poPhone')) document.getElementById('poPhone').value = f.phone||''; if(document.getElementById('poEmail')) document.getElementById('poEmail').value = f.email||''; if(document.getElementById('poAddr')) document.getElementById('poAddr').value = f.address||''; } }
+        function fillProd(val) { const f = productList.find(x=>x.name===val); if(f) { if(document.getElementById('iSpec')) document.getElementById('iSpec').value = f.spec || ''; } }
+        
+        async function loadInventoryData(isSearch = false) {
+            const tbody = document.getElementById('listBody'); 
+            const ordersRes = await supabase.from('orders').select('*'); 
+            const allOrders = ordersRes.data || [];
+            tbody.innerHTML = '';
+            
+            let filteredProducts = productList;
+            if (isSearch) {
+                const sName = document.getElementById('search_sName').value.toLowerCase(); 
+                const sCode = document.getElementById('search_sCode').value.toLowerCase();
+                filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true));
+            }
+            const hideZeroStock = document.getElementById('hideZeroStock')?.checked;
+            if (hideZeroStock) { filteredProducts = filteredProducts.filter(p => (p.stock || 0) > 0); }
+            
+            filteredProducts.forEach(prod => {
+                let reservedQty = 0; 
+                allOrders.forEach(ord => { 
+                    if (ord.status === 'completed') return;
+                    if(ord.items) { ord.items.forEach(item => { if(item.name === prod.name) { reservedQty += item.qty; } }); } 
+                });
+                const availableStock = prod.stock - reservedQty;
+                const stockClass = availableStock < 0 ? 'text-red-600' : 'text-blue-600';
+                let reservedText = reservedQty > 0 ? `<span class="text-red-500 font-bold">(${reservedQty}개)</span>` : '<span class="text-gray-300">-</span>';
+        
+                tbody.innerHTML += `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="font-bold">${prod.name}</td>
+                    <td class="text-center text-xs">${prod.manufacturer||'-'}</td>
+                    <td class="text-center text-xs text-gray-500">${prod.last_vendor||'-'}</td>
+                    <td class="text-right text-xs">${(prod.last_price||0).toLocaleString()}</td>
+                    <td class="text-center"><input type="number" id="stock_${prod.id}" value="${prod.stock}" class="border rounded px-2 py-1 w-16 text-center font-bold"></td>
+                    <td class="text-center font-bold ${stockClass}">${availableStock}</td>
+                    <td><input type="text" id="note_${prod.id}" value="${prod.inventory_note||''}" class="border rounded px-2 py-1 w-full text-xs"></td>
+                    <td class="text-xs text-center">${reservedText}</td>
+                    <td class="text-center flex gap-1 justify-center">
+                        <button onclick="openInventoryDetailModal('${prod.name}')" class="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600">상세</button>
+                        <button onclick="updateInventory(${prod.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">저장</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        async function openInventoryDetailModal(prodName) {
+            const modal = document.getElementById('genericModal'); document.getElementById('modalTitle').innerText = `[${prodName}] 상세 현황`; const body = document.getElementById('modalBody'); modal.classList.add('active'); body.innerHTML = '<div class="p-4 text-center">데이터 로딩중...</div>';
+            const { data: purchases } = await supabase.from('purchases').select('*').eq('item_name', prodName).order('date', { ascending: false });
+            const { data: orders } = await supabase.from('orders').select('*').order('date', { ascending: false });
+            let reservedList = [];
+            if (orders) { orders.forEach(ord => { if (ord.items) { ord.items.forEach(item => { if (item.name === prodName) { reservedList.push({ date: ord.date, partner: ord.partner_name, qty: item.qty }); } }); } }); }
+            const sortedPurchases = (purchases || []).sort((a, b) => { const aHas = a.serial_no ? 1:0; const bHas = b.serial_no?1:0; return bHas - aHas; });
+
+            let html = `<div class="grid grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">`;
+            html += `<div><h3 class="font-bold text-sm mb-2 text-blue-700">입고 및 시리얼 현황</h3><table class="w-full text-xs text-left border-collapse border"><thead class="bg-blue-50"><tr><th class="p-2 border">입고일</th><th class="p-2 border">시리얼번호</th><th class="p-2 border text-right">수량</th></tr></thead><tbody>`;
+            if (sortedPurchases.length === 0) html += `<tr><td colspan="3" class="p-2 text-center text-gray-400">내역 없음</td></tr>`;
+            else { sortedPurchases.forEach(p => { const serial = p.serial_no ? `<span class="font-bold text-blue-600">${p.serial_no}</span>` : '-'; html += `<tr><td class="p-2 border">${p.date}</td><td class="p-2 border">${serial}</td><td class="p-2 border text-right">${p.qty}</td></tr>`; }); }
+            html += `</tbody></table></div>`;
+
+            html += `<div><h3 class="font-bold text-sm mb-2 text-red-700">출고 예약 현황</h3><table class="w-full text-xs text-left border-collapse border"><thead class="bg-red-50"><tr><th class="p-2 border">수주일자</th><th class="p-2 border">거래처</th><th class="p-2 border text-right">예약</th></tr></thead><tbody>`;
+            if (reservedList.length === 0) html += `<tr><td colspan="3" class="p-2 text-center text-gray-400">내역 없음</td></tr>`;
+            else { reservedList.forEach(r => { html += `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border">${r.partner}</td><td class="p-2 border text-right font-bold text-red-500">${r.qty}</td></tr>`; }); }
+            html += `</tbody></table></div></div><div class="mt-6 text-right"><button onclick="closeModal()" class="bg-slate-600 text-white px-6 py-2 rounded font-bold hover:bg-slate-700">닫기</button></div>`;
+            body.innerHTML = html;
+        }
+        
+        async function updateInventory(id) { 
+            const note = document.getElementById(`note_${id}`).value; const newStock = parseInt(document.getElementById(`stock_${id}`).value) || 0; 
+            const { error } = await supabase.from('products').update({ inventory_note: note, stock: newStock }).eq('id', id); 
+            if(error) alert("저장 실패: " + error.message); else { alert("수정되었습니다."); fetchData().then(() => loadInventoryData(true)); }
+        }
+
+        function renderComplexForm(tab, container) {
+            const today = new Date().toISOString().split('T')[0];
+            let loadBtn = '';
+            if(tab === 'orders') loadBtn = `<button onclick="openLoadModal('quotes')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-orange-600">견적 불러오기</button>`;
+            if(tab === 'sales') loadBtn = `<button onclick="openLoadModal('orders')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs ml-2 hover:bg-blue-600">주문 불러오기</button>`;
+            
+            container.innerHTML = `<div class="bg-slate-50 p-4 rounded mb-4 border"><div class="grid grid-cols-3 gap-3 mb-2"><div><label class="text-xs text-slate-500">일자</label><input type="date" id="sDate" class="input-box" value="${today}"></div><div><label class="text-xs text-slate-500 flex items-center">거래처 ${loadBtn}</label><input id="sPartner" class="input-box" list="dl_part" onchange="fillPart(this.value)"></div><div><label class="text-xs text-slate-500">담당자(우리측)</label><input id="sManager" class="input-box"></div></div><div class="grid grid-cols-4 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처담당자</label><input id="sPManager" class="input-box"></div><div><label class="text-xs text-slate-500">연락처</label><input id="sContact" class="input-box"></div><div class="col-span-2"><label class="text-xs text-slate-500">주소</label><input id="sAddr" class="input-box"></div></div><div class="grid grid-cols-2 gap-3 mb-2"><div><label class="text-xs text-slate-500">거래처이메일</label><input id="sEmail" class="input-box"></div><div><label class="text-xs text-slate-500">비고</label><input id="sNote" class="input-box"></div></div></div>${renderItemInputArea(tab)}`;
+            fillDL('dl_part', partnerList); fillDL('dl_prod', productList);
+        }
+        function renderItemInputArea(tab) { 
+            return `<div class="bg-white border p-3 rounded mb-4 shadow-sm"><div class="flex gap-2 items-end"><div class="w-1/4"><label class="text-xs">품목명</label><input id="iName" class="input-box" list="dl_prod" onchange="fillProd(this.value)"></div><div class="flex-grow"><label class="text-xs">규격 (수정가능)</label><input id="iSpec" class="input-box"></div><div class="w-20"><label class="text-xs">수량</label><input type="number" id="iQty" class="input-box" value="1"></div><div class="w-28"><label class="text-xs">단가</label><input type="number" id="iPrice" class="input-box"></div><button onclick="addItemToGrid('${tab}')" class="bg-slate-700 text-white px-4 py-2 rounded font-bold text-sm h-9">추가</button></div></div><table class="w-full text-sm border-collapse border text-center mb-4"><thead class="bg-slate-100"><tr><th>품목명</th><th style="width:30%">규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>삭제</th></tr></thead><tbody id="itemGrid"></tbody></table><div class="flex flex-col items-end gap-1 mt-4 mb-6 pr-2"><div class="flex justify-between w-64 text-sm"><span class="text-slate-500 font-medium">공급가액</span> <span class="font-bold text-slate-700"><span id="sTotalSupply">0</span>원</span></div><div class="flex justify-between w-64 text-sm"><span class="text-slate-500 font-medium">부가세</span> <span class="font-bold text-slate-700"><span id="sTotalVat">0</span>원</span></div><div class="flex justify-between w-64 border-t border-slate-300 pt-2 mt-1 text-lg text-cyan-700 font-bold"><span>총 합계</span> <span><span id="sGrandTotal">0</span>원</span></div></div><button onclick="saveComplexData('${tab}')" class="w-full bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">문서 저장</button><datalist id="dl_part"></datalist><datalist id="dl_prod"></datalist>`; 
+        }
+        
+        function addItemToGrid(tab) {
+            const name = el('iName'); const qty = parseInt(el('iQty'))||0; const price = parseInt(el('iPrice'))||0;
+            const prod = productList.find(p => p.name === name); const inputSpec = el('iSpec'); const spec = inputSpec ? inputSpec : (prod ? prod.spec : ''); 
+            if(!name || qty <= 0) return alert("품목명과 수량을 확인해주세요.");
+            const supply = qty * price; const vat = Math.floor(supply * 0.1); const total = supply + vat; const unit = prod ? prod.unit : 'EA';
+            tempItems.push({ name, qty, price, supply, vat, total, spec, unit });
+            renderGrid(); document.getElementById('iName').value=''; document.getElementById('iQty').value='1'; document.getElementById('iSpec').value=''; 
+        }
+        function renderGrid() {
+            const tbody = document.getElementById('itemGrid'); tbody.innerHTML = ''; 
+            let totalSupply = 0; let totalVat = 0; let grandTotal = 0;
+            tempItems.forEach((item, idx) => {
+                totalSupply += item.supply; totalVat += item.vat; grandTotal += item.total;
+                tbody.innerHTML += `<tr class="hover:bg-slate-50 transition border-b"><td class="py-2">${item.name}</td><td class="text-left px-2 text-slate-600 text-xs">${item.spec||''}</td><td>${item.qty}</td><td class="text-right px-2">${item.price.toLocaleString()}</td><td class="text-right px-2 text-slate-600">${item.supply.toLocaleString()}</td><td class="text-right px-2 text-slate-400 text-xs">${item.vat.toLocaleString()}</td><td class="text-right px-2 font-bold">${item.total.toLocaleString()}</td><td onclick="tempItems.splice(${idx},1); renderGrid()" class="cursor-pointer text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></td></tr>`;
+            });
+            document.getElementById('sTotalSupply').innerText = totalSupply.toLocaleString(); document.getElementById('sTotalVat').innerText = totalVat.toLocaleString(); document.getElementById('sGrandTotal').innerText = grandTotal.toLocaleString();
+        }
+        
+        function addPurchaseItem() {
+            const name = document.getElementById('purItem').value; const maker = document.getElementById('purMaker').value; const serial = document.getElementById('purSerial').value; const qty = parseInt(document.getElementById('purQty').value) || 0; const price = parseInt(document.getElementById('purPrice').value) || 0;
+            if (!name || qty <= 0) return alert("품목명과 수량을 확인해주세요.");
+            const total = qty * price; tempItems.push({ name, manufacturer: maker, serial_no: serial, qty, unit_price: price, total_amount: total });
+            renderPurchaseGrid(); document.getElementById('purItem').value = ''; document.getElementById('purMaker').value = ''; document.getElementById('purSerial').value = ''; document.getElementById('purQty').value = '1';
+        }
+        function renderPurchaseGrid() {
+            const tbody = document.getElementById('purItemGrid'); tbody.innerHTML = ''; let grandTotal = 0;
+            tempItems.forEach((item, idx) => {
+                grandTotal += item.total_amount;
+                tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.manufacturer || '-'}</td><td>${item.serial_no || '-'}</td><td>${item.qty}</td><td>${item.unit_price.toLocaleString()}</td><td class="font-bold">${item.total_amount.toLocaleString()}</td><td onclick="tempItems.splice(${idx},1); renderPurchaseGrid()" class="cursor-pointer text-red-400"><i class="fa-solid fa-trash"></i></td></tr>`;
+            });
+            document.getElementById('purGrandTotal').innerText = grandTotal.toLocaleString();
+        }
+
+        async function openBOMModal() {
+            const modal = document.getElementById('genericModal'); document.getElementById('modalTitle').innerText = "세트(BOM) 구성 관리"; const body = document.getElementById('modalBody'); modal.classList.add('active');
+            const { data: bomList } = await supabase.from('bom').select('*').order('parent_name');
+            let html = `<div class="bg-purple-50 p-4 rounded border border-purple-200 mb-4"><p class="text-sm text-purple-700 mb-2 font-bold"><i class="fa-solid fa-circle-info"></i> 세트 품목 등록 방법</p><div class="flex gap-2 items-end"><div class="flex-1"><label class="text-xs text-slate-500">세트 품목 (보여지는 것)</label><input id="bomParent" class="input-box" list="dl_prod" placeholder="예: 머신시스템"></div><div class="flex-1"><label class="text-xs text-slate-500">구성 부품 (실제 나가는 것)</label><input id="bomChild" class="input-box" list="dl_prod" placeholder="예: IS모델"></div><div class="w-20"><label class="text-xs text-slate-500">소요 수량</label><input type="number" id="bomQty" class="input-box" value="1"></div><button onclick="saveBOM()" class="bg-purple-600 text-white px-4 py-2 rounded font-bold text-sm h-9 hover:bg-purple-700">추가</button></div></div><div class="overflow-y-auto max-h-96"><table class="w-full text-sm text-left border-collapse border"><thead class="bg-slate-100"><tr><th class="p-2 border">세트 품목명</th><th class="p-2 border">구성 부품명</th><th class="p-2 border text-center">수량</th><th class="p-2 border text-center">삭제</th></tr></thead><tbody>`;
+            if (!bomList || bomList.length === 0) { html += `<tr><td colspan="4" class="p-4 text-center text-gray-400">등록된 세트 구성이 없습니다.</td></tr>`; } 
+            else { bomList.forEach(item => { html += `<tr class="hover:bg-slate-50"><td class="p-2 border font-bold text-purple-700">${item.parent_name}</td><td class="p-2 border">${item.child_name}</td><td class="p-2 border text-center">${item.qty}</td><td class="p-2 border text-center"><button onclick="deleteBOM(${item.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button></td></tr>`; }); }
+            html += `</tbody></table></div><datalist id="dl_prod">${productList.map(p => `<option value="${p.name}">`).join('')}</datalist>`;
+            body.innerHTML = html;
+        }
+        
+        async function saveBOM() {
+            const parent = document.getElementById('bomParent').value; const child = document.getElementById('bomChild').value; const qty = parseInt(document.getElementById('bomQty').value) || 0;
+            if (!parent || !child || qty <= 0) return alert("모든 항목을 정확히 입력해주세요.");
+            const { error } = await supabase.from('bom').insert({ parent_name: parent, child_name: child, qty: qty });
+            if (error) alert("저장 실패: " + error.message); else openBOMModal();
+        }
+        async function deleteBOM(id) {
+            if (!confirm("이 구성을 삭제하시겠습니까?")) return;
+            const { error } = await supabase.from('bom').delete().eq('id', id); if (error) alert("삭제 실패"); else openBOMModal();
+        }
+
+        async function openLoadModal(srcTab) { 
+            currentLoadSource = srcTab; const modal = document.getElementById('loadDataModal'); if (!modal) return alert("오류");
+            modal.classList.add('active'); document.getElementById('loadModalTitle').innerText = (srcTab === 'quotes' ? '견적서' : '주문서') + ' 불러오기'; 
+            const tbody = document.getElementById('loadDataBody'); tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">데이터를 불러오는 중...</td></tr>'; 
+            try {
+                const { data, error } = await supabase.from(srcTab).select('*').order('created_at', {ascending:false}); 
+                if (error) throw error;
+                tbody.innerHTML = ''; 
+                if(!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">데이터가 없습니다.</td></tr>'; return; } 
+                data.forEach(row => { 
+                    const rowId = storeRowData(row);
+                    tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-3">${row.date}</td><td class="p-3">${row.partner_name}</td><td class="p-3 text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td class="p-3 text-center"><button onclick="applyDataById('${rowId}')" class="bg-blue-500 text-white px-3 py-1 text-xs rounded hover:bg-blue-600">선택</button></td></tr>`; 
+                });
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">오류 발생: ${e.message}</td></tr>`; }
+        }
+        function applyDataById(id) { const row = getRowData(id); if (row) applyData(row); else alert("데이터를 찾을 수 없습니다."); }
+        function applyData(row) { 
+            if (currentLoadSource === 'orders') currentLoadedOrderId = row.id; else currentLoadedOrderId = null;
+            document.getElementById('sPartner').value = row.partner_name || ''; 
+            document.getElementById('sManager').value = row.manager || ''; 
+            if(row.partner_address || row.phone || row.partner_manager) {
+                if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
+                if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
+                if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || '';
+                if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || '';
+            } else { fillPart(row.partner_name); }
+            if(row.items) { tempItems = row.items; renderGrid(); } 
+            document.getElementById('loadDataModal').classList.remove('active'); 
+        }
+
+        // ============= 캘린더 관련 =============
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+        let calendarEvents = [];
+        let selectedColor = 'green';
+        let editingEventId = null;
+
+        async function renderCalendar() {
+            if(calendarEvents.length === 0) await loadCalendarEvents();
+            const contentArea = document.getElementById('contentArea');
+            const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            const existingSearch = document.getElementById('calendarSearchInput') ? document.getElementById('calendarSearchInput').value : '';
+        
+            let html = `
+                <div class="calendar-container h-full flex flex-col">
+                    <div class="calendar-header flex-none">
+                        <h2 class="text-2xl font-bold text-slate-800">${currentYear}년 ${monthNames[currentMonth]}</h2>
+                        <div class="flex items-center gap-3">
+                            <div class="relative group">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-hover:text-blue-500 transition"></i>
+                                <input type="text" id="calendarSearchInput" value="${existingSearch}"
+                                    placeholder="일정 검색 (제목, 내용)" 
+                                    onkeyup="if(window.event.keyCode==13){ runCalendarSearch(this.value) } else if(this.value==''){ runCalendarSearch('') }"
+                                    class="pl-10 pr-4 py-2 bg-slate-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-full text-sm transition-all w-64 focus:w-80 outline-none shadow-sm"
+                                >
+                                ${existingSearch ? '<button onclick="clearCalendarSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>' : ''}
+                            </div>
+                            <div class="flex gap-1 ml-2">
+                                <button onclick="changeMonth(-1)" class="px-3 py-2 bg-white border border-slate-300 text-slate-600 rounded hover:bg-slate-50 font-semibold shadow-sm"><i class="fa-solid fa-chevron-left"></i></button>
+                                <button onclick="goToToday()" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded hover:bg-slate-50 font-semibold shadow-sm text-sm">오늘</button>
+                                <button onclick="changeMonth(1)" class="px-3 py-2 bg-white border border-slate-300 text-slate-600 rounded hover:bg-slate-50 font-semibold shadow-sm"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+            if (existingSearch.trim() !== '') { html += renderSearchResultsView(existingSearch); } 
+            else {
+                html += `<div class="calendar-grid flex-1 overflow-auto">${dayNames.map(day => `<div class="calendar-day-header sticky top-0 bg-slate-50 z-10">${day}</div>`).join('')}${renderCalendarDays()}</div>`;
+            }
+            html += `</div>`;
+            contentArea.innerHTML = html;
+            if(existingSearch) { const input = document.getElementById('calendarSearchInput'); if(input) input.focus(); }
+        }
+
+        function runCalendarSearch(keyword) { renderCalendar(); }
+        function clearCalendarSearch() { const input = document.getElementById('calendarSearchInput'); if(input) input.value = ''; renderCalendar(); }
+        function renderSearchResultsView(keyword) {
+            if (!keyword) return '';
+            const lowerKey = keyword.toLowerCase();
+            const filtered = calendarEvents.filter(e => (e.title && e.title.toLowerCase().includes(lowerKey)) || (e.description && e.description.toLowerCase().includes(lowerKey)));
+            filtered.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+            if (filtered.length === 0) return `<div class="flex flex-col items-center justify-center h-96 text-slate-400"><i class="fa-solid fa-magnifying-glass text-4xl mb-4"></i><p>검색 결과가 없습니다.</p></div>`;
+            let listHtml = `<div class="overflow-y-auto flex-1 p-4"><div class="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-slate-200 divide-y divide-slate-100">`;
+            filtered.forEach(evt => {
+                const dateObj = new Date(evt.start_date); const dayNum = dateObj.getDate(); const days = ['일','월','화','수','목','금','토']; const dayStr = days[dateObj.getDay()]; const yearMonth = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월`;
+                let timeHtml = evt.all_day ? `<span class="inline-block w-2 h-2 rounded-full bg-${evt.color || 'blue'}-500 mr-2"></span>종일` : `<span class="inline-block w-2 h-2 rounded-full bg-${evt.color || 'blue'}-500 mr-2"></span>${evt.start_time.substring(0,5)}`;
+                listHtml += `<div class="flex hover:bg-slate-50 transition cursor-pointer group" onclick="editEvent(${evt.id})"><div class="w-48 p-4 flex flex-col justify-center border-r border-transparent group-hover:border-slate-100 shrink-0"><div class="flex items-baseline gap-2"><span class="text-2xl font-bold text-slate-700">${dayNum}</span><span class="text-xs text-slate-500 font-medium">${yearMonth}, ${dayStr}</span></div></div><div class="flex-1 p-4 flex flex-col justify-center"><div class="flex items-center text-sm font-bold text-slate-600 mb-1">${timeHtml}</div><div class="text-base font-bold text-slate-800 mb-1">${evt.title}</div>${evt.description ? `<div class="text-sm text-slate-400 truncate">${evt.description}</div>` : ''}</div></div>`;
+            });
+            listHtml += `</div></div>`; return listHtml;
+        }
+        function renderCalendarDays() {
+            const firstDay = new Date(currentYear, currentMonth, 1); const lastDay = new Date(currentYear, currentMonth + 1, 0); const prevLastDay = new Date(currentYear, currentMonth, 0);
+            const firstDayOfWeek = firstDay.getDay(); const lastDate = lastDay.getDate(); const prevLastDate = prevLastDay.getDate();
+            const today = new Date(); const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            let html = '';
+            for (let i = firstDayOfWeek - 1; i >= 0; i--) { html += `<div class="calendar-day other-month"><div class="calendar-day-number">${prevLastDate - i}</div></div>`; }
+            for (let date = 1; date <= lastDate; date++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                const dayEvents = getEventsForDate(dateStr);
+                const isToday = dateStr === todayStr; const todayClass = isToday ? 'today' : '';
+                const maxVisible = 2; const visibleEvents = dayEvents.slice(0, maxVisible); const hiddenCount = dayEvents.length - maxVisible;
+                html += `<div class="calendar-day ${todayClass}" onclick="openEventModal('${dateStr}')"><div class="calendar-day-number">${date}</div>${visibleEvents.map(evt => `<div class="calendar-event event-${evt.color} ${evt.all_day ? 'allday' : ''}" onclick="editEvent(${evt.id}); event.stopPropagation();" title="${evt.title}">${evt.all_day?'':(evt.start_time?evt.start_time.substring(0,5)+' ':'')}${evt.title}</div>`).join('')}${hiddenCount > 0 ? `<div class="calendar-more-events" onclick="showAllEvents('${dateStr}'); event.stopPropagation();">+${hiddenCount}개 더보기</div>` : ''}</div>`;
+            }
+            const totalCells = firstDayOfWeek + lastDate; const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let date = 1; date <= remainingCells; date++) { html += `<div class="calendar-day other-month"><div class="calendar-day-number">${date}</div></div>`; }
+            return html;
+        }
+        function getEventsForDate(dateStr) { return calendarEvents.filter(evt => dateStr >= evt.start_date && dateStr <= evt.end_date).sort((a,b)=>{ if(a.all_day && !b.all_day) return -1; if(!a.all_day && b.all_day) return 1; return (a.start_time||'').localeCompare(b.start_time||''); }); }
+        function changeMonth(delta) { currentMonth += delta; if (currentMonth < 0) { currentMonth = 11; currentYear--; } else if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); }
+        function goToToday() { const today = new Date(); currentYear = today.getFullYear(); currentMonth = today.getMonth(); renderCalendar(); }
+        async function loadCalendarEvents() { try { const { data, error } = await supabase.from('calendar_events').select('*').order('start_date', { ascending: true }); if (error) throw error; calendarEvents = data || []; } catch (e) { console.error('일정 로드 오류:', e); calendarEvents = []; } }
+        function openEventModal(dateStr = null) {
+            editingEventId = null; selectColor('green');
+            const today = dateStr || new Date().toISOString().split('T')[0];
+            document.getElementById('eventModalTitle').innerText = '일정 추가'; document.getElementById('eventTitle').value = ''; document.getElementById('eventAllDay').checked = false; document.getElementById('eventStartDate').value = today; document.getElementById('eventEndDate').value = today; document.getElementById('eventStartTime').value = '09:00'; document.getElementById('eventEndTime').value = '10:00'; document.getElementById('eventDescription').value = ''; document.getElementById('deleteEventBtn').style.display = 'none';
+            toggleAllDay(); document.getElementById('eventModal').classList.add('active');
+            document.getElementById('eventStartDate').addEventListener('change', function() { if(document.getElementById('eventEndDate').value < this.value) document.getElementById('eventEndDate').value = this.value; });
+        }
+        function editEvent(eventId) {
+            const event = calendarEvents.find(e => e.id === eventId); if (!event) return;
+            editingEventId = eventId; selectColor(event.color || 'green');
+            document.getElementById('eventModalTitle').innerText = '일정 수정'; document.getElementById('eventTitle').value = event.title || ''; document.getElementById('eventAllDay').checked = event.all_day || false; document.getElementById('eventStartDate').value = event.start_date || ''; document.getElementById('eventEndDate').value = event.end_date || ''; document.getElementById('eventStartTime').value = event.start_time || '09:00'; document.getElementById('eventEndTime').value = event.end_time || '10:00'; document.getElementById('eventDescription').value = event.description || ''; document.getElementById('deleteEventBtn').style.display = 'block';
+            toggleAllDay(); document.getElementById('eventModal').classList.add('active');
+        }
+        function toggleAllDay() { const allDay = document.getElementById('eventAllDay').checked; document.getElementById('eventStartTime').disabled = allDay; document.getElementById('eventEndTime').disabled = allDay; document.getElementById('eventStartTime').style.opacity = allDay ? '0.5' : '1'; document.getElementById('eventEndTime').style.opacity = allDay ? '0.5' : '1'; }
+        function selectColor(color) { selectedColor = color; document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected')); const colorOpt = document.querySelector(`[data-color="${color}"]`); if (colorOpt) colorOpt.classList.add('selected'); }
+        async function saveEvent() {
+            const title = document.getElementById('eventTitle').value.trim(); if (!title) return alert('일정 제목을 입력해주세요.');
+            const startDate = document.getElementById('eventStartDate').value; let endDate = document.getElementById('eventEndDate').value;
+            if (startDate > endDate) endDate = startDate;
+            const isAllDay = document.getElementById('eventAllDay').checked;
+            const eventData = { title: title, start_date: startDate, end_date: endDate, start_time: isAllDay ? '00:00' : document.getElementById('eventStartTime').value, end_time: isAllDay ? '23:59' : document.getElementById('eventEndTime').value, all_day: isAllDay, description: document.getElementById('eventDescription').value.trim(), color: selectedColor };
+            try {
+                if (editingEventId) { const { error } = await supabase.from('calendar_events').update(eventData).eq('id', editingEventId); if (error) throw error; alert('일정이 수정되었습니다.'); } 
+                else { const { error } = await supabase.from('calendar_events').insert([eventData]); if (error) throw error; alert('일정이 추가되었습니다.'); }
+                closeEventModal(); await loadCalendarEvents(); renderCalendar();
+            } catch (e) { console.error('오류:', e); alert('오류: ' + e.message); }
+        }
+        async function deleteEvent() {
+            if (!editingEventId || !confirm('삭제하시겠습니까?')) return;
+            try { const { error } = await supabase.from('calendar_events').delete().eq('id', editingEventId); if (error) throw error; alert('삭제되었습니다.'); closeEventModal(); await loadCalendarEvents(); renderCalendar(); } catch (e) { alert('오류: ' + e.message); }
+        }
+        function closeEventModal() { document.getElementById('eventModal').classList.remove('active'); editingEventId = null; }
+        function showAllEvents(dateStr) {
+            const events = getEventsForDate(dateStr); const modal = document.getElementById('allEventsModal'); const body = document.getElementById('allEventsModalBody');
+            const [year, month, day] = dateStr.split('-'); document.getElementById('allEventsModalTitle').innerText = `${year}년 ${parseInt(month)}월 ${parseInt(day)}일 일정`;
+            body.innerHTML = events.length === 0 ? '<p class="text-center py-8">일정이 없습니다.</p>' : events.map(evt => `<div class="calendar-event event-${evt.color} mb-2 cursor-pointer hover:opacity-80 transition" onclick="editEvent(${evt.id}); closeAllEventsModal();" style="padding: 10px; font-size: 14px; border-radius: 4px;"><div class="font-bold flex justify-between"><span>${evt.title}</span><span class="text-xs opacity-70"><i class="fa-solid fa-pen"></i></span></div>${evt.all_day?'':`<div class="text-xs mt-1 font-semibold opacity-90">${evt.start_time.substring(0,5)}</div>`}</div>`).join('');
+            modal.classList.add('active');
+        }
+        function closeAllEventsModal() { document.getElementById('allEventsModal').classList.remove('active'); }
+        async function logout() { if (!confirm("로그아웃 하시겠습니까?")) return; try { await supabase.auth.signOut(); } finally { window.location.href = 'index.html'; } }
+    </script>
+</body>
+</html>
