@@ -1227,8 +1227,12 @@ else if (tab === 'bookkeeping') {
             const allOrders = ordersRes.data || [];
             tbody.innerHTML = '';
             
+            // [신규] 오늘 날짜 구하기 (YYYY-MM-DD)
+            const today = new Date().toISOString().split('T')[0];
+        
             let filteredProducts = productList;
             if (isSearch) {
+                // ... (기존 검색 로직 유지) ...
                 const sName = document.getElementById('search_sName').value.toLowerCase(); 
                 const sCode = document.getElementById('search_sCode').value.toLowerCase();
                 filteredProducts = productList.filter(p => (sName ? p.name.toLowerCase().includes(sName) : true) && (sCode ? p.code.toLowerCase().includes(sCode) : true));
@@ -1246,7 +1250,10 @@ else if (tab === 'bookkeeping') {
                 // 예약 수량 계산
                 allOrders.forEach(ord => { 
                     if (ord.status === 'completed') return;
-
+        
+                    // [핵심 수정] 주문 날짜가 오늘보다 이전(과거)이면 예약에서 제외 (상쇄)
+                    if (ord.date < today) return; 
+        
                     if(ord.items) { 
                         ord.items.forEach(item => { 
                             if(item.name === prod.name) { 
@@ -1257,13 +1264,13 @@ else if (tab === 'bookkeeping') {
                 });
                 
                 const availableStock = prod.stock - reservedQty;
+                // ... (이하 렌더링 코드는 기존과 동일) ...
                 const stockClass = availableStock < 0 ? 'text-red-600' : 'text-blue-600';
                 
                 let reservedText = reservedQty > 0 
                     ? `<span class="text-red-500 font-bold">(${reservedQty}개)</span>` 
                     : '<span class="text-gray-300">-</span>';
         
-                // [수정됨] 시리얼 제외, 순서 변경, 상세 버튼 연결(openInventoryDetailModal)
                 tbody.innerHTML += `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="font-bold">${prod.name}</td>
@@ -1288,79 +1295,86 @@ else if (tab === 'bookkeeping') {
                 </tr>`;
             });
         }
-
         // [수정됨] 상세 보기: 입고(시리얼) 내역 + 예약 내역 통합 표시
-async function openInventoryDetailModal(prodName) {
-    const modal = document.getElementById('genericModal');
-    document.getElementById('modalTitle').innerText = `[${prodName}] 상세 현황`;
-    const body = document.getElementById('modalBody');
-    modal.classList.add('active');
-    
-    body.innerHTML = '<div class="p-4 text-center">데이터 로딩중...</div>';
-
-    // 1. 입고 내역(시리얼) 조회
-    const { data: purchases } = await supabase.from('purchases').select('*').eq('item_name', prodName).order('date', { ascending: false });
-    
-    // 2. 예약 내역 조회
-    const { data: orders } = await supabase.from('orders').select('*').order('date', { ascending: false });
-    let reservedList = [];
-    if (orders) {
-        orders.forEach(ord => {
-            if (ord.items) {
-                ord.items.forEach(item => {
-                    if (item.name === prodName) {
-                        reservedList.push({ date: ord.date, partner: ord.partner_name, qty: item.qty });
+        async function openInventoryDetailModal(prodName) {
+            const modal = document.getElementById('genericModal');
+            document.getElementById('modalTitle').innerText = `[${prodName}] 상세 현황`;
+            const body = document.getElementById('modalBody');
+            modal.classList.add('active');
+            
+            body.innerHTML = '<div class="p-4 text-center">데이터 로딩중...</div>';
+        
+            // [신규] 오늘 날짜
+            const today = new Date().toISOString().split('T')[0];
+        
+            // 1. 입고 내역(시리얼) 조회
+            const { data: purchases } = await supabase.from('purchases').select('*').eq('item_name', prodName).order('date', { ascending: false });
+            
+            // 2. 예약 내역 조회
+            const { data: orders } = await supabase.from('orders').select('*').order('date', { ascending: false });
+            let reservedList = [];
+            if (orders) {
+                orders.forEach(ord => {
+                    // [핵심 수정] 완료된 건 제외 AND 날짜가 지난(과거) 주문도 제외
+                    if (ord.status === 'completed') return;
+                    if (ord.date < today) return; // 과거 날짜 제외
+        
+                    if (ord.items) {
+                        ord.items.forEach(item => {
+                            if (item.name === prodName) {
+                                reservedList.push({ date: ord.date, partner: ord.partner_name, qty: item.qty });
+                            }
+                        });
                     }
                 });
             }
-        });
-    }
-
-    // 3. 입고 내역 정렬 (시리얼 있는 것을 위로)
-    const sortedPurchases = (purchases || []).sort((a, b) => {
-        const aHasSerial = a.serial_no && a.serial_no.trim() !== '' ? 1 : 0;
-        const bHasSerial = b.serial_no && b.serial_no.trim() !== '' ? 1 : 0;
-        return bHasSerial - aHasSerial; // 내림차순 (있는 게 위로)
-    });
-
-    // 4. HTML 생성 (스크롤 적용: max-h-96 overflow-y-auto)
-    let html = `<div class="grid grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">`;
-
-    // 왼쪽: 입고 및 시리얼 현황
-    html += `<div>
-        <h3 class="font-bold text-sm mb-2 text-blue-700"><i class="fa-solid fa-box-open"></i> 입고 및 시리얼 현황</h3>
-        <table class="w-full text-xs text-left border-collapse border">
-            <thead class="bg-blue-50"><tr><th class="p-2 border">입고일</th><th class="p-2 border">시리얼번호</th><th class="p-2 border text-right">수량</th></tr></thead>
-            <tbody>`;
-    
-    if (sortedPurchases.length === 0) html += `<tr><td colspan="3" class="p-2 text-center text-gray-400">입고 내역 없음</td></tr>`;
-    else {
-        sortedPurchases.forEach(p => {
-            const serialDisplay = p.serial_no ? `<span class="font-bold text-blue-600">${p.serial_no}</span>` : '<span class="text-gray-300">-</span>';
-            html += `<tr><td class="p-2 border">${p.date}</td><td class="p-2 border">${serialDisplay}</td><td class="p-2 border text-right">${p.qty}</td></tr>`;
-        });
-    }
-    html += `</tbody></table></div>`;
-
-    // 오른쪽: 출고 예약 현황
-    html += `<div>
-        <h3 class="font-bold text-sm mb-2 text-red-700"><i class="fa-solid fa-truck-ramp-box"></i> 출고 예약 현황</h3>
-        <table class="w-full text-xs text-left border-collapse border">
-            <thead class="bg-red-50"><tr><th class="p-2 border">수주일자</th><th class="p-2 border">거래처</th><th class="p-2 border text-right">예약</th></tr></thead>
-            <tbody>`;
+        
+            // 3. 입고 내역 정렬 (시리얼 있는 것을 위로)
+            const sortedPurchases = (purchases || []).sort((a, b) => {
+                const aHasSerial = a.serial_no && a.serial_no.trim() !== '' ? 1 : 0;
+                const bHasSerial = b.serial_no && b.serial_no.trim() !== '' ? 1 : 0;
+                return bHasSerial - aHasSerial; 
+            });
+        
+            // 4. HTML 생성
+            // ... (이하 기존 코드와 동일) ...
+            let html = `<div class="grid grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">`;
+        
+            // 왼쪽: 입고 및 시리얼 현황
+            html += `<div>
+                <h3 class="font-bold text-sm mb-2 text-blue-700"><i class="fa-solid fa-box-open"></i> 입고 및 시리얼 현황</h3>
+                <table class="w-full text-xs text-left border-collapse border">
+                    <thead class="bg-blue-50"><tr><th class="p-2 border">입고일</th><th class="p-2 border">시리얼번호</th><th class="p-2 border text-right">수량</th></tr></thead>
+                    <tbody>`;
             
-    if (reservedList.length === 0) html += `<tr><td colspan="3" class="p-2 text-center text-gray-400">예약 내역 없음</td></tr>`;
-    else {
-        reservedList.forEach(r => {
-            html += `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border">${r.partner}</td><td class="p-2 border text-right font-bold text-red-500">${r.qty}</td></tr>`;
-        });
-    }
-    html += `</tbody></table></div></div>`;
-    
-    html += `<div class="mt-6 text-right"><button onclick="closeModal()" class="bg-slate-600 text-white px-6 py-2 rounded font-bold hover:bg-slate-700">닫기</button></div>`;
-    
-    body.innerHTML = html;
-}
+            if (sortedPurchases.length === 0) html += `<tr><td colspan="3" class="p-2 text-center text-gray-400">입고 내역 없음</td></tr>`;
+            else {
+                sortedPurchases.forEach(p => {
+                    const serialDisplay = p.serial_no ? `<span class="font-bold text-blue-600">${p.serial_no}</span>` : '<span class="text-gray-300">-</span>';
+                    html += `<tr><td class="p-2 border">${p.date}</td><td class="p-2 border">${serialDisplay}</td><td class="p-2 border text-right">${p.qty}</td></tr>`;
+                });
+            }
+            html += `</tbody></table></div>`;
+        
+            // 오른쪽: 출고 예약 현황
+            html += `<div>
+                <h3 class="font-bold text-sm mb-2 text-red-700"><i class="fa-solid fa-truck-ramp-box"></i> 출고 예약 현황 (오늘 이후)</h3>
+                <table class="w-full text-xs text-left border-collapse border">
+                    <thead class="bg-red-50"><tr><th class="p-2 border">수주일자</th><th class="p-2 border">거래처</th><th class="p-2 border text-right">예약</th></tr></thead>
+                    <tbody>`;
+                    
+            if (reservedList.length === 0) html += `<tr><td colspan="3" class="p-2 text-center text-gray-400">예약 내역 없음</td></tr>`;
+            else {
+                reservedList.forEach(r => {
+                    html += `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border">${r.partner}</td><td class="p-2 border text-right font-bold text-red-500">${r.qty}</td></tr>`;
+                });
+            }
+            html += `</tbody></table></div></div>`;
+            
+            html += `<div class="mt-6 text-right"><button onclick="closeModal()" class="bg-slate-600 text-white px-6 py-2 rounded font-bold hover:bg-slate-700">닫기</button></div>`;
+            
+            body.innerHTML = html;
+        }
         
         async function updateInventory(id) { 
             const note = document.getElementById(`note_${id}`).value; 
