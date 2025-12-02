@@ -2326,9 +2326,24 @@ async function openCostModal(orderId) {
     document.getElementById('modalTitle').innerText = "원가(매입단가) 입력";
     const body = document.getElementById('modalBody');
     
-    // 주문 정보 가져오기
+    // 1. 주문 정보 가져오기
     const { data: order } = await supabase.from('orders').select('*').eq('id', orderId).single();
     if (!order) return alert("주문 정보를 찾을 수 없습니다.");
+
+    // [방어 코드] items가 없거나 문자열로 되어있을 경우 처리
+    let items = order.items;
+    
+    // 만약 items가 문자열(String)로 되어있다면 JSON으로 변환 시도
+    if (typeof items === 'string') {
+        try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    // items가 없거나(null) 배열이 아니면 빈 배열로 초기화
+    if (!items || !Array.isArray(items)) {
+        items = [];
+    }
+    
+    // 가공된 items를 다시 order 객체에 담음 (저장 및 계산 로직을 위해)
+    order.items = items;
 
     modal.classList.add('active');
     
@@ -2354,10 +2369,10 @@ async function openCostModal(orderId) {
         <tbody id="costListBody">
     `;
 
-    // 품목 리스트 루프
-    if (order.items) {
-        order.items.forEach((item, idx) => {
-            const costPrice = item.cost_price || 0; // 기존에 입력한 원가가 있으면 가져옴
+    // 2. 품목 리스트 루프 (데이터가 있을 때만)
+    if (items.length > 0) {
+        items.forEach((item, idx) => {
+            const costPrice = item.cost_price || 0; 
             const margin = (item.unit_price - costPrice) * item.qty;
             
             html += `
@@ -2376,6 +2391,9 @@ async function openCostModal(orderId) {
             </tr>
             `;
         });
+    } else {
+        // [추가] 데이터가 없을 경우 안내 메시지 표시
+        html += `<tr><td colspan="5" class="p-4 text-center text-slate-400">등록된 품목 상세 내역이 없습니다. (품목 없이 총액만 등록된 주문일 수 있습니다)</td></tr>`;
     }
 
     html += `
