@@ -137,7 +137,7 @@
         <button onclick="switchTab('orders')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-file-signature w-5"></i> 주문 관리</button>
         <button onclick="switchTab('sales')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-truck-fast w-5"></i> 판매 관리</button>
         <button onclick="switchTab('collections')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-sack-dollar w-5"></i> 수금 관리</button>
-    
+        <button onclick="switchTab('cost_management')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-chart-pie w-5"></i> 원가 관리 (마진)</button>
         <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">자재/발주</div>
         <button onclick="switchTab('purchase_orders')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-file-import w-5"></i> 발주 관리 (PO)</button>
         <button onclick="switchTab('purchases')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-dolly w-5"></i> 구매 관리 (입고)</button>
@@ -422,7 +422,7 @@ function setupAutoTimeSync() {
                 startObj = new Date(); 
                 startObj.setFullYear(today.getFullYear() - 5); // 5년 전으로 설정
             }
-            else if (tab === 'bookkeeping') {
+            else if (tab === 'bookkeeping'|| tab === 'cost_management') {
                 startObj = new Date();
                 startObj.setFullYear(today.getFullYear() - 1);
             }
@@ -476,7 +476,10 @@ function setupAutoTimeSync() {
             if(tab === 'inventory') { await loadInventoryData(true); return; }
             
             // 수금 관리는 실제로는 'sales' 테이블을 조회합니다.
-            const targetTable = (tab === 'collections') ? 'sales' : tab;
+            //const targetTable = (tab === 'collections') ? 'sales' : tab;
+            let targetTable = tab;
+            if (tab === 'collections') targetTable = 'sales';
+            if (tab === 'cost_management') targetTable = 'orders'; // [추가]
             
             let query = supabase.from(targetTable).select('*');
             if (tab === 'bookkeeping') {
@@ -525,11 +528,45 @@ function setupAutoTimeSync() {
             }
             // 발주/구매 품목 검색 필터
             else if(tab === 'purchase_orders' || tab === 'purchases') { const sItem = document.getElementById('search_sItem') ? document.getElementById('search_sItem').value.toLowerCase() : ''; if(sItem) { if(tab === 'purchases') resultData = data.filter(r => r.item_name && r.item_name.toLowerCase().includes(sItem)); else resultData = data.filter(r => r.items && r.items.some(i => i.name.toLowerCase().includes(sItem))); } }
+
+                else if (tab === 'cost_management') {
+    const totalSales = row.total_amount || 0;
+    const totalCost = row.total_cost || 0;
+    const margin = totalSales - totalCost;
+    
+    // 마진율 계산 (매출이 0이면 0%)
+    const marginRate = totalSales > 0 ? ((margin / totalSales) * 100).toFixed(1) : 0;
+    
+    // 마진이 마이너스면 빨간색, 플러스면 파란색
+    const marginClass = margin < 0 ? 'text-red-600' : 'text-blue-600';
+
+    // 대표 품목명 만들기
+    let title = '-';
+    if(row.items && row.items.length > 0) {
+        title = row.items[0].name;
+        if(row.items.length > 1) title += ` 외 ${row.items.length-1}건`;
+    }
+
+    tr += `
+        <td class="text-center">${row.date}</td>
+        <td class="font-bold text-slate-700">${row.partner_name}</td>
+        <td>${title}</td>
+        <td class="text-right font-bold">${totalSales.toLocaleString()}</td>
+        <td class="text-right text-slate-600">${totalCost.toLocaleString()}</td>
+        <td class="text-right font-bold ${marginClass}">${margin.toLocaleString()}</td>
+        <td class="text-center text-xs ${marginClass}">${marginRate}%</td>
+        <td class="text-center">
+            <button onclick="openCostModal(${row.id})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-bold transition">원가입력</button>
+        </td>
+    `;
+}
+            
             else if (tab === 'bookkeeping') {
                 const cat = document.getElementById('search_sCategory').value;
                 const usage = document.getElementById('search_sUsage').value;
                 if(cat) query = query.eq('category', cat);
                 if(usage) query = query.ilike('usage_desc', `%${usage}%`);
+                query = query.order('created_at', { ascending: false });
             }
             renderTable(tab, resultData);
         }
@@ -565,7 +602,7 @@ function setupAutoTimeSync() {
             renderSearchPanel(tab);
         
             // [추가] 타이틀 맵에 수금 관리 추가
-            const titles = {'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황','quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)','collections':'수금 관리', 'bookkeeping':'기장 관리 (지출/비용)'};
+            const titles = {'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황','quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)','collections':'수금 관리', 'bookkeeping':'기장 관리 (지출/비용)', 'cost_management':'원가 관리 (마진 분석)'};
             
             let buttonsHtml = '';
             const commonBtnClass = "bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2";
@@ -578,7 +615,20 @@ function setupAutoTimeSync() {
             } else if (tab !== 'collections') {
                 buttonsHtml = `<button onclick="openNewModal('${tab}')" class="${commonBtnClass}"><i class="fa-solid fa-plus"></i> 신규 등록</button>`;
             }
-        
+            else if (tab === 'cost_management') {
+        html += `<thead>
+            <tr>
+                <th style="width:10%">주문일자</th>
+                <th style="width:15%">거래처</th>
+                <th style="width:20%">주문명(대표품목)</th>
+                <th style="width:12%">총 매출액</th>
+                <th style="width:12%">총 원가(입력)</th>
+                <th style="width:12%">마진금액</th>
+                <th style="width:8%">마진율</th>
+                <th style="width:10%">관리</th>
+            </tr>
+        </thead><tbody id="listBody"></tbody>`;
+    }
             let html = `
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-bold text-slate-800 border-l-8 border-cyan-500 pl-4">${titles[tab]}</h2>
@@ -2271,6 +2321,150 @@ function renderComplexForm(tab, container) {
             window.location.href = 'index.html'; 
         }
     }
+
+    // [신규 기능] 원가 관리 모달 열기
+async function openCostModal(orderId) {
+    const modal = document.getElementById('genericModal');
+    document.getElementById('modalTitle').innerText = "원가(매입단가) 입력";
+    const body = document.getElementById('modalBody');
+    
+    // 주문 정보 가져오기
+    const { data: order } = await supabase.from('orders').select('*').eq('id', orderId).single();
+    if (!order) return alert("주문 정보를 찾을 수 없습니다.");
+
+    modal.classList.add('active');
+    
+    let html = `
+    <div class="bg-green-50 p-4 rounded mb-4 border border-green-200">
+        <div class="flex justify-between mb-2">
+            <span class="font-bold text-green-900">주문일자: ${order.date}</span>
+            <span class="font-bold text-green-900">거래처: ${order.partner_name}</span>
+        </div>
+        <p class="text-xs text-green-700">※ 각 품목의 실제 입고 단가를 입력하세요. 마진은 자동 계산됩니다.</p>
+    </div>
+
+    <table class="w-full text-sm border-collapse border text-center mb-4">
+        <thead class="bg-slate-100">
+            <tr>
+                <th class="p-2 border">품목명</th>
+                <th class="p-2 border">판매단가</th>
+                <th class="p-2 border">수량</th>
+                <th class="p-2 border bg-yellow-50">입고단가(원가)</th>
+                <th class="p-2 border">예상마진</th>
+            </tr>
+        </thead>
+        <tbody id="costListBody">
+    `;
+
+    // 품목 리스트 루프
+    if (order.items) {
+        order.items.forEach((item, idx) => {
+            const costPrice = item.cost_price || 0; // 기존에 입력한 원가가 있으면 가져옴
+            const margin = (item.unit_price - costPrice) * item.qty;
+            
+            html += `
+            <tr>
+                <td class="p-2 border text-left">${item.name}</td>
+                <td class="p-2 border text-right text-slate-500">${item.unit_price.toLocaleString()}</td>
+                <td class="p-2 border">${item.qty}</td>
+                <td class="p-2 border bg-yellow-50">
+                    <input type="number" id="cost_input_${idx}" value="${costPrice}" 
+                        class="w-full text-right border p-1 rounded font-bold text-slate-700"
+                        oninput="calcRealTimeMargin()" placeholder="0">
+                </td>
+                <td class="p-2 border text-right font-bold text-blue-600" id="margin_display_${idx}">
+                    ${margin.toLocaleString()}
+                </td>
+            </tr>
+            `;
+        });
+    }
+
+    html += `
+        </tbody>
+        <tfoot class="bg-slate-50 font-bold">
+            <tr>
+                <td colspan="3" class="p-3 text-right">총 합계</td>
+                <td class="p-3 text-right text-red-600" id="totalCostDisplay">0</td>
+                <td class="p-3 text-right text-blue-600" id="totalMarginDisplay">0</td>
+            </tr>
+        </tfoot>
+    </table>
+    
+    <button onclick="saveCost(${orderId})" class="w-full bg-slate-800 text-white py-3 rounded font-bold hover:bg-slate-900 transition">원가 저장 및 마진 확정</button>
+    `;
+
+    body.innerHTML = html;
+    
+    // 현재 Order 데이터를 임시 저장 (저장할 때 참조용)
+    globalDataStore['currentCostOrder'] = order;
+    
+    // 모달 열리자마자 합계 계산 한 번 실행
+    calcRealTimeMargin();
+}
+
+// [신규 기능] 실시간 합계 계산 (입력할 때마다 수치 변경)
+function calcRealTimeMargin() {
+    const order = globalDataStore['currentCostOrder'];
+    if (!order || !order.items) return;
+
+    let totalCost = 0;
+    let totalMargin = 0;
+
+    order.items.forEach((item, idx) => {
+        const inputEl = document.getElementById(`cost_input_${idx}`);
+        const displayEl = document.getElementById(`margin_display_${idx}`);
+        
+        const costUnit = parseInt(inputEl.value) || 0;
+        const margin = (item.unit_price - costUnit) * item.qty;
+        
+        displayEl.innerText = margin.toLocaleString();
+        
+        totalCost += (costUnit * item.qty);
+        totalMargin += margin;
+    });
+
+    document.getElementById('totalCostDisplay').innerText = totalCost.toLocaleString();
+    document.getElementById('totalMarginDisplay').innerText = totalMargin.toLocaleString();
+}
+
+// [신규 기능] 원가 저장
+async function saveCost(orderId) {
+    const order = globalDataStore['currentCostOrder'];
+    if (!order || !order.items) return;
+
+    let totalCostAccumulated = 0;
+
+    // 1. items 배열 내부에 cost_price 업데이트
+    const updatedItems = order.items.map((item, idx) => {
+        const inputVal = document.getElementById(`cost_input_${idx}`).value;
+        const costPrice = parseInt(inputVal) || 0;
+        
+        totalCostAccumulated += (costPrice * item.qty);
+        
+        return {
+            ...item,
+            cost_price: costPrice // JSON 데이터 내부에 원가 정보 저장
+        };
+    });
+
+    // 2. DB 업데이트 (items JSON 수정 + total_cost 컬럼 업데이트)
+    const { error } = await supabase
+        .from('orders')
+        .update({ 
+            items: updatedItems,
+            total_cost: totalCostAccumulated
+        })
+        .eq('id', orderId);
+
+    if (error) {
+        alert("저장 실패: " + error.message);
+    } else {
+        alert("원가가 저장되었습니다.");
+        closeModal();
+        runSearch('cost_management'); // 목록 새로고침
+    }
+}
         
     </script>
 </body>
