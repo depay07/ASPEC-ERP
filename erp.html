@@ -421,6 +421,10 @@ function setupAutoTimeSync() {
                 startObj = new Date(); 
                 startObj.setFullYear(today.getFullYear() - 5); // 5년 전으로 설정
             }
+            else if (tab === 'bookkeeping') {
+                startObj = new Date();
+                startObj.setFullYear(today.getFullYear() - 1);
+            }
             
             // toISOString() 사용 시 시차 문제 방지를 위한 간단한 포맷팅 (YYYY-MM-DD)
             // (한국 시간 기준 정확도를 위해 offset 보정 또는 간단히 문자열 처리)
@@ -473,8 +477,17 @@ function setupAutoTimeSync() {
             // 수금 관리는 실제로는 'sales' 테이블을 조회합니다.
             const targetTable = (tab === 'collections') ? 'sales' : tab;
             
-            let query = supabase.from(targetTable).select('*').order('created_at', { ascending: false });
-            
+            let query = supabase.from(targetTable).select('*');
+            if (tab === 'bookkeeping') {
+                // 기장 관리는 날짜(date) 내림차순 (최신 날짜가 위로)
+                query = query.order('date', { ascending: false }); 
+                
+                // 날짜가 같을 경우 등록순으로 2차 정렬 (선택사항)
+                // query = query.order('date', { ascending: false }).order('created_at', { ascending: false });
+            } else {
+                // 나머지는 등록일시(created_at) 내림차순
+                query = query.order('created_at', { ascending: false });
+            }
             const sDate = document.getElementById('searchStartDate')?.value;
             const eDate = document.getElementById('searchEndDate')?.value;
             if(sDate && eDate && !['partners','products'].includes(tab)) query = query.gte('date', sDate).lte('date', eDate);
