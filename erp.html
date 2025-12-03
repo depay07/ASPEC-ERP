@@ -294,6 +294,7 @@
         let sessionTimer;
         let currentLoadedOrderId = null; // 불러온 주문서 ID 저장용
         let currentLoadSource = '';      // 불러온 데이터가 견적(quotes)인지 주문(orders)인지 구분
+        let draggedItemIndex = null;
 
         const quotes = [
             "할 수 있다고 믿는다면, 이미 절반은 해낸 것이다.",
@@ -621,6 +622,67 @@ function setupAutoTimeSync() {
             runSearch(tab);
         }
 
+        // [신규 기능 2] 복사 기능 로직
+        function duplicateItem(tab, dataId) {
+            const row = getRowData(dataId);
+            if (!row) return alert('데이터 오류');
+            
+            // 1. 모달 열기 (신규 등록 모드처럼 보이지만 데이터는 채움)
+            openNewModal(tab);
+            
+            // 2. 중요: 신규 등록으로 처리하기 위해 EditId는 null로 설정
+            currentEditId = null;
+            document.getElementById('modalTitle').innerText = getTitle(tab) + ' 복사 등록';
+
+            // 3. 데이터 채우기 (openEditModal 로직 재사용 + 날짜는 오늘로)
+            setTimeout(() => {
+                const today = new Date().toISOString().split('T')[0];
+
+                if(tab === 'purchase_orders') { 
+                    // 발주서 복사 시
+                    document.getElementById('poDate').value = today; // 날짜는 오늘
+                    document.getElementById('poNum').value = 'AUTO (저장시 생성)'; // 번호는 자동생성되게 비움
+                    
+                    document.getElementById('poPartner').value = row.partner_name; 
+                    document.getElementById('poEndUser').value = row.end_user||''; 
+                    document.getElementById('poManager').value = row.manager||''; 
+                    document.getElementById('poPreOrder').value = row.is_pre_order||''; 
+                    document.getElementById('poNote').value = row.note||'';
+                    document.getElementById('poPManager').value = row.partner_manager || ''; 
+                    document.getElementById('poPhone').value = row.phone || ''; 
+                    document.getElementById('poEmail').value = row.email || ''; 
+                    document.getElementById('poAddr').value = row.partner_address || '';
+                } 
+                else {
+                    // 견적/주문/판매 복사 시
+                    document.getElementById('sDate').value = today; // 날짜는 오늘
+                    document.getElementById('sPartner').value = row.partner_name;
+                    document.getElementById('sManager').value = row.manager || '';
+                    
+                    if(document.getElementById('sPManager')) document.getElementById('sPManager').value = row.partner_manager || '';
+                    if(document.getElementById('sContact')) document.getElementById('sContact').value = row.phone || '';
+                    if(document.getElementById('sAddr')) document.getElementById('sAddr').value = row.partner_address || '';
+                    if(document.getElementById('sEmail')) document.getElementById('sEmail').value = row.email || '';
+                    if(document.getElementById('sNote')) document.getElementById('sNote').value = row.note || '';
+                }
+
+                // 4. 품목 리스트 복사 (깊은 복사 사용)
+                tempItems = JSON.parse(JSON.stringify(row.items || []));
+                
+                // 규격 누락 방지
+                tempItems = tempItems.map(item => {
+                    if (!item.spec) {
+                        const prod = productList.find(p => p.name === item.name);
+                        if (prod) item.spec = prod.spec;
+                    }
+                    return item;
+                });
+
+                renderGrid();
+            }, 50);
+        }
+
+        
         // [수정됨] 수금 관리 테이블 렌더링 로직 추가
         function renderTable(tab, data) {
             const tbody = document.getElementById('listBody'); tbody.innerHTML = '';
@@ -633,7 +695,12 @@ function setupAutoTimeSync() {
                 
                 // 수금 관리 외 일반 버튼들
                 if (tab !== 'collections') {
-                    if(['quotes', 'orders', 'sales', 'purchase_orders'].includes(tab)) actions += `<button onclick="printDocument('${tab}', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄"><i class="fa-solid fa-print fa-lg"></i></button>`;
+                    if(['quotes', 'orders', 'sales', 'purchase_orders'].includes(tab)) {
+                        actions += `<button onclick="printDocument('${tab}', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄"><i class="fa-solid fa-print fa-lg"></i></button>`;
+                        
+                        // [신규 기능 2] 복사 버튼 추가
+                        actions += `<button onclick="duplicateItem('${tab}', '${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사(새 문서로 작성)"><i class="fa-regular fa-copy fa-lg"></i></button>`;
+                    }
                     if(tab !== 'inventory') actions += `<button onclick="openEditModal('${tab}', '${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정"><i class="fa-solid fa-pen-to-square fa-lg"></i></button>`;
                     actions += `<button onclick="deleteItem('${tab}', ${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제"><i class="fa-solid fa-trash-can fa-lg"></i></button></div>`;
                 }
@@ -1470,7 +1537,9 @@ else if (tab === 'bookkeeping') {
             
             <table class="w-full text-sm border-collapse border text-center mb-4">
                 <thead class="bg-slate-100">
-                    <tr><th>품목명</th><th style="width:30%">규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>삭제</th></tr>
+                    <tr>
+                        <th style="width: 50px;">이동</th> <th>품목명</th><th style="width:30%">규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>삭제</th>
+                    </tr>
                 </thead>
                 <tbody id="itemGrid"></tbody>
             </table>
@@ -1522,33 +1591,37 @@ else if (tab === 'bookkeeping') {
             const tbody = document.getElementById('itemGrid'); 
             tbody.innerHTML = ''; 
             
-            // [수정됨] 공급가액, 부가세, 총합계 변수 각각 선언
             let totalSupply = 0;
             let totalVat = 0;
             let grandTotal = 0;
             
             tempItems.forEach((item, idx) => {
-                // 각각 누적 계산
                 totalSupply += item.supply;
                 totalVat += item.vat;
                 grandTotal += item.total;
                 
+                // [수정됨] tr 태그에 draggable 속성과 이벤트 추가, 첫 번째 td에 햄버거 아이콘 추가
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition border-b">
-                        <td class="py-2">${item.name}</td>
-                        <td class="text-left px-2 text-slate-600 text-xs">${item.spec||''}</td>
-                        <td>${item.qty}</td>
-                        <td class="text-right px-2">${item.price.toLocaleString()}</td>
-                        <td class="text-right px-2 text-slate-600">${item.supply.toLocaleString()}</td>
-                        <td class="text-right px-2 text-slate-400 text-xs">${item.vat.toLocaleString()}</td>
-                        <td class="text-right px-2 font-bold">${item.total.toLocaleString()}</td>
+                    <tr class="hover:bg-slate-50 transition border-b" 
+                        draggable="true" 
+                        ondragstart="dragStart(${idx})" 
+                        ondragover="dragOver(event)" 
+                        ondrop="dropItem(${idx})"
+                        style="cursor: move;">
+                        
+                        <td class="text-slate-400"><i class="fa-solid fa-bars"></i></td> <td class="py-2 cursor-default">${item.name}</td>
+                        <td class="text-left px-2 text-slate-600 text-xs cursor-default">${item.spec||''}</td>
+                        <td class="cursor-default">${item.qty}</td>
+                        <td class="text-right px-2 cursor-default">${item.price.toLocaleString()}</td>
+                        <td class="text-right px-2 text-slate-600 cursor-default">${item.supply.toLocaleString()}</td>
+                        <td class="text-right px-2 text-slate-400 text-xs cursor-default">${item.vat.toLocaleString()}</td>
+                        <td class="text-right px-2 font-bold cursor-default">${item.total.toLocaleString()}</td>
                         <td onclick="tempItems.splice(${idx},1); renderGrid()" class="cursor-pointer text-red-400 hover:text-red-600">
                             <i class="fa-solid fa-trash"></i>
                         </td>
                     </tr>`;
             });
             
-            // [수정됨] 화면에 각각의 합계 표시
             document.getElementById('sTotalSupply').innerText = totalSupply.toLocaleString();
             document.getElementById('sTotalVat').innerText = totalVat.toLocaleString();
             document.getElementById('sGrandTotal').innerText = grandTotal.toLocaleString();
@@ -2306,7 +2379,25 @@ function renderComplexForm(tab, container) {
             document.getElementById('allEventsModal').classList.remove('active');
         }
         // ============= 캘린더 관련 함수들 끝 =============
+// [신규 기능 1] 드래그 앤 드롭 로직
+        function dragStart(idx) {
+            draggedItemIndex = idx;
+        }
 
+        function dragOver(event) {
+            event.preventDefault(); // 드롭을 허용하기 위해 필수
+        }
+
+        function dropItem(targetIdx) {
+            if (draggedItemIndex === null || draggedItemIndex === targetIdx) return;
+
+            // 배열 순서 변경
+            const itemToMove = tempItems.splice(draggedItemIndex, 1)[0];
+            tempItems.splice(targetIdx, 0, itemToMove);
+
+            draggedItemIndex = null;
+            renderGrid(); // 그리드 다시 그리기
+        }
         // [복구] 로그아웃 함수
     async function logout() {
         if (!confirm("정말 로그아웃 하시겠습니까?")) return;
