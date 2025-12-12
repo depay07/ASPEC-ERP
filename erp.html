@@ -131,6 +131,7 @@
         <button onclick="switchTab('calendar')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-calendar-days w-5"></i> 일정 관리</button>
         
         <button onclick="switchTab('bookkeeping')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-calculator w-5"></i> 기장 관리</button>
+        <button onclick="switchTab('meeting_logs')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-notebook w-5"></i> 미팅 일지</button>
     
         <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">영업 관리</div>
         <button onclick="switchTab('quotes')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3"><i class="fa-solid fa-file-invoice w-5"></i> 견적 관리</button>
@@ -450,6 +451,13 @@ function setupAutoTimeSync() {
             else if (tab === 'collections') {
                 html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
             }
+            else if (tab === 'meeting_logs') {
+                html += `
+                    <div><span class="search-label">업체명</span><input type="text" id="search_mlPartner" class="input-box" placeholder="업체명 검색" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                    <div><span class="search-label">내용 키워드</span><input type="text" id="search_mlContent" class="input-box" placeholder="내용 검색" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                `;
+            }
+
             else html += `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div><div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
         
             let extraControls = '';
@@ -475,6 +483,27 @@ function setupAutoTimeSync() {
             const tbody = document.getElementById('listBody'); tbody.innerHTML = '<tr><td colspan="10" class="text-center p-8">데이터를 불러오는 중입니다...</td></tr>';
             
             if(tab === 'inventory') { await loadInventoryData(true); return; }
+            // [신규 추가] 미팅 일지 조회 로직
+            if(tab === 'meeting_logs') {
+                let query = supabase.from('meeting_logs').select('*').order('date', { ascending: false }); // 날짜 내림차순 정렬
+                
+                // 날짜 필터 (기본 로직 활용)
+                const sDate = document.getElementById('searchStartDate')?.value;
+                const eDate = document.getElementById('searchEndDate')?.value;
+                if(sDate && eDate) query = query.gte('date', sDate).lte('date', eDate);
+            
+                // 추가 검색 필터
+                const pName = document.getElementById('search_mlPartner')?.value;
+                const pContent = document.getElementById('search_mlContent')?.value;
+                
+                if(pName) query = query.ilike('partner_name', `%${pName}%`);
+                if(pContent) query = query.ilike('content', `%${pContent}%`);
+            
+                const { data, error } = await query;
+                if(error) { alert("검색실패: "+error.message); return; }
+                
+                renderTable(tab, data);
+                return; // 여기서 종료
             
             // 수금 관리는 실제로는 'sales' 테이블을 조회합니다.
             //const targetTable = (tab === 'collections') ? 'sales' : tab;
@@ -571,7 +600,7 @@ function setupAutoTimeSync() {
             renderSearchPanel(tab);
         
             // [추가] 타이틀 맵에 수금 관리 추가
-            const titles = {'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황','quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)','collections':'수금 관리', 'bookkeeping':'기장 관리 (지출/비용)', 'cost_management':'원가 관리 (마진 분석)'};
+            const titles = {'partners':'거래처 관리','products':'품목 관리','purchase_orders':'발주 관리 (PO)','purchases':'구매 관리 (입고)','inventory':'재고 관리 현황','quotes':'견적 관리','orders':'주문 관리 (수주)','sales':'판매 관리 (출고)','collections':'수금 관리', 'bookkeeping':'기장 관리 (지출/비용)', 'cost_management':'원가 관리 (마진 분석)', 'meeting_logs': '미팅 일지 (영업 활동)'};
             
             let buttonsHtml = '';
             const commonBtnClass = "bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2.5 rounded font-bold shadow-md text-sm flex items-center gap-2";
@@ -615,6 +644,19 @@ function setupAutoTimeSync() {
             // [추가] 수금 관리 테이블 헤더
             else if (tab === 'collections') html += `<thead><tr><th style="width:10%">판매일자</th><th style="width:15%">거래처</th><th style="width:15%">매출총액(VAT포함)</th><th style="width:15%">기수금액</th><th style="width:15%">미수금(잔액)</th><th>비고</th><th style="width:10%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             else if (tab === 'bookkeeping') html += `<thead><tr><th style="width:10%">일자</th><th style="width:12%">계정과목</th><th style="width:20%">사용처(적요)</th><th style="width:10%">결제수단</th><th style="width:12%">금액</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
+            else if (tab === 'meeting_logs') {
+            html += `
+            <thead>
+                <tr>
+                    <th style="width:12%">미팅날짜</th>
+                    <th style="width:15%">업체명</th>
+                    <th style="width:15%">참석자</th>
+                    <th>미팅 내용 (요약)</th>
+                    <th style="width:20%">향후 계획</th>
+                    <th style="width:10%">관리</th>
+                </tr>
+            </thead><tbody id="listBody"></tbody>`;}
+
             else html += `<thead><tr><th style="width:10%">일자</th><th style="width:18%">거래처</th><th style="width:12%">담당자</th><th style="width:12%">공급가액</th><th style="width:10%">부가세</th><th style="width:12%">합계</th><th>비고</th><th style="width:15%">관리</th></tr></thead><tbody id="listBody"></tbody>`;
             
             html += `</table></div>`;
@@ -717,6 +759,18 @@ function setupAutoTimeSync() {
                 else if (tab === 'purchases') {
                     tr += `<td class="text-center">${row.date}</td><td class="text-center">${row.manufacturer||'-'}</td><td>${row.partner_name}</td><td>${row.item_name}</td><td class="text-center font-bold">${row.qty}</td><td class="text-right">${(row.unit_price||0).toLocaleString()}</td><td class="text-right font-bold">${(row.total_amount||0).toLocaleString()}</td><td class="text-center">${row.serial_no||'-'}</td><td>${actions}</td>`;
                 } 
+                else if (tab === 'meeting_logs') {
+                    const summary = row.content && row.content.length > 30 ? row.content.substring(0, 30) + '...' : row.content || '';
+                    tr += `
+                        <td class="text-center font-bold text-slate-700">${row.date}</td>
+                        <td class="text-center font-bold text-blue-600">${row.partner_name}</td>
+                        <td class="text-center text-xs">${row.attendees || '-'}</td>
+                        <td class="text-xs text-slate-600 cursor-pointer hover:text-blue-500" onclick="openEditModal('${tab}', '${dataId}')">${summary}</td>
+                        <td class="text-xs text-red-500">${row.next_step || ''}</td>
+                        <td>${actions}</td>
+                    `;
+                }
+
                 // [추가] 수금 관리 로직
                 else if (tab === 'collections') {
                     const total = row.total_amount || 0;
@@ -842,6 +896,13 @@ function setupAutoTimeSync() {
                     document.getElementById('prodSpec').value = row.spec||''; 
                     document.getElementById('prodMaker').value = row.manufacturer||''; 
                 }
+                else if(tab === 'meeting_logs') {
+                    document.getElementById('mlDate').value = row.date;
+                    document.getElementById('mlPartner').value = row.partner_name;
+                    document.getElementById('mlAttendees').value = row.attendees || '';
+                    document.getElementById('mlContent').value = row.content || '';
+                    document.getElementById('mlNextStep').value = row.next_step || '';
+                }
 
                 else if(tab === 'bookkeeping') {
                     document.getElementById('bkDate').value = row.date;
@@ -930,7 +991,37 @@ function setupAutoTimeSync() {
             }
             else if (tab === 'partners') html = `<div class="grid grid-cols-2 gap-3"><div><label class="text-xs">상호 (필수)</label><input id="pName" class="input-box"></div><div><label class="text-xs">사업자번호</label><input id="pBiz" class="input-box"></div><div><label class="text-xs">대표자</label><input id="pOwner" class="input-box"></div><div><label class="text-xs">담당자</label><input id="pManager" class="input-box"></div><div><label class="text-xs">전화번호</label><input id="pPhone" class="input-box"></div><div><label class="text-xs">이메일</label><input id="pEmail" class="input-box"></div><div class="col-span-2"><label class="text-xs">주소</label><input id="pAddr" class="input-box" placeholder="주소를 입력하세요"></div><div class="col-span-2 border p-2 rounded bg-slate-50"><label class="text-xs font-bold">사업자등록증 (PDF/이미지)</label><div class="flex gap-2 mt-1"><input type="file" id="pFile" class="text-xs w-full" accept=".pdf,.jpg,.png,.jpeg"><div id="pCurrentFileLink" class="text-xs flex items-center"></div></div></div><div class="col-span-2"><label class="text-xs">비고</label><input id="pNote" class="input-box"></div></div><button onclick="saveSimpleData('partners')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
             else if (tab === 'products') html = `<div class="grid grid-cols-2 gap-3"><div class="col-span-2"><label class="text-xs">품목명 (필수)</label><input id="prodName" class="input-box" oninput="autoGenCode(this.value)"></div><div><label class="text-xs">품목코드 (자동)</label><input id="prodCode" class="input-box bg-slate-100" readonly></div><div><label class="text-xs">단위</label><input id="prodUnit" class="input-box" placeholder="EA"></div><div class="col-span-2"><label class="text-xs">규격</label><input id="prodSpec" class="input-box"></div><div class="col-span-2"><label class="text-xs">제조사</label><input id="prodMaker" class="input-box"></div></div><button onclick="saveSimpleData('products')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold">저장</button>`;
-            
+            else if (tab === 'meeting_logs') {
+    html = `
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-xs font-bold text-slate-700">미팅 날짜 (필수)</label>
+                <input type="date" id="mlDate" class="input-box" value="${today}">
+            </div>
+            <div>
+                <label class="text-xs font-bold text-slate-700">업체명 (필수)</label>
+                <input id="mlPartner" class="input-box" list="dl_part" placeholder="업체명 입력 또는 선택">
+            </div>
+            <div class="col-span-2">
+                <label class="text-xs font-bold text-slate-700">참석자</label>
+                <input id="mlAttendees" class="input-box" placeholder="예: 김철수 부장, 이영희 대리">
+            </div>
+            <div class="col-span-2">
+                <label class="text-xs font-bold text-slate-700">미팅 상세 내용</label>
+                <textarea id="mlContent" class="input-box h-40 resize-none p-3" placeholder="미팅 내용을 상세히 기록하세요."></textarea>
+            </div>
+            <div class="col-span-2">
+                <label class="text-xs font-bold text-slate-700 text-red-600">향후 계획 / 조치 사항</label>
+                <input id="mlNextStep" class="input-box" placeholder="다음 미팅 일정 혹은 확인해야 할 사항">
+            </div>
+        </div>
+        <button onclick="saveSimpleData('meeting_logs')" class="w-full mt-6 bg-slate-800 text-white py-3 rounded font-bold hover:bg-slate-900 transition">일지 저장</button>
+        <datalist id="dl_part"></datalist>
+    `;
+    // 파트너 리스트 채우기 (기존 함수 재활용)
+    setTimeout(() => fillDL('dl_part', partnerList), 100);
+}
+
             // [수정됨] 구매(입고) 관리: 여러 품목 등록이 가능한 UI로 변경
             else if (tab === 'purchases') {
                 html = `
@@ -1053,6 +1144,21 @@ function setupAutoTimeSync() {
             else if(tab === 'products') {
                 data = { name: el('prodName'), code: el('prodCode'), spec: el('prodSpec'), unit: el('prodUnit'), manufacturer: el('prodMaker') };
             }
+            else if(tab === 'meeting_logs') {
+            const pName = el('mlPartner');
+            const pDate = el('mlDate');
+            const pContent = el('mlContent');
+            
+            if(!pName || !pDate || !pContent) { alert("날짜, 업체명, 내용은 필수입니다."); return; }
+            
+            data = {
+                date: pDate,
+                partner_name: pName,
+                attendees: el('mlAttendees'),
+                content: pContent,
+                next_step: el('mlNextStep')
+            };
+        }
 
             else if(tab === 'bookkeeping') {
                 const usage = el('bkUsage');
