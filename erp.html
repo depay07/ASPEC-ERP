@@ -1147,8 +1147,286 @@
             document.getElementById('loadDataModal').classList.remove('active'); 
         }
 
-        // [신규 기능] 원가 저장
+                // [신규 기능] 원가 저장 (이어지는 부분)
         async function saveCost(orderId) {
             try {
                 const order = globalDataStore['currentCostOrder'];
-                if (!order || !order
+                if (!order || !order.items) return alert("저장할 데이터가 없습니다.");
+
+                const bomList = order.bomList || [];
+                let totalCostAccumulated = 0;
+
+                // items 배열 업데이트
+                const updatedItems = order.items.map((item, idx) => {
+                    const children = bomList.filter(b => b.parent_name === item.name);
+                    const isBOM = children.length > 0;
+                    
+                    let finalUnitCost = 0;
+                    let bomBreakdown = []; // 세부 내역 저장용 배열
+
+                    if (isBOM) {
+                        // 세트 품목 처리
+                        children.forEach((child, cIdx) => {
+                            const inputEl = document.getElementById(`cost_input_bom_${idx}_${cIdx}`);
+                            const childCost = inputEl ? (parseInt(inputEl.value) || 0) : 0;
+                            
+                            // 세트 1개당 원가 합산 (자식단가 * 소요량)
+                            finalUnitCost += (childCost * child.qty);
+                            
+                            // 내역 저장
+                            bomBreakdown.push({
+                                name: child.child_name,
+                                cost: childCost,
+                                req_qty: child.qty
+                            });
+                        });
+                    } else {
+                        // 일반 품목 처리
+                        const inputEl = document.getElementById(`cost_input_${idx}`);
+                        finalUnitCost = inputEl ? (parseInt(inputEl.value) || 0) : 0;
+                    }
+
+                    totalCostAccumulated += (finalUnitCost * (item.qty || 0));
+                    
+                    return {
+                        ...item,
+                        cost_price: finalUnitCost, // 통합 원가
+                        bom_breakdown: isBOM ? bomBreakdown : null // BOM인 경우 세부내역 저장
+                    };
+                });
+
+                // DB 업데이트
+                const { error } = await supabase
+                    .from('orders')
+                    .update({ 
+                        items: updatedItems,
+                        total_cost: totalCostAccumulated
+                    })
+                    .eq('id', orderId);
+
+                if (error) {
+                    alert("저장 실패: " + error.message);
+                } else {
+                    alert("원가가 저장되었습니다.");
+                    closeModal();
+                    runSearch('cost_management');
+                }
+            } catch (err) {
+                alert("저장 중 오류 발생: " + err.message);
+            }
+        }
+
+        // [신규 기능] 실시간 마진 계산
+        function calcRealTimeMargin() {
+            const order = globalDataStore['currentCostOrder'];
+            if (!order || !order.items) return;
+
+            let totalCost = 0;
+            let totalMargin = 0;
+            const bomList = order.bomList || [];
+
+            order.items.forEach((item, idx) => {
+                const sellPrice = item.price || item.unit_price || 0;
+                const qty = item.qty || 0;
+                
+                // BOM 여부 확인
+                const children = bomList.filter(b => b.parent_name === item.name);
+                const isBOM = children.length > 0;
+                
+                let itemUnitCost = 0; // 이 품목(세트 포함)의 개당 원가
+
+                if (isBOM) {
+                    // 세트인 경우: 자식들의 (단가 * 소요량)을 합산
+                    children.forEach((child, cIdx) => {
+                        const inputEl = document.getElementById(`cost_input_bom_${idx}_${cIdx}`);
+                        if (inputEl) {
+                            const childUnitCost = parseInt(inputEl.value) || 0;
+                            itemUnitCost += (childUnitCost * child.qty);
+                        }
+                    });
+
+                    // 부모 행에 마진 표시 업데이트
+                    const margin = (sellPrice - itemUnitCost) * qty;
+                    const parentMarginEl = document.getElementById(`margin_parent_${idx}`);
+                    if (parentMarginEl) parentMarginEl.innerText = margin.toLocaleString();
+                    
+                    totalCost += (itemUnitCost * qty);
+                    totalMargin += margin;
+
+                } else {
+                    // 일반 품목인 경우
+                    const inputEl = document.getElementById(`cost_input_${idx}`);
+                    if (inputEl) {
+                        itemUnitCost = parseInt(inputEl.value) || 0;
+                        const margin = (sellPrice - itemUnitCost) * qty;
+                        
+                        const displayEl = document.getElementById(`margin_display_${idx}`);
+                        if(displayEl) displayEl.innerText = margin.toLocaleString();
+                        
+                        totalCost += (itemUnitCost * qty);
+                        totalMargin += margin;
+                    }
+                }
+            });
+
+            const tCostEl = document.getElementById('totalCostDisplay');
+            const tMarginEl = document.getElementById('totalMarginDisplay');
+            
+            if(tCostEl) tCostEl.innerText = totalCost.toLocaleString();
+            if(tMarginEl) tMarginEl.innerText = totalMargin.toLocaleString();
+        }
+
+        // [신규 기능] 원가 입력 모달 열기
+        async function openCostModal(orderId) {
+            try {
+                const modal = document.getElementById('genericModal');
+                const body = document.getElementById('modalBody');
+                
+                // 1. 주문 정보 가져오기
+                const { data: order, error } = await supabase.from('orders').select('*').eq('id', orderId).single();
+                if (error || !order) return alert("주문 정보를 가져오는데 실패했습니다.");
+
+                // 2. BOM(세트) 정보 미리 가져오기
+                const { data: bomList } = await supabase.from('bom').select('*');
+
+                document.getElementById('modalTitle').innerText = "원가(매입단가) 입력";
+
+                // items 데이터 안전 처리
+                let items = order.items;
+                if (typeof items === 'string') { try { items = JSON.parse(items); } catch (e) { items = []; } }
+                if (!items || !Array.isArray(items)) items = [];
+                order.items = items; // 객체 업데이트
+
+                modal.classList.add('active');
+                
+                let html = `
+                <div class="bg-green-50 p-4 rounded mb-4 border border-green-200">
+                    <div class="flex justify-between mb-2">
+                        <span class="font-bold text-green-900">주문일자: ${order.date}</span>
+                        <span class="font-bold text-green-900">거래처: ${order.partner_name}</span>
+                    </div>
+                    <p class="text-xs text-green-700">※ 세트(BOM) 품목은 구성품별로 원가를 입력하면 합계가 자동 계산됩니다.</p>
+                </div>
+
+                <div class="overflow-y-auto max-h-[60vh]">
+                <table class="w-full text-sm border-collapse border text-center mb-4">
+                    <thead class="bg-slate-100 sticky top-0 z-10">
+                        <tr>
+                            <th class="p-2 border">품목명</th>
+                            <th class="p-2 border">판매단가</th>
+                            <th class="p-2 border">수량</th>
+                            <th class="p-2 border bg-yellow-50">입고단가(원가)</th>
+                            <th class="p-2 border">예상마진</th>
+                        </tr>
+                    </thead>
+                    <tbody id="costListBody">
+                `;
+
+                if (items.length > 0) {
+                    items.forEach((item, idx) => {
+                        const sellPrice = item.price || item.unit_price || 0;
+                        const qty = item.qty || 0;
+                        
+                        // BOM 확인: 이 품목이 부모로 등록된 BOM이 있는지 확인
+                        const children = bomList ? bomList.filter(b => b.parent_name === item.name) : [];
+                        const isBOM = children.length > 0;
+
+                        if (isBOM) {
+                            // === [Case A: 세트 품목인 경우] ===
+                            // 기존에 저장된 bom_breakdown(세트 구성품별 원가 저장 내역)이 있는지 확인
+                            const savedBreakdown = item.bom_breakdown || [];
+                            
+                            // 부모 행 (입력 불가, 헤더 역할)
+                            html += `
+                            <tr class="bg-slate-100 font-bold text-slate-700">
+                                <td class="p-2 border text-left"><i class="fa-solid fa-layer-group text-purple-600 mr-1"></i> ${item.name} (세트)</td>
+                                <td class="p-2 border text-right">${sellPrice.toLocaleString()}</td>
+                                <td class="p-2 border">${qty}</td>
+                                <td class="p-2 border text-right text-xs text-slate-500">(하단 구성품 입력)</td>
+                                <td class="p-2 border text-right text-blue-600" id="margin_parent_${idx}">-</td>
+                            </tr>
+                            `;
+
+                            // 자식 행들 (실제 입력)
+                            children.forEach((child, cIdx) => {
+                                // 저장된 값이 있으면 불러오고, 없으면 0
+                                const savedChild = savedBreakdown.find(s => s.name === child.child_name);
+                                const childCost = savedChild ? savedChild.cost : 0;
+                                const requiredQty = child.qty; // 세트 1개당 필요한 자식 수량
+
+                                html += `
+                                <tr class="text-xs bg-purple-50">
+                                    <td class="p-2 border text-left pl-6">└ ${child.child_name} <span class="text-slate-400">(${requiredQty}ea/set)</span></td>
+                                    <td class="p-2 border text-center text-slate-400">-</td>
+                                    <td class="p-2 border text-center text-slate-500">${qty * requiredQty}</td>
+                                    <td class="p-2 border bg-white">
+                                        <input type="number" 
+                                            id="cost_input_bom_${idx}_${cIdx}" 
+                                            data-parent="${idx}" 
+                                            data-qty="${requiredQty}" 
+                                            value="${childCost}" 
+                                            class="w-full text-right border p-1 rounded font-bold text-slate-700"
+                                            oninput="calcRealTimeMargin()" placeholder="단가 입력">
+                                    </td>
+                                    <td class="p-2 border text-center text-slate-400">-</td>
+                                </tr>
+                                `;
+                            });
+
+                        } else {
+                            // === [Case B: 일반 품목인 경우] ===
+                            const costPrice = item.cost_price || 0; 
+                            const margin = (sellPrice - costPrice) * qty;
+                            
+                            html += `
+                            <tr>
+                                <td class="p-2 border text-left">${item.name}</td>
+                                <td class="p-2 border text-right text-slate-500">${sellPrice.toLocaleString()}</td>
+                                <td class="p-2 border">${qty}</td>
+                                <td class="p-2 border bg-yellow-50">
+                                    <input type="number" id="cost_input_${idx}" value="${costPrice}" 
+                                        class="w-full text-right border p-1 rounded font-bold text-slate-700"
+                                        oninput="calcRealTimeMargin()" placeholder="0">
+                                </td>
+                                <td class="p-2 border text-right font-bold text-blue-600" id="margin_display_${idx}">
+                                    ${margin.toLocaleString()}
+                                </td>
+                            </tr>
+                            `;
+                        }
+                    });
+                } else {
+                    html += `<tr><td colspan="5" class="p-4 text-center text-slate-400">품목 상세 내역이 없습니다.</td></tr>`;
+                }
+
+                html += `</tbody>
+                    <tfoot class="bg-slate-50 font-bold border-t-2 border-slate-300">
+                        <tr>
+                            <td colspan="3" class="p-3 text-right">총 합계</td>
+                            <td class="p-3 text-right text-red-600" id="totalCostDisplay">0</td>
+                            <td class="p-3 text-right text-blue-600" id="totalMarginDisplay">0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                </div>
+                
+                <button onclick="saveCost(${orderId})" class="w-full bg-slate-800 text-white py-3 rounded font-bold hover:bg-slate-900 transition">원가 저장 및 마진 확정</button>
+                `;
+
+                body.innerHTML = html;
+                
+                // 데이터 임시 저장 (BOM 정보 포함)
+                order.bomList = bomList; 
+                globalDataStore['currentCostOrder'] = order;
+                
+                // 초기 계산
+                setTimeout(calcRealTimeMargin, 50);
+
+            } catch (err) {
+                console.error(err);
+                alert("오류 발생: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
