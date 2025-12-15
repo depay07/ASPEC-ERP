@@ -1591,6 +1591,201 @@
                 alert("오류 발생: " + err.message);
             }
         }
+
+        // ==========================================
+    // [누락된 함수 추가] 입력 폼 및 그리드 관련
+    // ==========================================
+
+    // 1. 복합 입력 폼 렌더링 (견적, 주문, 판매 관리용)
+    function renderComplexForm(tab, body) {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // 데이터 불러오기 버튼 (주문->견적, 판매->주문 연동)
+        let loadBtn = '';
+        if(tab === 'orders') loadBtn = `<button onclick="openLoadModal('quotes')" class="bg-orange-500 text-white px-3 py-1 rounded text-xs font-bold ml-2 hover:bg-orange-600"><i class="fa-solid fa-cloud-arrow-down"></i> 견적서 불러오기</button>`;
+        if(tab === 'sales') loadBtn = `<button onclick="openLoadModal('orders')" class="bg-orange-500 text-white px-3 py-1 rounded text-xs font-bold ml-2 hover:bg-orange-600"><i class="fa-solid fa-cloud-arrow-down"></i> 주문서 불러오기</button>`;
+
+        let html = `
+        <div class="bg-slate-50 p-4 rounded mb-4 border">
+            <div class="grid grid-cols-2 gap-3 mb-2">
+                <div><label class="text-xs text-slate-500">일자</label><input type="date" id="sDate" class="input-box" value="${today}"></div>
+                <div>
+                    <label class="text-xs text-slate-500">거래처 ${loadBtn}</label>
+                    <input id="sPartner" class="input-box" list="dl_part" onchange="fillPart(this.value)" placeholder="거래처 검색">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-2">
+                <div><label class="text-xs text-slate-500">담당자 (거래처)</label><input id="sPManager" class="input-box"></div>
+                <div><label class="text-xs text-slate-500">연락처</label><input id="sContact" class="input-box"></div>
+            </div>
+             <div class="grid grid-cols-2 gap-3 mb-2">
+                <div><label class="text-xs text-slate-500">이메일</label><input id="sEmail" class="input-box"></div>
+                <div><label class="text-xs text-slate-500">주소</label><input id="sAddr" class="input-box"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-2">
+                <div><label class="text-xs text-slate-500">담당자 (우리측)</label><input id="sManager" class="input-box"></div>
+                <div><label class="text-xs text-slate-500">비고</label><input id="sNote" class="input-box"></div>
+            </div>
+        </div>
+
+        ${renderItemInputArea(tab)}
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm border-collapse border text-center mb-4 table-fixed">
+                <thead class="bg-slate-100">
+                    <tr>
+                        <th class="p-2 border w-10">No</th>
+                        <th class="p-2 border w-1/4">품목명</th>
+                        <th class="p-2 border w-1/6">규격</th>
+                        <th class="p-2 border w-12">단위</th>
+                        <th class="p-2 border w-14">수량</th>
+                        <th class="p-2 border">단가</th>
+                        <th class="p-2 border">공급가액</th>
+                        <th class="p-2 border w-10">삭제</th>
+                    </tr>
+                </thead>
+                <tbody id="itemGrid"></tbody>
+                <tfoot class="bg-slate-50 font-bold">
+                    <tr>
+                        <td colspan="6" class="p-2 text-right border">합계 (공급가액 + 세액)</td>
+                        <td class="p-2 text-right border" id="tSupply">0</td>
+                        <td class="p-2 border"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" class="p-2 text-right border text-slate-500">부가세 (VAT)</td>
+                        <td class="p-2 text-right border text-slate-500" id="tVat">0</td>
+                        <td class="p-2 border"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" class="p-2 text-right border text-blue-600 text-lg">총 합계</td>
+                        <td class="p-2 text-right border text-blue-600 text-lg" id="tTotal">0</td>
+                        <td class="p-2 border"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <button onclick="saveComplexData('${tab}')" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">저장하기</button>
+        <datalist id="dl_part"></datalist>
+        <datalist id="dl_prod"></datalist>
+        `;
+
+        body.innerHTML = html;
+        
+        // 모달이 열린 후 데이터 바인딩
+        setTimeout(() => {
+            fillDL('dl_part', partnerList);
+            fillDL('dl_prod', productList);
+            renderGrid();
+        }, 50);
+    }
+
+    // 2. 품목 입력 영역 HTML 생성 (발주 관리 및 일반 폼 공용)
+    function renderItemInputArea(tab) {
+        return `
+        <div class="bg-white border p-3 rounded mb-4 shadow-sm">
+            <div class="flex flex-wrap gap-2 items-end">
+                <div class="flex-1 min-w-[150px]">
+                    <label class="text-xs text-slate-500 font-bold">품목명</label>
+                    <input id="iName" class="input-box" list="dl_prod" onchange="fillProd(this.value)" placeholder="품목 검색">
+                </div>
+                <div class="w-24">
+                    <label class="text-xs text-slate-500">규격</label>
+                    <input id="iSpec" class="input-box">
+                </div>
+                <div class="w-16">
+                    <label class="text-xs text-slate-500">단위</label>
+                    <input id="iUnit" class="input-box" value="EA">
+                </div>
+                <div class="w-16">
+                    <label class="text-xs text-slate-500 font-bold">수량</label>
+                    <input type="number" id="iQty" class="input-box" value="1" onkeypress="if(event.key==='Enter') document.getElementById('iPrice').focus()">
+                </div>
+                <div class="w-28">
+                    <label class="text-xs text-slate-500 font-bold">단가</label>
+                    <input type="number" id="iPrice" class="input-box" onkeypress="if(event.key==='Enter') addGridItem()">
+                </div>
+                <button onclick="addGridItem()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded font-bold text-sm h-[38px] transition"><i class="fa-solid fa-plus"></i> 추가</button>
+            </div>
+        </div>
+        `;
+    }
+
+    // 3. 그리드(테이블)에 품목 추가
+    function addGridItem() {
+        const name = document.getElementById('iName').value;
+        const spec = document.getElementById('iSpec').value;
+        const unit = document.getElementById('iUnit').value;
+        const qty = parseInt(document.getElementById('iQty').value);
+        const price = parseInt(document.getElementById('iPrice').value);
+
+        if (!name || !qty) return alert("품목명과 수량은 필수입니다.");
+
+        const supply = price * qty;
+        const vat = Math.floor(supply * 0.1);
+        const total = supply + vat;
+
+        // 목록에 추가
+        tempItems.push({ 
+            name, spec, unit, qty, price, supply, vat, total,
+            manufacturer: '', // 필요시 추가
+            serial_no: ''     // 필요시 추가
+        });
+
+        // 입력창 초기화
+        document.getElementById('iName').value = '';
+        document.getElementById('iSpec').value = '';
+        document.getElementById('iQty').value = '1';
+        document.getElementById('iPrice').value = '';
+        document.getElementById('iName').focus();
+
+        renderGrid();
+    }
+
+    // 4. 그리드 렌더링 (화면에 그리기)
+    function renderGrid() {
+        const tbody = document.getElementById('itemGrid');
+        if (!tbody) return; // PO 등 일부 화면에선 없을 수 있음 (단, renderItemInputArea 쓰는 경우 체크 필요)
+        
+        tbody.innerHTML = '';
+        let tSupply = 0, tVat = 0, tTotal = 0;
+
+        tempItems.forEach((item, idx) => {
+            tSupply += item.supply;
+            tVat += item.vat;
+            tTotal += item.total;
+
+            tbody.innerHTML += `
+                <tr class="hover:bg-slate-50 border-b group" draggable="true" ondragstart="dragStart(${idx})" ondragover="dragOver(event)" ondrop="dropItem(${idx})">
+                    <td class="p-2 border text-slate-400 cursor-move"><i class="fa-solid fa-bars"></i> ${idx + 1}</td>
+                    <td class="p-2 border text-left font-bold text-slate-700">${item.name}</td>
+                    <td class="p-2 border text-xs text-slate-500">${item.spec || ''}</td>
+                    <td class="p-2 border text-center text-xs">${item.unit}</td>
+                    <td class="p-2 border text-center font-bold">${item.qty}</td>
+                    <td class="p-2 border text-right text-slate-600">${(item.price || 0).toLocaleString()}</td>
+                    <td class="p-2 border text-right font-bold">${(item.supply || 0).toLocaleString()}</td>
+                    <td class="p-2 border text-center">
+                        <button onclick="removeGridItem(${idx})" class="text-red-400 hover:text-red-600 transition"><i class="fa-solid fa-xmark"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        // 합계 업데이트 (PO의 경우 ID가 다를 수 있음 주의, 여기서는 일반 폼 기준)
+        if(document.getElementById('tSupply')) document.getElementById('tSupply').innerText = tSupply.toLocaleString();
+        if(document.getElementById('tVat')) document.getElementById('tVat').innerText = tVat.toLocaleString();
+        if(document.getElementById('tTotal')) document.getElementById('tTotal').innerText = tTotal.toLocaleString();
+        
+        // PO(발주서) 모달의 경우 ID가 다를 수 있으므로 별도 처리 필요 시 추가
+        // 예: <div class="text-right text-lg font-bold text-cyan-700">총 합계: <span id="purGrandTotal">0</span>원</div>
+    }
+
+    // 5. 그리드 항목 삭제
+    function removeGridItem(idx) {
+        tempItems.splice(idx, 1);
+        renderGrid();
+    }
+
     </script>
 </body>
 </html>
