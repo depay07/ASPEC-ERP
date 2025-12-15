@@ -1597,13 +1597,19 @@
     // ==========================================
 
     // 1. 복합 입력 폼 렌더링 (견적, 주문, 판매 관리용)
-    function renderComplexForm(tab, body) {
+        function renderComplexForm(tab, body) {
         const today = new Date().toISOString().split('T')[0];
         
-        // 데이터 불러오기 버튼 (주문->견적, 판매->주문 연동)
+        // 데이터 불러오기 버튼
         let loadBtn = '';
         if(tab === 'orders') loadBtn = `<button onclick="openLoadModal('quotes')" class="bg-orange-500 text-white px-3 py-1 rounded text-xs font-bold ml-2 hover:bg-orange-600"><i class="fa-solid fa-cloud-arrow-down"></i> 견적서 불러오기</button>`;
         if(tab === 'sales') loadBtn = `<button onclick="openLoadModal('orders')" class="bg-orange-500 text-white px-3 py-1 rounded text-xs font-bold ml-2 hover:bg-orange-600"><i class="fa-solid fa-cloud-arrow-down"></i> 주문서 불러오기</button>`;
+
+        // [수정 1] 견적서(quotes)일 때는 주소 필드를 아예 생성하지 않음
+        let addressField = `<div><label class="text-xs text-slate-500">주소</label><input id="sAddr" class="input-box"></div>`;
+        if (tab === 'quotes') {
+            addressField = ``; // 견적서면 빈칸 처리
+        }
 
         let html = `
         <div class="bg-slate-50 p-4 rounded mb-4 border">
@@ -1620,7 +1626,7 @@
             </div>
              <div class="grid grid-cols-2 gap-3 mb-2">
                 <div><label class="text-xs text-slate-500">이메일</label><input id="sEmail" class="input-box"></div>
-                <div><label class="text-xs text-slate-500">주소</label><input id="sAddr" class="input-box"></div>
+                ${addressField} <!-- 조건부 주소 렌더링 -->
             </div>
             <div class="grid grid-cols-2 gap-3 mb-2">
                 <div><label class="text-xs text-slate-500">담당자 (우리측)</label><input id="sManager" class="input-box"></div>
@@ -1634,11 +1640,12 @@
             <table class="w-full text-sm border-collapse border text-center mb-4 table-fixed">
                 <thead class="bg-slate-100">
                     <tr>
+                        <!-- [수정 2] 테이블 헤더 너비 조정 (규격을 넓힘) -->
                         <th class="p-2 border w-10">No</th>
-                        <th class="p-2 border w-1/4">품목명</th>
-                        <th class="p-2 border w-1/6">규격</th>
-                        <th class="p-2 border w-12">단위</th>
-                        <th class="p-2 border w-14">수량</th>
+                        <th class="p-2 border w-[22%]">품목명</th> <!-- 기존 25% -> 22% 축소 -->
+                        <th class="p-2 border w-[30%]">규격</th>   <!-- 기존 16% -> 30% 대폭 확대 -->
+                        <th class="p-2 border w-14">단위</th>
+                        <th class="p-2 border w-16">수량</th>
                         <th class="p-2 border">단가</th>
                         <th class="p-2 border">공급가액</th>
                         <th class="p-2 border w-10">삭제</th>
@@ -1672,13 +1679,47 @@
 
         body.innerHTML = html;
         
-        // 모달이 열린 후 데이터 바인딩
         setTimeout(() => {
             fillDL('dl_part', partnerList);
             fillDL('dl_prod', productList);
             renderGrid();
         }, 50);
     }
+
+    // 2. 품목 입력 영역 HTML 생성 (입력칸 비율 조정)
+    function renderItemInputArea(tab) {
+        // [수정 3] 입력 칸 비율 변경
+        // 품목명: flex-1(가변) -> w-[22%] (고정, 테이블 헤더와 비슷하게)
+        // 규격: w-24(고정) -> flex-1 (나머지 공간 다 차지하게 넓힘)
+        return `
+        <div class="bg-white border p-3 rounded mb-4 shadow-sm">
+            <div class="flex flex-wrap gap-2 items-end">
+                <div class="w-[22%] min-w-[150px]">
+                    <label class="text-xs text-slate-500 font-bold">품목명</label>
+                    <input id="iName" class="input-box" list="dl_prod" onchange="fillProd(this.value)" placeholder="품목 검색">
+                </div>
+                <div class="flex-1 min-w-[200px]"> <!-- 규격을 flex-1로 변경하여 넓게 -->
+                    <label class="text-xs text-slate-500 font-bold">규격</label>
+                    <input id="iSpec" class="input-box">
+                </div>
+                <div class="w-16">
+                    <label class="text-xs text-slate-500">단위</label>
+                    <input id="iUnit" class="input-box" value="EA">
+                </div>
+                <div class="w-16">
+                    <label class="text-xs text-slate-500 font-bold">수량</label>
+                    <input type="number" id="iQty" class="input-box" value="1" onkeypress="if(event.key==='Enter') document.getElementById('iPrice').focus()">
+                </div>
+                <div class="w-28">
+                    <label class="text-xs text-slate-500 font-bold">단가</label>
+                    <input type="number" id="iPrice" class="input-box" onkeypress="if(event.key==='Enter') addGridItem()">
+                </div>
+                <button onclick="addGridItem()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded font-bold text-sm h-[38px] transition"><i class="fa-solid fa-plus"></i> 추가</button>
+            </div>
+        </div>
+        `;
+    }
+
 
     // 2. 품목 입력 영역 HTML 생성 (발주 관리 및 일반 폼 공용)
     function renderItemInputArea(tab) {
