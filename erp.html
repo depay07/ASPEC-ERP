@@ -263,15 +263,14 @@
         if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_URL')) alert("API 키를 설정해주세요.");
 
         // [핵심 수정] supabase가 이미 선언되어 있으면 재사용, 없으면 생성 (에러 방지)
-        let supabase;
-        if (window.supabase) {
-            // 이미 로드된 클라이언트가 있다면 재사용
-             supabase = window.supabaseClient ? window.supabaseClient : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        var supabase;
+        if (window.supabaseClient) {
+            supabase = window.supabaseClient;
         } else {
-             alert("Supabase 라이브러리가 로드되지 않았습니다.");
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            window.supabaseClient = supabase;
         }
-        // 전역 변수에 저장하여 중복 선언 방지
-        window.supabaseClient = supabase;
+        
         let currentTab = 'dashboard';
         let tempItems = []; 
         let partnerList = []; 
