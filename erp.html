@@ -338,10 +338,16 @@
         }
 
         async function fetchData() {
-            const pRes = await supabaseClient.from('partners').select('*');
-            const prodRes = await supabaseClient.from('products').select('*').order('name');
-            if(!pRes.error) partnerList = pRes.data || [];
-            if(!prodRes.error) productList = prodRes.data || [];
+            const { data, error } = await supabaseClient
+                .from('inventory')
+                .select('*')
+                .order('created_at', { ascending: false });
+        
+            if (error) {
+                console.error("데이터 로드 에러:", error.message);
+                return;
+            }
+            renderTable(data);
         }
 
         function storeRowData(row) { const id = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); globalDataStore[id] = row; return id; }
