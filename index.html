@@ -44,26 +44,23 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8';
         // ==========================================
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // 'supabase' 대신 'supabaseClient'라는 이름을 사용합니다.
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 이미 로그인 되어있으면 바로 ERP로 이동
-        window.onload = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) window.location.href = 'erp.html';
-        }
+window.onload = async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession(); // 변수명 변경 적용
+    if (session) window.location.href = 'erp.html';
+}
 
-        async function handleLogin() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const msg = document.getElementById('errorMsg');
+async function handleLogin() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const msg = document.getElementById('errorMsg');
 
-            // 입력값 확인용 로그 (개발자 도구 콘솔에서 확인 가능)
-            console.log("로그인 시도:", email);
-
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ // 변수명 변경 적용
+        email: email,
+        password: password,
+    });
 
             if (error) {
                 console.error("에러 발생:", error.message);
