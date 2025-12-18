@@ -331,16 +331,12 @@
         }
 
         async function fetchData() {
-            const { data, error } = await supabaseClient
-                .from('orders')
-                .select('*')
-                .order('created_at', { ascending: false });
-        
-            if (error) {
-                console.error("데이터 로드 에러:", error.message);
-                return;
-            }
-            renderTable(data);
+            // 백업본의 실제 로직: partners와 products 테이블만 참조함
+            const pRes = await supabase.from('partners').select('*');
+            const prodRes = await supabase.from('products').select('*').order('name');
+            
+            if(!pRes.error) partnerList = pRes.data || [];
+            if(!prodRes.error) productList = prodRes.data || [];
         }
 
         function storeRowData(row) { const id = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); globalDataStore[id] = row; return id; }
@@ -1180,6 +1176,11 @@
         }
 
         function removePurchaseItem(idx) { tempItems.splice(idx, 1); renderPurchaseGrid(); }
+
+        async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
+}
     </script>
 </body>
 </html>
