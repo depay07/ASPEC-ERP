@@ -338,8 +338,8 @@
         }
 
         async function fetchData() {
-            const pRes = await supabase.from('partners').select('*');
-            const prodRes = await supabase.from('products').select('*').order('name');
+            const pRes = await supabaseClient.from('partners').select('*');
+            const prodRes = await supabaseClient.from('products').select('*').order('name');
             if(!pRes.error) partnerList = pRes.data || [];
             if(!prodRes.error) productList = prodRes.data || [];
         }
@@ -416,7 +416,7 @@
 
             // [신규] 미팅 일지 검색 로직
             if(tab === 'meeting_logs') {
-                let query = supabase.from('meeting_logs').select('*').order('date', { ascending: false });
+                let query = supabaseClient.from('meeting_logs').select('*').order('date', { ascending: false });
                 
                 const sDate = document.getElementById('searchStartDate')?.value;
                 const eDate = document.getElementById('searchEndDate')?.value;
@@ -438,7 +438,7 @@
             if (tab === 'collections') targetTable = 'sales';
             if (tab === 'cost_management') targetTable = 'orders';
             
-            let query = supabase.from(targetTable).select('*');
+            let query = supabaseClient.from(targetTable).select('*');
             if (tab === 'bookkeeping') {
                 query = query.order('date', { ascending: false }); 
             } else {
@@ -691,7 +691,7 @@
             const collectedAmount = parseInt(document.getElementById(`col_${id}`).value) || 0;
             const note = document.getElementById(`cnote_${id}`).value;
             if (!confirm('수금 정보를 저장하시겠습니까?')) return;
-            const { error } = await supabase.from('sales').update({ collected_amount: collectedAmount, collection_note: note }).eq('id', id);
+            const { error } = await supabaseClient.from('sales').update({ collected_amount: collectedAmount, collection_note: note }).eq('id', id);
             if (error) { alert("저장 중 오류가 발생했습니다: " + error.message); } else { alert("저장되었습니다."); runSearch('collections'); }
         }
 
@@ -772,7 +772,7 @@
             if (tab === 'purchase_orders') {
                 let autoPO = '';
                 if (!isEdit) {
-                    const { count } = await supabase.from('purchase_orders').select('*', { count: 'exact', head: true }).eq('date', today);
+                    const { count } = await supabaseClient.from('purchase_orders').select('*', { count: 'exact', head: true }).eq('date', today);
                     const nextSeq = (count || 0) + 1;
                     const seqStr = String(nextSeq).padStart(2, '0');
                     const yymmdd = today.slice(2).replace(/-/g,'');
@@ -843,8 +843,8 @@
 
         async function saveData(tab, data) {
             let res;
-            if (currentEditId) res = await supabase.from(tab).update(data).eq('id', currentEditId);
-            else res = await supabase.from(tab).insert(data);
+            if (currentEditId) res = await supabaseClient.from(tab).update(data).eq('id', currentEditId);
+            else res = await supabaseClient.from(tab).insert(data);
             if(res.error) { alert("오류: " + res.error.message); return false; }
             return true;
         }
@@ -856,9 +856,9 @@
                 const fileInput = document.getElementById('pFile');
                 if (fileInput && fileInput.files.length > 0) {
                     const file = fileInput.files[0]; const fileName = `biz_${Date.now()}.${file.name.split('.').pop()}`; 
-                    const { data: uploadData, error: uploadError } = await supabase.storage.from('erp').upload(fileName, file);
+                    const { data: uploadData, error: uploadError } = await supabaseClient.storage.from('erp').upload(fileName, file);
                     if (uploadError) { alert("파일 업로드 실패: " + uploadError.message); return; }
-                    const { data: publicUrlData } = supabase.storage.from('erp').getPublicUrl(fileName);
+                    const { data: publicUrlData } = supabaseClient.storage.from('erp').getPublicUrl(fileName);
                     data.biz_file_url = publicUrlData.publicUrl; 
                 }
             }
@@ -890,13 +890,13 @@
             let successCount = 0;
             for (const item of tempItems) {
                 const data = { date: dateVal, partner_name: partnerVal, item_name: item.name, manufacturer: item.manufacturer, qty: item.qty, unit_price: item.unit_price, supply_price: item.unit_price * item.qty, vat: Math.floor(item.unit_price * item.qty * 0.1), total_amount: item.total_amount, serial_no: item.serial_no, note: noteVal };
-                const { error } = await supabase.from('purchases').insert(data);
+                const { error } = await supabaseClient.from('purchases').insert(data);
                 if (!error) {
                     successCount++;
                     const prod = productList.find(p => p.name === item.name);
                     if (prod) {
                         prod.stock = prod.stock + item.qty; 
-                        await supabase.from('products').update({ stock: prod.stock, last_vendor: partnerVal, last_price: item.unit_price, last_serial_no: item.serial_no, manufacturer: item.manufacturer || prod.manufacturer }).eq('id', prod.id);
+                        await supabaseClient.from('products').update({ stock: prod.stock, last_vendor: partnerVal, last_price: item.unit_price, last_serial_no: item.serial_no, manufacturer: item.manufacturer || prod.manufacturer }).eq('id', prod.id);
                     }
                 }
             }
@@ -912,7 +912,7 @@
                 data.po_number = el('poNum'); data.partner_name = el('poPartner'); data.end_user = el('poEndUser'); data.manager = el('poManager'); data.is_pre_order = el('poPreOrder'); data.note = el('poNote'); 
                 data.partner_manager = el('poPManager'); data.phone = el('poPhone'); data.email = el('poEmail'); data.partner_address = el('poAddr');
                 if (!currentEditId) {
-                    const { count } = await supabase.from(tab).select('*', { count: 'exact', head: true }).eq('date', dateVal);
+                    const { count } = await supabaseClient.from(tab).select('*', { count: 'exact', head: true }).eq('date', dateVal);
                     const seq = (count || 0) + 1; 
                     const yymmdd = dateVal.slice(2).replace(/-/g, ''); 
                     data.po_number = `ASPEC-${yymmdd}-P${String(seq).padStart(2, '0')}`;
@@ -923,21 +923,21 @@
             }
             if(await saveData(tab, data)) { 
                 if(tab === 'sales' && !currentEditId) { 
-                    const { data: bomList } = await supabase.from('bom').select('*');
+                    const { data: bomList } = await supabaseClient.from('bom').select('*');
                     for(const item of tempItems) { 
                         const relatedParts = bomList ? bomList.filter(b => b.parent_name === item.name) : [];
                         if (relatedParts.length > 0) {
                             for (const part of relatedParts) {
                                 const childProd = productList.find(p => p.name === part.child_name);
-                                if (childProd) await supabase.from('products').update({ stock: childProd.stock - (item.qty * part.qty) }).eq('id', childProd.id);
+                                if (childProd) await supabaseClient.from('products').update({ stock: childProd.stock - (item.qty * part.qty) }).eq('id', childProd.id);
                             }
                         } else {
                             const prod = productList.find(p => p.name === item.name); 
-                            if(prod) await supabase.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); 
+                            if(prod) await supabaseClient.from('products').update({ stock: prod.stock - item.qty }).eq('id', prod.id); 
                         }
                     }
                     if (currentLoadedOrderId) {
-                        await supabase.from('orders').update({ status: 'completed' }).eq('id', currentLoadedOrderId);
+                        await supabaseClient.from('orders').update({ status: 'completed' }).eq('id', currentLoadedOrderId);
                         currentLoadedOrderId = null; 
                     }
                 }
@@ -948,15 +948,15 @@
         async function deleteItem(table, id) { 
             if(!confirm("정말 삭제하시겠습니까?")) return; 
             if (table === 'sales') {
-                const { data: saleData } = await supabase.from('sales').select('items').eq('id', id).single();
+                const { data: saleData } = await supabaseClient.from('sales').select('items').eq('id', id).single();
                 if (saleData && saleData.items) {
                     for (const item of saleData.items) {
                         const prod = productList.find(p => p.name === item.name);
-                        if (prod) await supabase.from('products').update({ stock: prod.stock + item.qty }).eq('id', prod.id);
+                        if (prod) await supabaseClient.from('products').update({ stock: prod.stock + item.qty }).eq('id', prod.id);
                     }
                 }
             }
-            const { error } = await supabase.from(table).delete().eq('id', id); 
+            const { error } = await supabaseClient.from(table).delete().eq('id', id); 
             if(error) alert("삭제 실패"); else runSearch(table); 
         }
 
@@ -980,7 +980,7 @@
             document.getElementById('p_date').innerText = row.date;
             if (isPO && row.po_number && row.po_number.startsWith('ASPEC')) document.getElementById('p_no').innerText = row.po_number;
             else {
-                const { count } = await supabase.from(tab).select('*', { count: 'exact', head: true }).eq('date', row.date).lte('id', row.id);
+                const { count } = await supabaseClient.from(tab).select('*', { count: 'exact', head: true }).eq('date', row.date).lte('id', row.id);
                 const d = new Date(row.date); const yymmdd = d.getFullYear().toString().slice(2) + (d.getMonth()+1).toString().padStart(2,'0') + d.getDate().toString().padStart(2,'0');
                 document.getElementById('p_no').innerText = `ASPEC-${yymmdd}-${prefix}${String(count).padStart(2,'0')}`;
             }
@@ -1050,7 +1050,7 @@
                     totalCostAccumulated += (finalUnitCost * (item.qty || 0));
                     return { ...item, cost_price: finalUnitCost, bom_breakdown: isBOM ? bomBreakdown : null };
                 });
-                const { error } = await supabase.from('orders').update({ items: updatedItems, total_cost: totalCostAccumulated }).eq('id', orderId);
+                const { error } = await supabaseClient.from('orders').update({ items: updatedItems, total_cost: totalCostAccumulated }).eq('id', orderId);
                 if (error) { alert("저장 실패: " + error.message); } else { alert("원가가 저장되었습니다."); closeModal(); runSearch('cost_management'); }
             } catch (err) { alert("저장 중 오류 발생: " + err.message); }
         }
@@ -1089,9 +1089,9 @@
         async function openCostModal(orderId) {
             try {
                 const modal = document.getElementById('genericModal'); const body = document.getElementById('modalBody');
-                const { data: order, error } = await supabase.from('orders').select('*').eq('id', orderId).single();
+                const { data: order, error } = await supabaseClient.from('orders').select('*').eq('id', orderId).single();
                 if (error || !order) return alert("주문 정보를 가져오는데 실패했습니다.");
-                const { data: bomList } = await supabase.from('bom').select('*');
+                const { data: bomList } = await supabaseClient.from('bom').select('*');
                 document.getElementById('modalTitle').innerText = "원가(매입단가) 입력";
                 let items = order.items; if (typeof items === 'string') { try { items = JSON.parse(items); } catch (e) { items = []; } }
                 if (!items || !Array.isArray(items)) items = []; order.items = items; 
