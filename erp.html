@@ -262,7 +262,16 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8'; 
         if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_URL')) alert("API 키를 설정해주세요.");
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // [핵심 수정] supabase가 이미 선언되어 있으면 재사용, 없으면 생성 (에러 방지)
+        let supabase;
+        if (window.supabase) {
+            // 이미 로드된 클라이언트가 있다면 재사용
+             supabase = window.supabaseClient ? window.supabaseClient : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } else {
+             alert("Supabase 라이브러리가 로드되지 않았습니다.");
+        }
+        // 전역 변수에 저장하여 중복 선언 방지
+        window.supabaseClient = supabase;
         let currentTab = 'dashboard';
         let tempItems = []; 
         let partnerList = []; 
@@ -284,13 +293,23 @@
 
         window.onload = async () => { 
             try { 
+                // [수정 2] 로그인 상태 체크 (로그인 안 되어 있으면 로그인 페이지로 튕겨내기)
                 const { data: { user } } = await supabase.auth.getUser();
-                if(user) currentUserEmail = user.email;
+                if (!user) {
+                    // 유저가 없으면 index.html(로그인 페이지)로 이동
+                    alert("로그인이 필요합니다.");
+                    window.location.href = 'index.html'; 
+                    return;
+                }
+                
+                currentUserEmail = user.email;
                 setupAutoTimeSync();
                 await fetchData(); 
                 switchTab('dashboard'); 
                 startSessionTimer();
-            } catch (e) { console.error("초기화 오류: ", e); }
+            } catch (e) { 
+                console.error("초기화 오류: ", e); 
+            }
         };
 
         function setupAutoTimeSync() {
