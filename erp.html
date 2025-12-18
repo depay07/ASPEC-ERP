@@ -1806,6 +1806,83 @@
         renderGrid();
     }
 
+    function addPurchaseItem() {
+    const name = document.getElementById('purItem').value;
+    const maker = document.getElementById('purMaker').value;
+    const serial = document.getElementById('purSerial').value;
+    // 수량과 단가가 비어있으면 0으로 처리
+    const qty = parseInt(document.getElementById('purQty').value) || 0;
+    const price = parseInt(document.getElementById('purPrice').value) || 0;
+
+    if (!name) return alert("품목명을 입력해주세요.");
+    if (qty <= 0) return alert("수량은 1개 이상이어야 합니다.");
+
+    const total = qty * price;
+
+    // tempItems 배열에 추가 (저장 버튼 누를 때 이 배열을 사용함)
+    tempItems.push({
+        name: name,
+        manufacturer: maker,
+        serial_no: serial,
+        qty: qty,
+        unit_price: price,
+        total_amount: total
+    });
+
+    // 입력창 초기화
+    document.getElementById('purItem').value = '';
+    document.getElementById('purMaker').value = '';
+    document.getElementById('purSerial').value = '';
+    document.getElementById('purQty').value = '1';
+    document.getElementById('purPrice').value = '';
+    
+    // 다시 입력하기 편하게 포커스 이동
+    document.getElementById('purItem').focus();
+
+    // 화면에 목록 그리기
+    renderPurchaseGrid();
+}
+
+// 2. [구매 관리] 추가된 품목 목록을 화면에 그려주는 함수
+function renderPurchaseGrid() {
+    const tbody = document.getElementById('purItemGrid');
+    const totalEl = document.getElementById('purGrandTotal');
+    
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    let grandTotal = 0;
+
+    tempItems.forEach((item, idx) => {
+        grandTotal += item.total_amount;
+        tbody.innerHTML += `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-2">${item.name}</td>
+                <td class="p-2 text-xs text-slate-500">${item.manufacturer || '-'}</td>
+                <td class="p-2 text-xs text-blue-600">${item.serial_no || '-'}</td>
+                <td class="p-2 font-bold">${item.qty}</td>
+                <td class="p-2 text-right text-slate-600">${item.unit_price.toLocaleString()}</td>
+                <td class="p-2 text-right font-bold">${item.total_amount.toLocaleString()}</td>
+                <td class="p-2">
+                    <button onclick="removePurchaseItem(${idx})" class="text-red-400 hover:text-red-600">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    // 총 합계 업데이트
+    if (totalEl) totalEl.innerText = grandTotal.toLocaleString();
+}
+
+// 3. [구매 관리] 목록에서 삭제하는 함수
+function removePurchaseItem(idx) {
+    tempItems.splice(idx, 1);
+    renderPurchaseGrid();
+}
+
+        
     </script>
 </body>
 </html>
