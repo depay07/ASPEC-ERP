@@ -332,7 +332,7 @@
 
         async function fetchData() {
             const { data, error } = await supabaseClient
-                .from('inventory')
+                .from('orders')
                 .select('*')
                 .order('created_at', { ascending: false });
         
