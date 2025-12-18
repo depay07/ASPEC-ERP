@@ -267,7 +267,7 @@
         if (window.supabaseClient) {
             supabase = window.supabaseClient;
         } else {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             window.supabaseClient = supabase;
         }
         
