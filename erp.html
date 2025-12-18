@@ -331,12 +331,18 @@
         }
 
         async function fetchData() {
-            // 백업본의 실제 로직: partners와 products 테이블만 참조함
-            const pRes = await supabase.from('partners').select('*');
-            const prodRes = await supabase.from('products').select('*').order('name');
-            
-            if(!pRes.error) partnerList = pRes.data || [];
-            if(!prodRes.error) productList = prodRes.data || [];
+            try {
+                // supabase.from -> supabaseClient.from 으로 변경
+                const pRes = await supabaseClient.from('partners').select('*');
+                const prodRes = await supabaseClient.from('products').select('*').order('name');
+                
+                if(!pRes.error) partnerList = pRes.data || [];
+                if(!prodRes.error) productList = prodRes.data || [];
+                
+                console.log("데이터 로드 완료");
+            } catch (e) {
+                console.error("fetchData 오류:", e);
+            }
         }
 
         function storeRowData(row) { const id = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); globalDataStore[id] = row; return id; }
