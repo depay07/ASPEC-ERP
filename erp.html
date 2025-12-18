@@ -1141,7 +1141,7 @@
         }
         function changeMonth(delta) { currentMonth += delta; if (currentMonth < 0) { currentMonth = 11; currentYear--; } else if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); }
         function goToToday() { const today = new Date(); currentYear = today.getFullYear(); currentMonth = today.getMonth(); renderCalendar(); }
-        async function loadCalendarEvents() { try { const { data, error } = await supabase.from('calendar_events').select('*').order('start_date', { ascending: true }); if (error) throw error; calendarEvents = data || []; } catch (e) { console.error('일정 로드 오류:', e); calendarEvents = []; } }
+        async function loadCalendarEvents() { try { const { data, error } = await supabaseClient.from('calendar_events').select('*').order('start_date', { ascending: true }); if (error) throw error; calendarEvents = data || []; } catch (e) { console.error('일정 로드 오류:', e); calendarEvents = []; } }
 
         // 5. 모달 및 이벤트 처리
         function openEventModal(dateStr = null) {
@@ -1173,12 +1173,12 @@
             const isAllDay = document.getElementById('eventAllDay').checked;
             const eventData = { title: title, start_date: startDate, end_date: endDate, start_time: isAllDay ? '00:00' : document.getElementById('eventStartTime').value, end_time: isAllDay ? '23:59' : document.getElementById('eventEndTime').value, all_day: isAllDay, description: document.getElementById('eventDescription').value.trim(), color: selectedColor };
             try {
-                if (editingEventId) { const { error } = await supabase.from('calendar_events').update(eventData).eq('id', editingEventId); if (error) throw error; alert('수정되었습니다.'); } 
-                else { const { error } = await supabase.from('calendar_events').insert([eventData]); if (error) throw error; alert('추가되었습니다.'); }
+                if (editingEventId) { const { error } = await supabaseClient.from('calendar_events').update(eventData).eq('id', editingEventId); if (error) throw error; alert('수정되었습니다.'); } 
+                else { const { error } = await supabaseClient.from('calendar_events').insert([eventData]); if (error) throw error; alert('추가되었습니다.'); }
                 closeEventModal(); await loadCalendarEvents(); renderCalendar();
             } catch (e) { alert('저장 오류: ' + e.message); }
         }
-        async function deleteEvent() { if (!editingEventId || !confirm('삭제하시겠습니까?')) return; try { const { error } = await supabase.from('calendar_events').delete().eq('id', editingEventId); if (error) throw error; alert('삭제되었습니다.'); closeEventModal(); await loadCalendarEvents(); renderCalendar(); } catch (e) { alert('삭제 오류: ' + e.message); } }
+        async function deleteEvent() { if (!editingEventId || !confirm('삭제하시겠습니까?')) return; try { const { error } = await supabaseClient.from('calendar_events').delete().eq('id', editingEventId); if (error) throw error; alert('삭제되었습니다.'); closeEventModal(); await loadCalendarEvents(); renderCalendar(); } catch (e) { alert('삭제 오류: ' + e.message); } }
         function closeEventModal() { document.getElementById('eventModal').classList.remove('active'); editingEventId = null; }
         
         function showAllEvents(dateStr) {
