@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASPEC ERP System</title>
+    
+    <!-- 외부 라이브러리 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 커스텀 스타일 -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- 메인 레이아웃 -->
+    <div class="flex h-screen overflow-hidden no-print">
+        
+        <!-- 사이드바 -->
+        <aside class="w-52 bg-slate-900 text-slate-300 flex flex-col shadow-xl z-20">
+            <div class="p-6 border-b border-slate-800">
+                <a href="erp.html" class="block cursor-pointer hover:opacity-80 transition">
+                    <h1 class="text-2xl font-bold text-white">ASPEC <span class="text-cyan-400 text-sm">ERP</span></h1>
+                </a>
+            </div>
+            
+            <nav class="flex-1 py-4 overflow-y-auto text-base">
+                <button onclick="switchTab('dashboard')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3 bg-slate-800 text-white font-bold">
+                    <i class="fa-solid fa-house w-5"></i> 홈 화면
+                </button>
+                <button onclick="switchTab('calendar')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-calendar-days w-5"></i> 일정 관리
+                </button>
+                <button onclick="switchTab('bookkeeping')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-calculator w-5"></i> 기장 관리
+                </button>
+                <button onclick="switchTab('meeting_logs')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-book w-5"></i> 미팅 일지
+                </button>
+
+                <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-4 mb-2">영업 관리</div>
+                <button onclick="switchTab('quotes')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-file-invoice w-5"></i> 견적 관리
+                </button>
+                <button onclick="switchTab('orders')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-file-signature w-5"></i> 주문 관리
+                </button>
+                <button onclick="switchTab('sales')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-truck-fast w-5"></i> 판매 관리
+                </button>
+                <button onclick="switchTab('collections')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-sack-dollar w-5"></i> 수금 관리
+                </button>
+                <button onclick="switchTab('cost_management')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-chart-pie w-5"></i> 원가 관리
+                </button>
+
+                <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">자재/발주</div>
+                <button onclick="switchTab('purchase_orders')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-file-import w-5"></i> 발주 관리 (PO)
+                </button>
+                <button onclick="switchTab('purchases')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-dolly w-5"></i> 구매 관리 (입고)
+                </button>
+                <button onclick="switchTab('inventory')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-warehouse w-5"></i> 재고 관리 현황
+                </button>
+
+                <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">기초 등록</div>
+                <button onclick="switchTab('partners')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-building w-5"></i> 거래처 관리
+                </button>
+                <button onclick="switchTab('products')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                    <i class="fa-solid fa-box w-5"></i> 품목 관리
+                </button>
+            </nav>
+            
+            <div class="p-6 border-t border-slate-800">
+                <button onclick="logout()" class="w-full bg-slate-800 py-3 rounded text-sm hover:text-white font-bold">
+                    로그아웃
+                </button>
+            </div>
+        </aside>
+        
+        <!-- 메인 콘텐츠 -->
+        <main class="flex-1 overflow-y-auto p-8" id="mainContent">
+            <div id="searchContainer"></div>
+            <div id="contentArea"></div>
+        </main>
+    </div>
+
+    <!-- 공통 모달 -->
+    <div id="genericModal" class="modal no-print">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 id="modalTitle" class="text-2xl font-bold text-slate-800">입력</h2>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500">
+                    <i class="fa-solid fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- 데이터 불러오기 모달 -->
+    <div id="loadDataModal" class="modal no-print" style="z-index: 60;">
+        <div class="modal-content" style="max-width: 800px;">
+            <h3 class="text-xl font-bold mb-4" id="loadModalTitle">데이터 불러오기</h3>
+            <div class="overflow-y-auto max-h-96 border rounded">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="p-3">날짜</th>
+                            <th class="p-3">거래처</th>
+                            <th class="p-3">총액</th>
+                            <th class="p-3">선택</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loadDataBody"></tbody>
+                </table>
+            </div>
+            <div class="mt-6 text-right">
+                <button onclick="document.getElementById('loadDataModal').classList.remove('active')" class="px-6 py-2 bg-slate-200 rounded text-sm font-bold">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 일정 추가/수정 모달 -->
+    <div id="eventModal" class="modal no-print">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 id="eventModalTitle" class="text-2xl font-bold text-slate-800">일정 추가</h2>
+                <button onclick="closeEventModal()" class="text-slate-400 hover:text-red-500">
+                    <i class="fa-solid fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div id="eventModalBody">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">일정 제목</label>
+                    <input type="text" id="eventTitle" class="input-box" placeholder="일정 제목을 입력하세요">
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
+                        <input type="checkbox" id="eventAllDay" onchange="toggleAllDay()">
+                        <span>하루 종일</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">시작</label>
+                        <input type="date" id="eventStartDate" class="input-box mb-2">
+                        <input type="time" id="eventStartTime" class="input-box">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">종료</label>
+                        <input type="date" id="eventEndDate" class="input-box mb-2">
+                        <input type="time" id="eventEndTime" class="input-box">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">메모</label>
+                    <textarea id="eventDescription" class="input-box" rows="3" placeholder="메모를 입력하세요"></textarea>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">색상 라벨</label>
+                    <div class="color-selector">
+                        <div class="color-option event-red" data-color="red" onclick="selectColor('red')"></div>
+                        <div class="color-option event-orange" data-color="orange" onclick="selectColor('orange')"></div>
+                        <div class="color-option event-yellow" data-color="yellow" onclick="selectColor('yellow')"></div>
+                        <div class="color-option event-green selected" data-color="green" onclick="selectColor('green')"></div>
+                        <div class="color-option event-blue" data-color="blue" onclick="selectColor('blue')"></div>
+                        <div class="color-option event-indigo" data-color="indigo" onclick="selectColor('indigo')"></div>
+                        <div class="color-option event-purple" data-color="purple" onclick="selectColor('purple')"></div>
+                        <div class="color-option event-pink" data-color="pink" onclick="selectColor('pink')"></div>
+                    </div>
+                </div>
+                <div class="flex justify-between">
+                    <button id="deleteEventBtn" onclick="deleteEvent()" class="px-6 py-3 bg-red-500 text-white rounded font-bold hover:bg-red-600" style="display: none;">삭제</button>
+                    <div class="flex-1"></div>
+                    <button onclick="closeEventModal()" class="px-6 py-3 bg-slate-200 rounded font-bold hover:bg-slate-300 mr-2">취소</button>
+                    <button onclick="saveEvent()" class="px-6 py-3 bg-blue-500 text-white rounded font-bold hover:bg-blue-600">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 일정 더보기 모달 -->
+    <div id="allEventsModal" class="modal no-print">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 id="allEventsModalTitle" class="text-2xl font-bold text-slate-800">일정 목록</h2>
+                <button onclick="closeAllEventsModal()" class="text-slate-400 hover:text-red-500">
+                    <i class="fa-solid fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div id="allEventsModalBody" class="max-h-96 overflow-y-auto"></div>
+            <div class="mt-6 text-right">
+                <button onclick="closeAllEventsModal()" class="px-6 py-3 bg-slate-200 rounded font-bold hover:bg-slate-300">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 프린트 컨테이너 -->
+    <div id="printContainer" class="hidden">
+        <div class="print-wrap">
+            <div class="print-title-area">
+                <div>
+                    <span id="p_title_ko" class="print-title-main">견 적 서</span>
+                    <span id="p_title_en" class="print-title-sub">QUOTATION</span>
+                </div>
+                <div class="print-meta">
+                    <div>문서번호: <span id="p_no"></span></div>
+                    <div>작성일자: <span id="p_date"></span></div>
+                </div>
+            </div>
+            
+            <div class="print-grid-box">
+                <div class="print-half">
+                    <div class="print-header-cell" id="p_left_role">공 급 받 는 자</div>
+                    <table class="print-info-table">
+                        <colgroup><col style="width: 20%;"><col style="width: 80%;"></colgroup>
+                        <tr><th>상호</th><td id="p_left_name"></td></tr>
+                        <tr id="print_row_addr_1"><th>주소</th><td id="p_left_addr" class="addr-cell"></td></tr>
+                        <tr><th>담당자</th><td id="p_left_manager"></td></tr>
+                        <tr><th>TEL</th><td id="p_left_phone"></td></tr>
+                        <tr><th>E-mail</th><td id="p_left_email"></td></tr>
+                    </table>
+                </div>
+                <div class="print-half">
+                    <div class="print-header-cell" id="p_right_role">공 급 자</div>
+                    <table class="print-info-table">
+                        <colgroup><col style="width: 20%;"><col style="width: 80%;"></colgroup>
+                        <tr><th>상호</th><td id="p_right_name">아스펙 (ASPEC)</td></tr>
+                        <tr id="print_row_addr_2"><th>주소</th><td class="addr-cell" style="font-size: 10px;">경기도 화성시 메타폴리스로 42, 9층 902호<br>(반송동, 디앤씨빌딩)</td></tr>
+                        <tr><th>담당자</th><td id="p_right_manager"></td></tr>
+                        <tr><th>TEL</th><td id="p_right_mp"></td></tr>
+                        <tr><th>E-mail</th><td id="p_right_email"></td></tr>
+                    </table>
+                </div>
+            </div>
+            
+            <table class="print-items-table">
+                <colgroup>
+                    <col style="width: 5%;">
+                    <col style="width: 25%;">
+                    <col style="width: 30%;">
+                    <col style="width: 8%;">
+                    <col style="width: 8%;">
+                    <col style="width: 12%;">
+                    <col style="width: 12%;">
+                </colgroup>
+                <thead>
+                    <tr><th>No</th><th>품명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>공급가액</th></tr>
+                </thead>
+                <tbody id="p_tbody"></tbody>
+                <tfoot>
+                    <tr style="background: #f8f8f8; font-weight: bold;">
+                        <td colspan="4" style="text-align: center; border-right: 1px solid black;">합 계 (Total)</td>
+                        <td style="text-align: center; border-right: 1px solid black;" id="p_total_qty"></td>
+                        <td style="text-align: right; border-right: 1px solid black;">VAT 포함</td>
+                        <td style="text-align: right;" id="p_total_amt"></td>
+                    </tr>
+                    <tr style="background: #fff; border-top: 2px double black;">
+                        <td colspan="7" style="padding: 10px; text-align: left;">
+                            <strong>[비고]</strong> <span id="p_note"></span>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- ========== JavaScript 파일 로드 ========== -->
+    <!-- 핵심 설정 -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>    
+    
+    <!-- 모듈 -->
+    <script src="js/modules/dashboard.js"></script>
+    <script src="js/modules/calendar.js"></script>
+    <script src="js/modules/partners.js"></script>
+    <script src="js/modules/products.js"></script>
+    <script src="js/modules/bookkeeping.js"></script>
+    <script src="js/modules/meeting-logs.js"></script>
+    <script src="js/modules/purchases.js"></script>
+    <script src="js/modules/purchase-orders.js"></script>
+    <script src="js/modules/document-base.js"></script>
+    <script src="js/modules/quotes.js"></script>
+    <script src="js/modules/orders.js"></script>
+    <script src="js/modules/sales.js"></script>
+    <script src="js/modules/collections.js"></script>
+    <script src="js/modules/inventory.js"></script>
+    <script src="js/modules/cost-management.js"></script>
+    <script src="js/modules/print.js"></script>
+    <script src="js/modules/bom.js"></script>
+    <script src="js/router.js"></script>
+
+    <!-- 앱 초기화 -->
+    <script>
+        // 시간 자동 동기화 설정
+        function setupAutoTimeSync() {
+            const sDate = document.getElementById('eventStartDate');
+            const eDate = document.getElementById('eventEndDate');
+            const sTime = document.getElementById('eventStartTime');
+            const eTime = document.getElementById('eventEndTime');
+
+            if (sDate && eDate) {
+                sDate.addEventListener('change', function() {
+                    eDate.value = this.value;
+                });
+            }
+
+            if (sTime && eTime) {
+                sTime.addEventListener('change', function() {
+                    if (!this.value) return;
+                    const [hours, mins] = this.value.split(':').map(Number);
+                    const dateObj = new Date();
+                    dateObj.setHours(hours + 1);
+                    dateObj.setMinutes(mins);
+                    const newHour = String(dateObj.getHours()).padStart(2, '0');
+                    const newMin = String(dateObj.getMinutes()).padStart(2, '0');
+                    eTime.value = `${newHour}:${newMin}`;
+                });
+            }
+        }
+
+        // 앱 시작
+        window.onload = async () => {
+            try {
+                const initialized = await initializeApp();
+                if (initialized) {
+                    setupAutoTimeSync();
+                    switchTab('dashboard');
+                }
+            } catch (e) {
+                console.error("초기화 오류:", e);
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASPEC ERP - 로그인</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-100 h-screen flex items-center justify-center">
+
+    <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200">
+        <div class="text-center mb-8">
+            <svg width="180" height="60" viewBox="0 0 400 150" class="mx-auto">
+                <rect x="30" y="50" width="12" height="50" fill="#06b6d4"/>
+                <rect x="48" y="40" width="12" height="60" fill="#0891b2"/>
+                <rect x="66" y="45" width="12" height="55" fill="#0e7490"/>
+                <text x="95" y="90" font-family="Arial" font-size="60" font-weight="700" fill="#1e293b" letter-spacing="-2px">ASPEC</text>
+                <text x="98" y="115" font-family="Arial" font-size="14" fill="#64748b" letter-spacing="2px">ERP SYSTEM</text>
+            </svg>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">이메일</label>
+                <input type="email" id="email" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="admin@aspec.com">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">비밀번호</label>
+                <input type="password" id="password" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="••••••">
+            </div>
+            <button onclick="handleLogin()" class="w-full bg-cyan-600 text-white py-3 rounded-lg font-bold hover:bg-cyan-700 transition shadow-lg shadow-cyan-500/30">
+                로그인
+            </button>
+        </div>
+        <p id="errorMsg" class="text-red-500 text-sm text-center mt-4 hidden"></p>
+    </div>
+
+    <script>
+        // ==========================================
+        // [수정됨] 따옴표('')가 추가되었습니다!
+        // ==========================================
+        const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8';
+        // ==========================================
+
+        // 'supabase' 대신 'supabaseClient'라는 이름을 사용합니다.
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+window.onload = async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession(); // 변수명 변경 적용
+    if (session) window.location.href = 'erp.html';
+}
+
+async function handleLogin() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const msg = document.getElementById('errorMsg');
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ // 변수명 변경 적용
+        email: email,
+        password: password,
+    });
+
+            if (error) {
+                console.error("에러 발생:", error.message);
+                msg.innerText = "로그인 실패: 아이디나 비번을 확인하세요.";
+                msg.classList.remove('hidden');
+            } else {
+                console.log("로그인 성공!");
+                // 로그인 성공 시 erp.html로 이동
+                window.location.href = 'erp.html';
+            }
+        }
+    </script>
+</body>
+</html>
