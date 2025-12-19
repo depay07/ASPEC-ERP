@@ -1,40 +1,34 @@
 // js/modules/partners.js - 거래처 관리 모듈
 
-const PartnersModule = {
+var PartnersModule = {
     tableName: 'partners',
     
-    async search() {
-        showTableLoading(5);
+    // 검색 (공통 함수 사용)
+    async search(forceRefresh) {
+        var self = this;
+        var query = supabaseClient
+            .from(this.tableName)
+            .select('*')
+            .order('created_at', { ascending: false });
         
-        try {
-            var query = supabaseClient
-                .from(this.tableName)
-                .select('*')
-                .order('created_at', { ascending: false });
-            
-            var nameFilter = el('search_sName');
-            var managerFilter = el('search_sManager');
-            
-            if (nameFilter) query = query.ilike('name', '%' + nameFilter + '%');
-            if (managerFilter) query = query.ilike('manager_name', '%' + managerFilter + '%');
-            
-            var result = await query;
-            
-            if (result.error) {
-                alert("검색 실패: " + result.error.message);
-                return;
-            }
-            
-            // 캐시 저장
-            setCache('partners', result.data);
-            
-            this.renderTable(result.data);
-        } catch (e) {
-            console.error('Partners search error:', e);
-        }
+        // 필터 적용
+        var nameFilter = el('search_sName');
+        var managerFilter = el('search_sManager');
+        if (nameFilter) query = query.ilike('name', '%' + nameFilter + '%');
+        if (managerFilter) query = query.ilike('manager_name', '%' + managerFilter + '%');
+        
+        // 공통 캐시 검색 함수 사용
+        await cachedSearch(
+            this.tableName,
+            query,
+            function(data) { self.renderTable(data); },
+            5,
+            forceRefresh
+        );
     },
     
-    renderTable(data) {
+    // 테이블 렌더링
+    renderTable: function(data) {
         var tbody = document.getElementById('listBody');
         
         if (!data || data.length === 0) {
@@ -66,13 +60,13 @@ const PartnersModule = {
         tbody.innerHTML = html;
     },
     
-    openNewModal() {
+    openNewModal: function() {
         AppState.currentEditId = null;
         openModal('거래처 등록');
         document.getElementById('modalBody').innerHTML = this.getFormHtml();
     },
     
-    openEditModal(dataId) {
+    openEditModal: function(dataId) {
         var row = getRowData(dataId);
         if (!row) {
             alert('데이터를 찾을 수 없습니다.');
@@ -102,7 +96,7 @@ const PartnersModule = {
         }, 50);
     },
     
-    getFormHtml() {
+    getFormHtml: function() {
         var html = '';
         html += '<div class="grid grid-cols-2 gap-3">';
         html += '<div><label class="text-xs font-bold text-slate-600">상호 (필수)</label><input id="pName" class="input-box" placeholder="거래처명 입력"></div>';
@@ -124,7 +118,8 @@ const PartnersModule = {
         return html;
     },
     
-    async save() {
+    // 저장 (공통 후처리 함수 사용)
+    save: async function() {
         var name = el('pName');
         if (!name || name.trim() === '') {
             alert('상호명은 필수입니다.');
@@ -143,6 +138,7 @@ const PartnersModule = {
                 note: el('pNote') || null
             };
             
+            // 파일 업로드
             var fileInput = document.getElementById('pFile');
             if (fileInput && fileInput.files && fileInput.files.length > 0) {
                 var file = fileInput.files[0];
@@ -165,16 +161,12 @@ const PartnersModule = {
                 data.biz_file_url = urlResult.data.publicUrl;
             }
             
+            // 저장
             var result;
             if (AppState.currentEditId) {
-                result = await supabaseClient
-                    .from(this.tableName)
-                    .update(data)
-                    .eq('id', AppState.currentEditId);
+                result = await supabaseClient.from(this.tableName).update(data).eq('id', AppState.currentEditId);
             } else {
-                result = await supabaseClient
-                    .from(this.tableName)
-                    .insert(data);
+                result = await supabaseClient.from(this.tableName).insert(data);
             }
             
             if (result.error) {
@@ -183,12 +175,9 @@ const PartnersModule = {
             }
             
             alert("저장되었습니다.");
-            closeModal();
             
-            // 캐시 삭제 후 새로 로드
-            clearCache('partners');
-            await fetchMasterData(true);
-            this.search();
+            // 공통 후처리 (캐시 삭제 + 마스터 새로고침 + 모달 닫기 + 검색)
+            await afterDataChange(this.tableName, true);
             
         } catch (e) {
             console.error('Save error:', e);
@@ -196,24 +185,20 @@ const PartnersModule = {
         }
     },
     
-    async delete(id) {
+    // 삭제 (공통 후처리 함수 사용)
+    delete: async function(id) {
         if (!confirm("정말 삭제하시겠습니까?")) return;
         
         try {
-            var result = await supabaseClient
-                .from(this.tableName)
-                .delete()
-                .eq('id', id);
+            var result = await supabaseClient.from(this.tableName).delete().eq('id', id);
             
             if (result.error) {
                 alert("삭제 실패: " + result.error.message);
                 return;
             }
             
-            // 캐시 삭제 후 새로 로드
-            clearCache('partners');
-            await fetchMasterData(true);
-            this.search();
+            // 공통 후처리
+            await afterDataChange(this.tableName, true);
             
         } catch (e) {
             console.error('Delete error:', e);
