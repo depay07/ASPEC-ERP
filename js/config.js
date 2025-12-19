@@ -1,4 +1,5 @@
 // js/config.js - Supabase 설정
+
 const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8';
 
@@ -15,6 +16,10 @@ const AppState = {
     globalDataStore: {},
     sessionTimer: null,
     
+    // 탭별 데이터 캐시
+    cache: {},
+    cacheTime: {},
+    
     // 캘린더 관련
     calendar: {
         currentYear: new Date().getFullYear(),
@@ -24,6 +29,50 @@ const AppState = {
         editingEventId: null
     }
 };
+
+// 캐시 유효 시간 (5분)
+const CACHE_DURATION = 5 * 60 * 1000;
+
+/**
+ * 캐시 유효성 체크
+ */
+function isCacheValid(tabName) {
+    if (!AppState.cache[tabName] || !AppState.cacheTime[tabName]) {
+        return false;
+    }
+    return (Date.now() - AppState.cacheTime[tabName]) < CACHE_DURATION;
+}
+
+/**
+ * 캐시 저장
+ */
+function setCache(tabName, data) {
+    AppState.cache[tabName] = data;
+    AppState.cacheTime[tabName] = Date.now();
+}
+
+/**
+ * 캐시 가져오기
+ */
+function getCache(tabName) {
+    return AppState.cache[tabName];
+}
+
+/**
+ * 특정 탭 캐시 삭제
+ */
+function clearCache(tabName) {
+    delete AppState.cache[tabName];
+    delete AppState.cacheTime[tabName];
+}
+
+/**
+ * 전체 캐시 삭제
+ */
+function clearAllCache() {
+    AppState.cache = {};
+    AppState.cacheTime = {};
+}
 
 // 명언 목록
 const QUOTES = [
