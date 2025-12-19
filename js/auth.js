@@ -5,7 +5,8 @@
  */
 async function initializeApp() {
     try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        var result = await supabaseClient.auth.getUser();
+        var user = result.data.user;
         
         if (!user) {
             alert("로그인이 필요합니다.");
@@ -15,7 +16,7 @@ async function initializeApp() {
         
         AppState.currentUserEmail = user.email;
         startSessionTimer();
-        await fetchMasterData(true); // 최초 로드는 강제
+        await fetchMasterData(true); // 최초는 강제 로드
         return true;
         
     } catch (e) {
@@ -25,22 +26,27 @@ async function initializeApp() {
 }
 
 /**
- * 마스터 데이터 로드 (캐싱 적용)
+ * 마스터 데이터 로드 (거래처, 품목) - 캐싱 적용
  */
-async function fetchMasterData(forceRefresh = false) {
-    // 이미 데이터가 있고, 강제 새로고침이 아니면 스킵
+async function fetchMasterData(forceRefresh) {
+    forceRefresh = forceRefresh || false;
+    
+    // 강제 새로고침이 아니고, 이미 데이터가 있으면 스킵
     if (!forceRefresh && AppState.partnerList.length > 0 && AppState.productList.length > 0) {
-        console.log("캐시된 마스터 데이터 사용");
+        console.log("마스터 데이터 캐시 사용");
         return;
     }
     
     try {
         console.log("마스터 데이터 로드 중...");
         
-        const [partnersRes, productsRes] = await Promise.all([
+        var results = await Promise.all([
             supabaseClient.from('partners').select('*'),
             supabaseClient.from('products').select('*').order('name')
         ]);
+        
+        var partnersRes = results[0];
+        var productsRes = results[1];
         
         if (!partnersRes.error) AppState.partnerList = partnersRes.data || [];
         if (!productsRes.error) AppState.productList = productsRes.data || [];
