@@ -15,7 +15,7 @@ async function initializeApp() {
         
         AppState.currentUserEmail = user.email;
         startSessionTimer();
-        await fetchMasterData();
+        await fetchMasterData(true); // 최초 로드는 강제
         return true;
         
     } catch (e) {
@@ -25,10 +25,18 @@ async function initializeApp() {
 }
 
 /**
- * 마스터 데이터 로드 (거래처, 품목)
+ * 마스터 데이터 로드 (캐싱 적용)
  */
-async function fetchMasterData() {
+async function fetchMasterData(forceRefresh = false) {
+    // 이미 데이터가 있고, 강제 새로고침이 아니면 스킵
+    if (!forceRefresh && AppState.partnerList.length > 0 && AppState.productList.length > 0) {
+        console.log("캐시된 마스터 데이터 사용");
+        return;
+    }
+    
     try {
+        console.log("마스터 데이터 로드 중...");
+        
         const [partnersRes, productsRes] = await Promise.all([
             supabaseClient.from('partners').select('*'),
             supabaseClient.from('products').select('*').order('name')
@@ -49,7 +57,7 @@ async function fetchMasterData() {
 function startSessionTimer() {
     clearTimeout(AppState.sessionTimer);
     
-    AppState.sessionTimer = setTimeout(() => {
+    AppState.sessionTimer = setTimeout(function() {
         if (confirm("로그인 시간이 30분 지났습니다. 연장하시겠습니까?")) {
             startSessionTimer();
         } else {
