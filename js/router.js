@@ -1,4 +1,4 @@
-// js/router.js - 탭 전환 및 라우팅 (캐싱 적용)
+// js/router.js - 탭 전환 및 라우팅
 
 /**
  * 탭 전환 메인 함수
@@ -7,7 +7,7 @@ async function switchTab(tab) {
     AppState.currentTab = tab;
     updateNavigation(tab);
     
-    const container = document.getElementById('contentArea');
+    var container = document.getElementById('contentArea');
     
     // 대시보드
     if (tab === 'dashboard') {
@@ -23,60 +23,55 @@ async function switchTab(tab) {
         return;
     }
     
-    // 일반 탭 - 마스터 데이터는 캐시 사용 (강제 로드 안함)
+    // 일반 탭 - 마스터 데이터는 캐시 사용
     await fetchMasterData(false);
     renderSearchPanel(tab);
     renderTabContent(tab, container);
-    runSearch(tab);
+    runSearch(tab, false); // 캐시 사용 허용
 }
 
 /**
  * 검색 실행 - 탭별 모듈로 분기
  */
 async function runSearch(tab, forceRefresh) {
-    // forceRefresh가 명시적으로 true가 아니면 캐시 체크
-    if (forceRefresh !== true && isCacheValid(tab)) {
-        console.log(tab + ' 캐시 데이터 사용');
-        renderCachedData(tab);
-        return;
-    }
+    forceRefresh = forceRefresh || false;
     
     switch (tab) {
         case 'partners':
-            await PartnersModule.search();
+            await PartnersModule.search(forceRefresh);
             break;
         case 'products':
-            await ProductsModule.search();
+            await ProductsModule.search(forceRefresh);
             break;
         case 'bookkeeping':
-            await BookkeepingModule.search();
+            await BookkeepingModule.search(forceRefresh);
             break;
         case 'meeting_logs':
-            await MeetingLogsModule.search();
+            await MeetingLogsModule.search(forceRefresh);
             break;
         case 'purchases':
-            await PurchasesModule.search();
+            await PurchasesModule.search(forceRefresh);
             break;
         case 'purchase_orders':
-            await PurchaseOrdersModule.search();
+            await PurchaseOrdersModule.search(forceRefresh);
             break;
         case 'quotes':
-            await QuotesModule.search();
+            await QuotesModule.search(forceRefresh);
             break;
         case 'orders':
-            await OrdersModule.search();
+            await OrdersModule.search(forceRefresh);
             break;
         case 'sales':
-            await SalesModule.search();
+            await SalesModule.search(forceRefresh);
             break;
         case 'collections':
-            await CollectionsModule.search();
+            await CollectionsModule.search(forceRefresh);
             break;
         case 'inventory':
-            await InventoryModule.search();
+            await InventoryModule.search(forceRefresh);
             break;
         case 'cost_management':
-            await CostManagementModule.search();
+            await CostManagementModule.search(forceRefresh);
             break;
         default:
             console.warn('Unknown tab:', tab);
@@ -84,54 +79,7 @@ async function runSearch(tab, forceRefresh) {
 }
 
 /**
- * 캐시된 데이터 렌더링
- */
-function renderCachedData(tab) {
-    const data = getCache(tab);
-    if (!data) return;
-    
-    switch (tab) {
-        case 'partners':
-            PartnersModule.renderTable(data);
-            break;
-        case 'products':
-            ProductsModule.renderTable(data);
-            break;
-        case 'bookkeeping':
-            BookkeepingModule.renderTable(data);
-            break;
-        case 'meeting_logs':
-            MeetingLogsModule.renderTable(data);
-            break;
-        case 'purchases':
-            PurchasesModule.renderTable(data);
-            break;
-        case 'purchase_orders':
-            PurchaseOrdersModule.renderTable(data);
-            break;
-        case 'quotes':
-            QuotesModule.renderTable(data);
-            break;
-        case 'orders':
-            OrdersModule.renderTable(data);
-            break;
-        case 'sales':
-            SalesModule.renderTable(data);
-            break;
-        case 'collections':
-            CollectionsModule.renderTable(data);
-            break;
-        case 'inventory':
-            InventoryModule.renderTable(data, {});
-            break;
-        case 'cost_management':
-            CostManagementModule.renderTable(data);
-            break;
-    }
-}
-
-/**
- * 신규 등록 모달 열기 - 탭별 모듈로 분기
+ * 신규 등록 모달 열기
  */
 function openNewModal(tab) {
     switch (tab) {
@@ -163,7 +111,7 @@ function openNewModal(tab) {
             SalesModule.openNewModal();
             break;
         default:
-            console.warn('Unknown tab for new modal:', tab);
+            console.warn('Unknown tab for modal:', tab);
     }
 }
 
@@ -171,7 +119,7 @@ function openNewModal(tab) {
  * 네비게이션 활성화 상태 업데이트
  */
 function updateNavigation(activeTab) {
-    const navBtns = document.querySelectorAll('.nav-btn');
+    var navBtns = document.querySelectorAll('.nav-btn');
     navBtns.forEach(function(btn) {
         btn.classList.remove('bg-slate-800', 'text-white', 'font-bold');
         var onclickAttr = btn.getAttribute('onclick');
@@ -185,9 +133,9 @@ function updateNavigation(activeTab) {
  * 일반 탭 콘텐츠 렌더링
  */
 function renderTabContent(tab, container) {
-    const title = getTabTitle(tab);
-    const buttonsHtml = getTabButtons(tab);
-    const tableHtml = getTableStructure(tab);
+    var title = getTabTitle(tab);
+    var buttonsHtml = getTabButtons(tab);
+    var tableHtml = getTableStructure(tab);
     
     var html = '';
     html += '<div class="flex justify-between items-center mb-6">';
