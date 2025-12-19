@@ -7,42 +7,45 @@ const PartnersModule = {
         showTableLoading(5);
         
         try {
-            let query = supabaseClient
+            var query = supabaseClient
                 .from(this.tableName)
                 .select('*')
                 .order('created_at', { ascending: false });
             
-            const nameFilter = el('search_sName');
-            const managerFilter = el('search_sManager');
+            var nameFilter = el('search_sName');
+            var managerFilter = el('search_sManager');
             
             if (nameFilter) query = query.ilike('name', '%' + nameFilter + '%');
             if (managerFilter) query = query.ilike('manager_name', '%' + managerFilter + '%');
             
-            const { data, error } = await query;
+            var result = await query;
             
-            if (error) {
-                alert("검색 실패: " + error.message);
+            if (result.error) {
+                alert("검색 실패: " + result.error.message);
                 return;
             }
             
-            this.renderTable(data);
+            // 캐시 저장
+            setCache('partners', result.data);
+            
+            this.renderTable(result.data);
         } catch (e) {
             console.error('Partners search error:', e);
         }
     },
     
     renderTable(data) {
-        const tbody = document.getElementById('listBody');
+        var tbody = document.getElementById('listBody');
         
         if (!data || data.length === 0) {
             showEmptyTable(5);
             return;
         }
         
-        let html = '';
+        var html = '';
         data.forEach(function(row) {
-            const dataId = storeRowData(row);
-            const fileIcon = row.biz_file_url 
+            var dataId = storeRowData(row);
+            var fileIcon = row.biz_file_url 
                 ? '<a href="' + row.biz_file_url + '" target="_blank" class="text-green-600 hover:text-green-800 ml-2"><i class="fa-solid fa-file-pdf"></i></a>' 
                 : '';
             
@@ -70,7 +73,7 @@ const PartnersModule = {
     },
     
     openEditModal(dataId) {
-        const row = getRowData(dataId);
+        var row = getRowData(dataId);
         if (!row) {
             alert('데이터를 찾을 수 없습니다.');
             return;
@@ -90,7 +93,7 @@ const PartnersModule = {
             document.getElementById('pAddr').value = row.address || '';
             document.getElementById('pNote').value = row.note || '';
             
-            const linkDiv = document.getElementById('pCurrentFileLink');
+            var linkDiv = document.getElementById('pCurrentFileLink');
             if (row.biz_file_url) {
                 linkDiv.innerHTML = '<a href="' + row.biz_file_url + '" target="_blank" class="text-blue-600 hover:underline font-bold ml-2">[기존 파일 보기]</a>';
             } else {
@@ -100,7 +103,7 @@ const PartnersModule = {
     },
     
     getFormHtml() {
-        let html = '';
+        var html = '';
         html += '<div class="grid grid-cols-2 gap-3">';
         html += '<div><label class="text-xs font-bold text-slate-600">상호 (필수)</label><input id="pName" class="input-box" placeholder="거래처명 입력"></div>';
         html += '<div><label class="text-xs font-bold text-slate-600">사업자번호</label><input id="pBiz" class="input-box" placeholder="000-00-00000"></div>';
@@ -122,14 +125,14 @@ const PartnersModule = {
     },
     
     async save() {
-        const name = el('pName');
+        var name = el('pName');
         if (!name || name.trim() === '') {
             alert('상호명은 필수입니다.');
             return;
         }
         
         try {
-            const data = {
+            var data = {
                 name: name.trim(),
                 biz_num: el('pBiz') || null,
                 owner_name: el('pOwner') || null,
@@ -140,13 +143,13 @@ const PartnersModule = {
                 note: el('pNote') || null
             };
             
-            const fileInput = document.getElementById('pFile');
+            var fileInput = document.getElementById('pFile');
             if (fileInput && fileInput.files && fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                const fileExt = file.name.split('.').pop();
-                const fileName = 'biz_' + Date.now() + '.' + fileExt;
+                var file = fileInput.files[0];
+                var fileExt = file.name.split('.').pop();
+                var fileName = 'biz_' + Date.now() + '.' + fileExt;
                 
-                const uploadResult = await supabaseClient.storage
+                var uploadResult = await supabaseClient.storage
                     .from('erp')
                     .upload(fileName, file);
                 
@@ -155,14 +158,14 @@ const PartnersModule = {
                     return;
                 }
                 
-                const urlResult = supabaseClient.storage
+                var urlResult = supabaseClient.storage
                     .from('erp')
                     .getPublicUrl(fileName);
                 
                 data.biz_file_url = urlResult.data.publicUrl;
             }
             
-            let result;
+            var result;
             if (AppState.currentEditId) {
                 result = await supabaseClient
                     .from(this.tableName)
@@ -181,7 +184,10 @@ const PartnersModule = {
             
             alert("저장되었습니다.");
             closeModal();
-            await fetchMasterData();
+            
+            // 캐시 삭제 후 새로 로드
+            clearCache('partners');
+            await fetchMasterData(true);
             this.search();
             
         } catch (e) {
@@ -194,7 +200,7 @@ const PartnersModule = {
         if (!confirm("정말 삭제하시겠습니까?")) return;
         
         try {
-            const result = await supabaseClient
+            var result = await supabaseClient
                 .from(this.tableName)
                 .delete()
                 .eq('id', id);
@@ -204,7 +210,9 @@ const PartnersModule = {
                 return;
             }
             
-            await fetchMasterData();
+            // 캐시 삭제 후 새로 로드
+            clearCache('partners');
+            await fetchMasterData(true);
             this.search();
             
         } catch (e) {
