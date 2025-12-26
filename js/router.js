@@ -73,6 +73,9 @@ async function runSearch(tab, forceRefresh) {
         case 'cost_management':
             await CostManagementModule.search(forceRefresh);
             break;
+        case 'memos':
+            await MemosModule.search();
+            break;
         default:
             console.warn('Unknown tab:', tab);
     }
@@ -109,6 +112,9 @@ function openNewModal(tab) {
             break;
         case 'sales':
             SalesModule.openNewModal();
+            break;
+        case 'memos':
+            MemosModule.openNewModal();
             break;
         default:
             console.warn('Unknown tab for modal:', tab);
