@@ -187,7 +187,12 @@ function getTabButtons(tab) {
     if (tab === 'collections' || tab === 'cost_management') {
         return '';
     }
-    
+        // memos 탭일 때 신규 등록 버튼 반환
+    if (tab === 'memos') {
+        return '<button onclick="openNewModal(\'memos\')" class="' + commonBtnClass + '">' +
+            '<i class="fa-solid fa-plus"></i> 신규 메모 등록</button>';
+    }
+
     return '<button onclick="openNewModal(\'' + tab + '\')" class="' + commonBtnClass + '">' +
         '<i class="fa-solid fa-plus"></i> 신규 등록</button>';
 }
