@@ -133,24 +133,31 @@ function updateNavigation(activeTab) {
  * 일반 탭 콘텐츠 렌더링
  */
 function renderTabContent(tab, container) {
-    var title = getTabTitle(tab);
-    var buttonsHtml = getTabButtons(tab);
-    var tableHtml = getTableStructure(tab);
+    const title = getTabTitle(tab);
+    const buttonsHtml = getTabButtons(tab);
     
     var html = '';
     html += '<div class="flex justify-between items-center mb-6">';
     html += '<h2 class="text-3xl font-bold text-slate-800 border-l-8 border-cyan-500 pl-4">' + title + '</h2>';
     html += buttonsHtml;
     html += '</div>';
-    html += '<div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">';
-    html += '<table class="data-table">';
-    html += tableHtml;
-    html += '<tbody id="listBody"></tbody>';
-    html += '</table>';
-    html += '</div>';
+
+    // [수정됨] 메모 탭일 경우 테이블이 아닌 div 그리드 컨테이너를 생성
+    if (tab === 'memos') {
+        html += '<div id="listBody" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4"></div>';
+    } else {
+        // 기존 테이블 구조
+        html += '<div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">';
+        html += '<table class="data-table">';
+        html += getTableStructure(tab);
+        html += '<tbody id="listBody"></tbody>';
+        html += '</table>';
+        html += '</div>';
+    }
     
     container.innerHTML = html;
 }
+
 
 /**
  * 탭별 버튼 HTML
