@@ -60,7 +60,8 @@ var TAB_TITLES = {
     collections: '수금 관리',
     bookkeeping: '기장 관리 (지출/비용)',
     cost_management: '원가 관리 (마진 분석)',
-    meeting_logs: '미팅 일지 (영업 활동)'
+    meeting_logs: '미팅 일지 (영업 활동)',
+    memos: '업무 메모장'
 };
 
 // ========== 캐시 관련 공통 함수 ==========
