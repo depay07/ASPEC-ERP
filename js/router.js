@@ -114,6 +114,7 @@ function openNewModal(tab) {
             SalesModule.openNewModal();
             break;
         case 'memos':
+            console.log("MemosModule 모달 호출 시도"); 
             MemosModule.openNewModal();
             break;
         default:
