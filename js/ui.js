@@ -107,7 +107,15 @@ function getTabSpecificFilters(tab) {
             return `
                 <div><span class="search-label">업체명</span><input type="text" id="search_mlPartner" class="input-box" placeholder="업체명 검색" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
                 <div><span class="search-label">내용 키워드</span><input type="text" id="search_mlContent" class="input-box" placeholder="내용 검색" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
-        
+
+        case 'memos':
+            return `
+                <div>
+                    <span class="search-label">메모 내용</span>
+                    <input type="text" id="search_memoContent" class="input-box" placeholder="내용 키워드 검색" onkeypress="handleSearchKeyPress(event, '${tab}')">
+                </div>`;
+
+            
         case 'bookkeeping':
             return `
                 <div><span class="search-label">계정과목</span>
