@@ -35,7 +35,29 @@ const BookkeepingModule = {
             alert("검색 실패: " + error.message);
             return;
         }
-        
+                // ==========================================
+        // ✨ [추가된 부분] 총 사용금액 계산 및 표시
+        // ==========================================
+        if (data && data.length > 0) {
+            // data 배열을 순회하며 금액(amount) 컬럼의 합을 구합니다.
+            // DB 컬럼명이 'amount'가 아니라면 'price', 'cost' 등 실제 컬럼명으로 변경하세요.
+            const totalSum = data.reduce((sum, row) => {
+                return sum + (Number(row.amount) || 0); 
+            }, 0);
+
+            // HTML에 표시 (천단위 콤마 포맷팅 포함)
+            const displayEl = document.getElementById('totalAmountDisplay');
+            if (displayEl) {
+                displayEl.innerHTML = `총 합계: ${totalSum.toLocaleString()}원`;
+            }
+        } else {
+            // 데이터가 없을 경우 0원으로 초기화
+            const displayEl = document.getElementById('totalAmountDisplay');
+            if (displayEl) {
+                displayEl.innerHTML = `총 합계: 0원`;
+            }
+        }
+
         this.renderTable(data);
     },
     
