@@ -127,7 +127,11 @@ function getTabSpecificFilters(tab) {
                     </select>
                 </div>
                 <div><span class="search-label">사용처/적요</span><input type="text" id="search_sUsage" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
-        
+
+                <div class="pb-1">
+                    <span id="totalAmountDisplay" class="font-bold text-blue-600 text-lg"></span>
+                </div>`;
+
         default:
             return `
                 <div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
