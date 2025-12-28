@@ -115,7 +115,7 @@ function getTabSpecificFilters(tab) {
                     <input type="text" id="search_memoContent" class="input-box" placeholder="내용 키워드 검색" onkeypress="handleSearchKeyPress(event, '${tab}')">
                 </div>`;
 
-            
+        // ▼▼▼▼▼ 여기가 수정된 부분입니다 ▼▼▼▼▼
         case 'bookkeeping':
             return `
                 <div><span class="search-label">계정과목</span>
@@ -126,11 +126,12 @@ function getTabSpecificFilters(tab) {
                         <option>임차료</option><option>기타</option>
                     </select>
                 </div>
-                <div><span class="search-label">사용처/적요</span><input type="text" id="search_sUsage" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
-
+                <div><span class="search-label">사용처/적요</span><input type="text" id="search_sUsage" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                
                 <div class="pb-1">
                     <span id="totalAmountDisplay" class="font-bold text-blue-600 text-lg"></span>
                 </div>`;
+        // ▲▲▲▲▲ 중간에 끊기지 않고 끝까지 이어집니다 ▲▲▲▲▲
 
         default:
             return `
@@ -139,6 +140,7 @@ function getTabSpecificFilters(tab) {
                 <div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
     }
 }
+
 
 /**
  * 탭별 추가 컨트롤 (체크박스 등)
