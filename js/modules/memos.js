@@ -23,6 +23,27 @@ const MemosModule = {
     },
     
     renderCards(data) {
+                const container = document.getElementById('listBody');
+        container.innerHTML = '<div class="col-span-full text-center py-10">메모를 불러오는 중...</div>';
+        
+        let query = supabaseClient
+            .from(this.tableName)
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        const keyword = el('search_memoContent');
+        if (keyword) query = query.ilike('content', `%${keyword}%`);
+        
+        const { data, error } = await query;
+        if (error) {
+            alert("조회 실패: " + error.message);
+            return;
+        }
+        this.renderCards(data);
+    },
+    
+    // [수정됨] 카드를 작게 만들고 더블클릭 이벤트 추가
+    renderCards(data) {
         const container = document.getElementById('listBody');
         if (!data || data.length === 0) {
             container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400">등록된 메모가 없습니다.</div>';
@@ -30,31 +51,42 @@ const MemosModule = {
         }
         
         container.innerHTML = data.map(row => {
-            const dataId = storeRowData(row); // utils.js 함수 사용
+            const dataId = storeRowData(row); 
             const dateStr = row.created_at ? row.created_at.split('T')[0] : '';
             
+            // 핵심 변경 사항:
+            // 1. h-48: 높이를 고정 (약 192px, 필요시 조절)
+            // 2. cursor-pointer: 클릭 가능하다는 느낌
+            // 3. ondblclick: 더블 클릭 시 상세 모달 오픈
+            // 4. line-clamp-6: 텍스트가 6줄 넘어가면 ... 처리
             return `
-                <div class="p-5 rounded-xl shadow-sm border-t-4 transition hover:shadow-md relative flex flex-col justify-between" 
-                     style="background-color: white; border-top-color: ${row.color || '#06b6d4'};">
-                    <div class="mb-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-[11px] font-bold text-slate-400">${dateStr}</span>
-                            <div class="flex gap-2">
-                                <button onclick="MemosModule.openEditModal('${dataId}')" class="text-slate-400 hover:text-blue-500">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button onclick="MemosModule.delete(${row.id})" class="text-slate-400 hover:text-red-500">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </div>
+                <div ondblclick="MemosModule.openDetailModal('${dataId}')"
+                     class="h-48 p-4 rounded-xl shadow-sm border-t-4 transition hover:shadow-md hover:-translate-y-1 relative flex flex-col cursor-pointer overflow-hidden bg-white" 
+                     style="border-top-color: ${row.color || '#06b6d4'};">
+                    
+                    <div class="flex justify-between items-center mb-2 flex-shrink-0">
+                        <span class="text-[11px] font-bold text-slate-400">${dateStr}</span>
+                        <div class="flex gap-2" onclick="event.stopPropagation()"> 
+                            <!-- event.stopPropagation()은 버튼 클릭시 더블클릭 이벤트 방지용 -->
+                            <button onclick="MemosModule.openEditModal('${dataId}')" class="text-slate-400 hover:text-blue-500">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="MemosModule.delete(${row.id})" class="text-slate-400 hover:text-red-500">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>
-                        <div class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                    </div>
+
+                    <div class="text-sm text-slate-700 leading-relaxed overflow-hidden">
+                        <!-- line-clamp-6: 6줄까지만 보이고 나머지는 ... 처리 -->
+                        <div class="line-clamp-6 whitespace-pre-wrap">
                             ${row.content}
                         </div>
                     </div>
                 </div>`;
         }).join('');
     },
+
     
     openNewModal() {
         AppState.currentEditId = null;
@@ -74,6 +106,31 @@ const MemosModule = {
         document.getElementById('memoContent').value = row.content || '';
         document.getElementById('memoColor').value = row.color || '#06b6d4';
     },
+
+    openDetailModal(dataId) {
+        const row = getRowData(dataId);
+        if (!row) return;
+
+        openModal('메모 상세 내용'); // 모달 제목 설정
+        const body = document.getElementById('modalBody');
+        
+        // 읽기 전용으로 크게 보여주기
+        body.innerHTML = `
+            <div class="flex flex-col h-full">
+                <div class="flex justify-end mb-2">
+                    <span class="text-xs text-slate-400">${row.created_at ? row.created_at.split('T')[0] : ''}</span>
+                </div>
+                <div class="flex-1 p-4 bg-slate-50 rounded-lg border border-slate-200 overflow-y-auto max-h-[60vh]">
+                    <p class="text-slate-800 whitespace-pre-wrap leading-relaxed text-base">${row.content}</p>
+                </div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 transition">닫기</button>
+                    <button onclick="MemosModule.openEditModal('${dataId}')" class="px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-900 transition">수정하기</button>
+                </div>
+            </div>
+        `;
+    },
+
     
     getFormHtml() {
         return `
