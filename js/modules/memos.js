@@ -1,9 +1,10 @@
 const MemosModule = {
     tableName: 'memos',
     
+    // 1. 검색 및 목록 불러오기
     async search() {
-        // 검색 중 표시
         const container = document.getElementById('listBody');
+        // 로딩 표시
         container.innerHTML = '<div class="col-span-full text-center py-10">메모를 불러오는 중...</div>';
         
         let query = supabaseClient
@@ -11,7 +12,8 @@ const MemosModule = {
             .select('*')
             .order('created_at', { ascending: false });
         
-        const keyword = el('search_memoContent');
+        // 검색어 필터
+        const keyword = typeof el === 'function' && el('search_memoContent'); // el 함수가 없을 경우 대비 안전장치
         if (keyword) query = query.ilike('content', `%${keyword}%`);
         
         const { data, error } = await query;
@@ -19,46 +21,24 @@ const MemosModule = {
             alert("조회 실패: " + error.message);
             return;
         }
+        
+        // 데이터가 로드되면 카드 렌더링 함수 호출
         this.renderCards(data);
     },
     
-    renderCards(data) {
-                const container = document.getElementById('listBody');
-        container.innerHTML = '<div class="col-span-full text-center py-10">메모를 불러오는 중...</div>';
-        
-        let query = supabaseClient
-            .from(this.tableName)
-            .select('*')
-            .order('created_at', { ascending: false });
-        
-        const keyword = el('search_memoContent');
-        if (keyword) query = query.ilike('content', `%${keyword}%`);
-        
-        const { data, error } = await query;
-        if (error) {
-            alert("조회 실패: " + error.message);
-            return;
-        }
-        this.renderCards(data);
-    },
-    
-    // [수정됨] 카드를 작게 만들고 더블클릭 이벤트 추가
+    // 2. 카드 그리기 (작은 사이즈 + 더블클릭 이벤트)
     renderCards(data) {
         const container = document.getElementById('listBody');
+        
         if (!data || data.length === 0) {
             container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400">등록된 메모가 없습니다.</div>';
             return;
         }
         
         container.innerHTML = data.map(row => {
-            const dataId = storeRowData(row); 
+            const dataId = storeRowData(row); // utils.js의 storeRowData 사용 가정
             const dateStr = row.created_at ? row.created_at.split('T')[0] : '';
             
-            // 핵심 변경 사항:
-            // 1. h-48: 높이를 고정 (약 192px, 필요시 조절)
-            // 2. cursor-pointer: 클릭 가능하다는 느낌
-            // 3. ondblclick: 더블 클릭 시 상세 모달 오픈
-            // 4. line-clamp-6: 텍스트가 6줄 넘어가면 ... 처리
             return `
                 <div ondblclick="MemosModule.openDetailModal('${dataId}')"
                      class="h-48 p-4 rounded-xl shadow-sm border-t-4 transition hover:shadow-md hover:-translate-y-1 relative flex flex-col cursor-pointer overflow-hidden bg-white" 
@@ -67,7 +47,6 @@ const MemosModule = {
                     <div class="flex justify-between items-center mb-2 flex-shrink-0">
                         <span class="text-[11px] font-bold text-slate-400">${dateStr}</span>
                         <div class="flex gap-2" onclick="event.stopPropagation()"> 
-                            <!-- event.stopPropagation()은 버튼 클릭시 더블클릭 이벤트 방지용 -->
                             <button onclick="MemosModule.openEditModal('${dataId}')" class="text-slate-400 hover:text-blue-500">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
@@ -78,7 +57,6 @@ const MemosModule = {
                     </div>
 
                     <div class="text-sm text-slate-700 leading-relaxed overflow-hidden">
-                        <!-- line-clamp-6: 6줄까지만 보이고 나머지는 ... 처리 -->
                         <div class="line-clamp-6 whitespace-pre-wrap">
                             ${row.content}
                         </div>
@@ -86,14 +64,15 @@ const MemosModule = {
                 </div>`;
         }).join('');
     },
-
     
+    // 3. 새 메모 등록 모달 열기
     openNewModal() {
         AppState.currentEditId = null;
         openModal('새 메모 등록');
         document.getElementById('modalBody').innerHTML = this.getFormHtml();
     },
     
+    // 4. 수정 모달 열기
     openEditModal(dataId) {
         const row = getRowData(dataId);
         if (!row) return;
@@ -107,14 +86,14 @@ const MemosModule = {
         document.getElementById('memoColor').value = row.color || '#06b6d4';
     },
 
+    // 5. [신규] 상세 보기 모달 (더블클릭 시 실행)
     openDetailModal(dataId) {
         const row = getRowData(dataId);
         if (!row) return;
 
-        openModal('메모 상세 내용'); // 모달 제목 설정
+        openModal('메모 상세 내용'); 
         const body = document.getElementById('modalBody');
         
-        // 읽기 전용으로 크게 보여주기
         body.innerHTML = `
             <div class="flex flex-col h-full">
                 <div class="flex justify-end mb-2">
@@ -131,7 +110,7 @@ const MemosModule = {
         `;
     },
 
-    
+    // 6. 입력 폼 HTML 반환
     getFormHtml() {
         return `
             <div class="space-y-4">
@@ -149,6 +128,7 @@ const MemosModule = {
             </div>`;
     },
     
+    // 7. 저장 (추가/수정)
     async save() {
         const content = document.getElementById('memoContent').value;
         const color = document.getElementById('memoColor').value;
@@ -170,6 +150,7 @@ const MemosModule = {
         this.search();
     },
     
+    // 8. 삭제
     async delete(id) {
         if (!confirm("삭제하시겠습니까?")) return;
         const { error } = await supabaseClient.from(this.tableName).delete().eq('id', id);
