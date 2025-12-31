@@ -211,10 +211,8 @@ function getTableStructure(tab) {
         collections: '<thead><tr><th style="width:10%">판매일자</th><th style="width:15%">거래처</th><th style="width:15%">매출총액(VAT포함)</th><th style="width:15%">기수금액</th><th style="width:15%">미수금(잔액)</th><th>비고</th><th style="width:10%">관리</th></tr></thead>',
         bookkeeping: '<thead><tr><th style="width:10%">일자</th><th style="width:12%">계정과목</th><th style="width:20%">사용처(적요)</th><th style="width:10%">결제수단</th><th style="width:12%">금액</th><th>비고</th><th style="width:15%">관리</th></tr></thead>',
         meeting_logs: '<thead><tr><th style="width:12%">미팅날짜</th><th style="width:15%">업체명</th><th style="width:15%">참석자</th><th>미팅 내용 (요약)</th><th style="width:20%">향후 계획</th><th style="width:10%">관리</th></tr></thead>',
-        cost_management: '<thead><tr><th style="width:10%">주문일자</th><th style="width:15%">거래처</th><th style="width:20%">주문명(대표품목)</th><th style="width:12%">총 매출액</th><th style="width:12%">총 원가(입력)</th><th style="width:12%">마진금액</th><th style="width:8%">마진율</th><th style="width:10%">관리</th></tr></thead>',
-        
-        // ▼▼▼ 아래 줄이 꼭 추가되어야 합니다! (계산서 헤더 포함) ▼▼▼
-        sales: '<thead><tr><th style="width:10%">일자</th><th style="width:15%">거래처</th><th style="width:10%">담당자</th><th style="width:10%">공급가액</th><th style="width:10%">부가세</th><th style="width:10%">합계</th><th>비고</th><th style="width:8%">계산서</th><th style="width:10%">관리</th></tr></thead>'
+        cost_management: '<thead><tr><th style="width:10%">주문일자</th><th style="width:15%">거래처</th><th style="width:20%">주문명(대표품목)</th><th style="width:12%">총 매출액</th><th style="width:12%">총 원가(입력)</th><th style="width:12%">마진금액</th><th style="width:8%">마진율</th><th style="width:10%">관리</th></tr></thead>',            
+        sales: '<thead><tr><th style="width:10%">일자</th><th style="width:15%">거래처</th><th style="width:10%">담당자</th><th style="width:10%">공급가액</th><th style="width:10%">부가세</th><th style="width:10%">합계</th><th style="width:15%">비고</th><th style="width:8%">계산서</th><th style="width:12%">관리</th></tr></thead>'
     };
     
     var defaultStructure = '<thead><tr><th style="width:10%">일자</th><th style="width:18%">거래처</th><th style="width:12%">담당자</th><th style="width:12%">공급가액</th><th style="width:10%">부가세</th><th style="width:12%">합계</th><th>비고</th><th style="width:15%">관리</th></tr></thead>';
