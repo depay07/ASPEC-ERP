@@ -52,31 +52,45 @@ const PurchaseOrdersModule = {
      * 테이블 렌더링
      */
     renderTable(data) {
-        const tbody = document.getElementById('listBody');
+    const tbody = document.getElementById('listBody');
+    
+    if (!data || data.length === 0) {
+        showEmptyTable(9); // 컬럼이 9개로 늘어남 (기존 7 + 2)
+        return;
+    }
+    
+    tbody.innerHTML = data.map(row => {
+        const dataId = storeRowData(row);
+        const itemsSummary = row.items && row.items.length > 0 
+            ? `${row.items[0].name} 외 ${row.items.length - 1}건` 
+            : '-';
         
-        if (!data || data.length === 0) {
-            showEmptyTable(7);
-            return;
-        }
+        // 송금 완료 로직 계산
+        const totalAmount = row.total_amount || 0;
+        const remittedAmount = row.remitted_amount || 0;
+        // 총액이 0보다 크고, 송금액과 일치할 때 완료로 간주
+        const isPaid = totalAmount > 0 && totalAmount === remittedAmount;
         
-        tbody.innerHTML = data.map(row => {
-            const dataId = storeRowData(row);
-            const itemsSummary = row.items && row.items.length > 0 
-                ? `${row.items[0].name} 외 ${row.items.length - 1}건` 
-                : '-';
-            
-            return `
-                <tr class="hover:bg-slate-50 border-b transition">
-                    <td class="font-bold text-blue-600 text-center">${row.po_number}</td>
-                    <td>${row.partner_name}</td>
-                    <td class="text-center">${row.end_user || '-'}</td>
-                    <td>${itemsSummary}</td>
-                    <td class="font-bold text-right">${formatNumber(row.total_amount)}</td>
-                    <td class="text-center">${row.date}</td>
-                    <td>${this.getActionButtons(dataId, row.id)}</td>
-                </tr>`;
-        }).join('');
-    },
+        const statusIcon = isPaid 
+            ? '<i class="fa-solid fa-circle text-green-500" title="송금완료"></i>' 
+            : '<i class="fa-solid fa-circle-xmark text-orange-500" title="미입금/금액불일치"></i>';
+
+        return `
+            <tr class="hover:bg-slate-50 border-b transition text-sm">
+                <td class="font-bold text-blue-600 text-center">${row.po_number}</td>
+                <td>${row.partner_name}</td>
+                <td class="text-center text-xs">${row.end_user || '-'}</td>
+                <td class="text-xs">${itemsSummary}</td>
+                <td class="font-bold text-right">${formatNumber(totalAmount)}</td>
+                <td class="text-center">${row.date}</td>
+                <!-- 송금 정보 추가 -->
+                <td class="text-center text-lg">${statusIcon}</td>
+                <td class="text-right font-bold text-slate-600">${formatNumber(remittedAmount)}</td>
+                <td>${this.getActionButtons(dataId, row.id)}</td>
+            </tr>`;
+    }).join('');
+}
+
     
     /**
      * 액션 버튼
@@ -227,6 +241,22 @@ const PurchaseOrdersModule = {
                         <label class="text-xs text-slate-500">EndUser</label>
                         <input id="poEndUser" class="input-box">
                     </div>
+                    <div class="grid grid-cols-3 gap-3 mb-2">
+    <div>
+        <label class="text-xs text-slate-500">EndUser</label>
+        <input id="poEndUser" class="input-box">
+    </div>
+    <div>
+        <label class="text-xs text-slate-500">담당자(우리측)</label>
+        <input id="poManager" class="input-box">
+    </div>
+    <!-- 송금액 입력 필드 추가 -->
+    <div>
+        <label class="text-xs font-bold text-blue-600">송금액(결제금액)</label>
+        <input type="number" id="poRemittedAmount" class="input-box" placeholder="숫자만 입력">
+    </div>
+</div>
+
                     <div>
                         <label class="text-xs text-slate-500">담당자(우리측)</label>
                         <input id="poManager" class="input-box">
@@ -308,6 +338,8 @@ const PurchaseOrdersModule = {
             document.getElementById('poPhone').value = row.phone || '';
             document.getElementById('poEmail').value = row.email || '';
             document.getElementById('poAddr').value = row.partner_address || '';
+            document.getElementById('poRemittedAmount').value = row.remitted_amount || 0;
+
             
             // 품목 데이터
             AppState.tempItems = (row.items || []).map(item => {
@@ -355,6 +387,7 @@ const PurchaseOrdersModule = {
             email: el('poEmail'),
             partner_address: el('poAddr'),
             items: AppState.tempItems,
+            remitted_amount: Number(document.getElementById('poRemittedAmount').value) || 0,
             total_supply: tSupply,
             total_vat: tVat,
             total_amount: tTotal
