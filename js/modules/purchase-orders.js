@@ -260,7 +260,7 @@ const PurchaseOrdersModule = {
                             <th class="p-2 border">품목요약</th>
                             <th class="p-2 border w-24">총액</th>
                             <th class="p-2 border w-24">일자</th>                            
-                            <th class="p-2 border w-20 text-blue-600 font-bold">송금여부</th>
+                            <th class="p-2 border w-24 text-blue-600 font-bold">송금여부</th>
                             <th class="p-2 border w-24 text-blue-600 font-bold">송금액</th>                           
                             <th class="p-2 border w-32">관리</th>
                         </tr>
