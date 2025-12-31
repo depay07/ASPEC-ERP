@@ -4,10 +4,10 @@ const PurchaseOrdersModule = {
     tableName: 'purchase_orders',
     
     /**
-     * 검색
+     * 검색 실행
      */
     async search() {
-        // 컬럼이 9개로 늘어났으므로 9로 수정
+        // 컬럼이 9개(기존 7 + 송금여부, 송금액)로 늘어났으므로 로딩바 칸수를 9로 설정
         showTableLoading(9);
         
         let query = supabaseClient
@@ -15,12 +15,14 @@ const PurchaseOrdersModule = {
             .select('*')
             .order('created_at', { ascending: false });
         
+        // 날짜 필터 적용
         const startDate = el('searchStartDate');
         const endDate = el('searchEndDate');
         if (startDate && endDate) {
             query = query.gte('date', startDate).lte('date', endDate);
         }
         
+        // 업체명, EndUser 필터
         const partnerFilter = el('search_sPartner');
         const endUserFilter = el('search_sEndUser');
         const itemFilter = el('search_sItem');
@@ -35,6 +37,7 @@ const PurchaseOrdersModule = {
             return;
         }
         
+        // 품목명 필터 (클라이언트 사이드 필터링)
         let resultData = data || [];
         if (itemFilter) {
             const lowerItem = itemFilter.toLowerCase();
@@ -47,13 +50,13 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 테이블 렌더링 (메인 리스트)
+     * 메인 테이블 렌더링
      */
     renderTable(data) {
         const tbody = document.getElementById('listBody');
         
         if (!data || data.length === 0) {
-            showEmptyTable(9); // 헤더 개수에 맞게 9로 설정
+            showEmptyTable(9); // 9칸 전체에 '데이터 없음' 표시
             return;
         }
         
@@ -63,12 +66,12 @@ const PurchaseOrdersModule = {
                 ? `${row.items[0].name} 외 ${row.items.length - 1}건` 
                 : '-';
             
-            // 송금 완료 로직 계산
+            // 송금 여부 계산 로직
             const totalAmount = row.total_amount || 0;
             const remittedAmount = row.remitted_amount || 0;
-            // 총액이 존재하고, 송금액이 총액 이상일 때 완료 처리
             const isPaid = totalAmount > 0 && remittedAmount >= totalAmount;
             
+            // 아이콘 설정: 일치하면 초록색 동그라미, 아니면 주황색 X
             const statusIcon = isPaid 
                 ? '<i class="fa-solid fa-circle text-green-500" title="송금완료"></i>' 
                 : '<i class="fa-solid fa-circle-xmark text-orange-500" title="미입금/금액불일치"></i>';
@@ -76,21 +79,22 @@ const PurchaseOrdersModule = {
             return `
                 <tr class="hover:bg-slate-50 border-b transition text-sm">
                     <td class="font-bold text-blue-600 text-center">${row.po_number}</td>
-                    <td>${row.partner_name}</td>
+                    <td class="pl-2">${row.partner_name}</td>
                     <td class="text-center text-xs">${row.end_user || '-'}</td>
-                    <td class="text-xs">${itemsSummary}</td>
-                    <td class="font-bold text-right">${formatNumber(totalAmount)}</td>
+                    <td class="pl-2 text-xs">${itemsSummary}</td>
+                    <td class="font-bold text-right pr-2">${formatNumber(totalAmount)}</td>
                     <td class="text-center">${row.date}</td>
-                    <!-- 추가된 송금 상태 및 금액 컬럼 -->
+                    <!-- 송금 완료 여부 아이콘 칸 -->
                     <td class="text-center text-lg">${statusIcon}</td>
-                    <td class="text-right font-bold text-slate-600">${formatNumber(remittedAmount)}</td>
+                    <!-- 송금액 표시 칸 -->
+                    <td class="text-right font-bold text-slate-600 pr-2">${formatNumber(remittedAmount)}</td>
                     <td>${this.getActionButtons(dataId, row.id)}</td>
                 </tr>`;
         }).join('');
     },
     
     /**
-     * 액션 버튼
+     * 테이블 우측 액션 버튼 HTML
      */
     getActionButtons(dataId, rowId) {
         return `
@@ -111,13 +115,14 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 신규 등록 모달
+     * 신규 등록 모달 열기
      */
     async openNewModal() {
         AppState.currentEditId = null;
         AppState.tempItems = [];
         openModal('발주 등록');
         
+        // 오늘 날짜 기준 PO 번호 자동 생성
         const today = getToday();
         const { count } = await supabaseClient
             .from(this.tableName)
@@ -137,7 +142,7 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 수정 모달
+     * 수정 모달 열기
      */
     openEditModal(dataId) {
         const row = getRowData(dataId);
@@ -153,7 +158,7 @@ const PurchaseOrdersModule = {
     },
 
     /**
-     * 복사
+     * 기존 데이터 복사하여 새로 등록
      */
     async duplicate(dataId) {
         const row = getRowData(dataId);
@@ -181,69 +186,69 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 폼 HTML
+     * 입력 폼 HTML 생성 (송금액 필드 포함)
      */
     getFormHtml(poNumber, date) {
         return `
             <div class="bg-slate-50 p-4 rounded mb-4 border text-left">
                 <div class="grid grid-cols-3 gap-3 mb-2">
                     <div>
-                        <label class="text-xs text-slate-500">PO# (자동생성)</label>
+                        <label class="text-xs text-slate-500 font-bold">PO# (자동생성)</label>
                         <input id="poNum" class="input-box bg-gray-100" value="${poNumber}" readonly>
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">수주일자</label>
+                        <label class="text-xs text-slate-500 font-bold">발주일자</label>
                         <input type="date" id="poDate" class="input-box" value="${date}">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">발주업체</label>
-                        <input id="poPartner" class="input-box" list="dl_part_po" onchange="PurchaseOrdersModule.fillPartnerInfo(this.value)">
+                        <label class="text-xs text-slate-500 font-bold">납품업체 (필수)</label>
+                        <input id="poPartner" class="input-box" list="dl_part_po" onchange="PurchaseOrdersModule.fillPartnerInfo(this.value)" placeholder="업체 선택 또는 입력">
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-3 mb-2">
                     <div>
-                        <label class="text-xs text-slate-500">거래처 담당자</label>
+                        <label class="text-xs text-slate-500 font-bold">거래처 담당자</label>
                         <input id="poPManager" class="input-box">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">연락처</label>
+                        <label class="text-xs text-slate-500 font-bold">연락처</label>
                         <input id="poPhone" class="input-box">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">선발주여부</label>
+                        <label class="text-xs text-slate-500 font-bold">선발주여부</label>
                         <select id="poPreOrder" class="input-box">
-                            <option>N</option>
-                            <option>Y</option>
+                            <option value="N">N (일반)</option>
+                            <option value="Y">Y (선발주)</option>
                         </select>
                     </div>
                 </div>
                 <div class="mb-2">
-                    <label class="text-xs text-slate-500">주소</label>
+                    <label class="text-xs text-slate-500 font-bold">납품 주소</label>
                     <input id="poAddr" class="input-box">
                 </div>
                 <div class="grid grid-cols-2 gap-3 mb-2">
                     <div>
-                        <label class="text-xs text-slate-500">이메일</label>
+                        <label class="text-xs text-slate-500 font-bold">이메일</label>
                         <input id="poEmail" class="input-box">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">비고</label>
+                        <label class="text-xs text-slate-500 font-bold">비고</label>
                         <input id="poNote" class="input-box">
                     </div>
                 </div>
-                <!-- 송금액 필드 포함된 하단 3개 섹션 -->
                 <div class="grid grid-cols-3 gap-3">
                     <div>
-                        <label class="text-xs text-slate-500">EndUser</label>
+                        <label class="text-xs text-slate-500 font-bold">EndUser (실수요처)</label>
                         <input id="poEndUser" class="input-box">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">담당자(우리측)</label>
+                        <label class="text-xs text-slate-500 font-bold">담당자 (우리측)</label>
                         <input id="poManager" class="input-box">
                     </div>
+                    <!-- 송금액 입력 필드 (리스트 상태 업데이트용) -->
                     <div>
-                        <label class="text-xs font-bold text-blue-600">송금액 (결제금액)</label>
-                        <input type="number" id="poRemittedAmount" class="input-box border-blue-300" placeholder="숫자만 입력">
+                        <label class="text-xs font-bold text-blue-600">실제 송금액 (결제금액)</label>
+                        <input type="number" id="poRemittedAmount" class="input-box border-blue-300 bg-blue-50" placeholder="금액 입력">
                     </div>
                 </div>
             </div>
@@ -252,20 +257,18 @@ const PurchaseOrdersModule = {
             
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border-collapse border text-center mb-4 table-fixed">
-                    <thead class="bg-slate-100 text-xs text-slate-600">
+                    <thead class="bg-slate-100">
                         <tr>
-                            <th class="p-2 border w-32">PO#</th>
-                            <th class="p-2 border">납품업체</th>
-                            <th class="p-2 border">EndUser</th>
-                            <th class="p-2 border">품목요약</th>
-                            <th class="p-2 border w-24">총액</th>
-                            <th class="p-2 border w-24">일자</th>                            
-                            <th class="p-2 border w-24 text-blue-600 font-bold">송금여부</th>
-                            <th class="p-2 border w-24 text-blue-600 font-bold">송금액</th>                           
-                            <th class="p-2 border w-32">관리</th>
+                            <th class="p-2 border w-10">No</th>
+                            <th class="p-2 border w-[22%]">품목명</th>
+                            <th class="p-2 border w-[30%]">규격</th>
+                            <th class="p-2 border w-14">단위</th>
+                            <th class="p-2 border w-16">수량</th>
+                            <th class="p-2 border">단가</th>
+                            <th class="p-2 border">공급가액</th>
+                            <th class="p-2 border w-10">삭제</th>
                         </tr>
                     </thead>
-
                     <tbody id="itemGrid"></tbody>
                     <tfoot class="bg-slate-50 font-bold">
                         <tr>
@@ -279,7 +282,7 @@ const PurchaseOrdersModule = {
                             <td class="p-2 border"></td>
                         </tr>
                         <tr>
-                            <td colspan="6" class="p-2 text-right border text-blue-600 text-lg">총 합계</td>
+                            <td colspan="6" class="p-2 text-right border text-blue-600 text-lg">총 합계 (발주액)</td>
                             <td class="p-2 text-right border text-blue-600 text-lg" id="tTotal">0</td>
                             <td class="p-2 border"></td>
                         </tr>
@@ -288,13 +291,16 @@ const PurchaseOrdersModule = {
             </div>
             
             <button onclick="PurchaseOrdersModule.save()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
-                저장하기
+                발주 데이터 저장하기
             </button>
             
             <datalist id="dl_part_po"></datalist>
             <datalist id="dl_prod_po"></datalist>`;
     },
     
+    /**
+     * 업체 선택 시 기본 정보 자동 채우기
+     */
     fillPartnerInfo(partnerName) {
         const partner = AppState.partnerList.find(p => p.name === partnerName);
         if (partner) {
@@ -305,6 +311,9 @@ const PurchaseOrdersModule = {
         }
     },
     
+    /**
+     * 모달창에 기존 데이터 세팅
+     */
     fillFormData(row) {
         setTimeout(() => {
             document.getElementById('poNum').value = row.po_number || '';
@@ -318,8 +327,12 @@ const PurchaseOrdersModule = {
             document.getElementById('poPhone').value = row.phone || '';
             document.getElementById('poEmail').value = row.email || '';
             document.getElementById('poAddr').value = row.partner_address || '';
-            document.getElementById('poRemittedAmount').value = row.remitted_amount || 0;
             
+            // 송금액 필드 데이터 로드
+            const remitInput = document.getElementById('poRemittedAmount');
+            if (remitInput) remitInput.value = row.remitted_amount || 0;
+            
+            // 품목 데이터 로드
             AppState.tempItems = (row.items || []).map(item => {
                 if (!item.spec) {
                     const prod = AppState.productList.find(p => p.name === item.name);
@@ -334,12 +347,16 @@ const PurchaseOrdersModule = {
         }, 50);
     },
     
+    /**
+     * 데이터 저장 (DB 전송)
+     */
     async save() {
         if (AppState.tempItems.length === 0) {
-            alert("품목을 추가해주세요.");
+            alert("품목을 최소 하나 이상 추가해주세요.");
             return;
         }
         
+        // 합계 재계산
         let tSupply = 0, tVat = 0, tTotal = 0;
         AppState.tempItems.forEach(i => {
             tSupply += i.supply || 0;
@@ -362,12 +379,14 @@ const PurchaseOrdersModule = {
             email: el('poEmail'),
             partner_address: el('poAddr'),
             items: AppState.tempItems,
+            // 새 컬럼: 송금액 저장
             remitted_amount: Number(document.getElementById('poRemittedAmount').value) || 0,
             total_supply: tSupply,
             total_vat: tVat,
             total_amount: tTotal
         };
         
+        // 신규 등록 시 중복 방지를 위한 PO 번호 최종 확정
         if (!AppState.currentEditId) {
             const { count } = await supabaseClient
                 .from(this.tableName)
@@ -396,13 +415,16 @@ const PurchaseOrdersModule = {
             return;
         }
         
-        alert("저장되었습니다.");
+        alert("성공적으로 저장되었습니다.");
         closeModal();
         this.search();
     },
     
+    /**
+     * 데이터 삭제
+     */
     async delete(id) {
-        if (!confirm("정말 삭제하시겠습니까?")) return;
+        if (!confirm("정말 삭제하시겠습니까? 관련 데이터가 모두 삭제됩니다.")) return;
         
         const { error } = await supabaseClient
             .from(this.tableName)
