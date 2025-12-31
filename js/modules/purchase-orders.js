@@ -252,18 +252,22 @@ const PurchaseOrdersModule = {
             
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border-collapse border text-center mb-4 table-fixed">
-                    <thead class="bg-slate-100">
+                    <thead class="bg-slate-100 text-xs">
                         <tr>
-                            <th class="p-2 border w-10">No</th>
-                            <th class="p-2 border w-[22%]">품목명</th>
-                            <th class="p-2 border w-[30%]">규격</th>
-                            <th class="p-2 border w-14">단위</th>
-                            <th class="p-2 border w-16">수량</th>
-                            <th class="p-2 border">단가</th>
-                            <th class="p-2 border">공급가액</th>
-                            <th class="p-2 border w-10">삭제</th>
+                            <th class="p-2 border w-32">PO#</th>
+                            <th class="p-2 border">납품업체</th>
+                            <th class="p-2 border">EndUser</th>
+                            <th class="p-2 border">품목요약</th>
+                            <th class="p-2 border w-24">총액</th>
+                            <th class="p-2 border w-24">일자</th>
+                            <!-- 추가된 부분 -->
+                            <th class="p-2 border w-20 text-blue-600">송금여부</th>
+                            <th class="p-2 border w-24 text-blue-600">송금액</th>
+                            <!-- 관리 컬럼은 맨 마지막에 -->
+                            <th class="p-2 border w-32">관리</th>
                         </tr>
                     </thead>
+
                     <tbody id="itemGrid"></tbody>
                     <tfoot class="bg-slate-50 font-bold">
                         <tr>
