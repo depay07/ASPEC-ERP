@@ -33,27 +33,40 @@ const SalesModule = {
                 : '<i class="fa-solid fa-circle text-orange-500" title="미발행"></i>';
 
             return `
-            <tr class="hover:bg-slate-50 border-b transition text-sm">
-                <td class="text-center p-2">${row.date}</td>
-                <td class="text-center font-bold p-2">${row.partner_name}</td>
-                <td class="text-center p-2 text-xs">${row.manager || '-'}</td>
-                <td class="text-right p-2 text-slate-600">${formatNumber(row.total_supply)}</td>
-                <td class="text-right p-2 text-slate-400 text-xs">${formatNumber(row.total_vat)}</td>
-                <td class="text-right p-2 font-bold">${formatNumber(row.total_amount)}</td>
-                <td class="text-left p-2 text-xs truncate max-w-[150px]">${row.note || ''}</td>
-                
-                <!-- 새로 추가된 계산서 상태 컬럼 -->
-                <td class="text-center p-2 text-lg">${taxIcon}</td>
-                
-                <td class="p-2">
-                    <div class="flex justify-center items-center gap-2">
-                        <button onclick="printDocument('sales', '${dataId}')" class="text-slate-600 hover:text-black p-1" title="인쇄"><i class="fa-solid fa-print"></i></button>
-                        <button onclick="SalesModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-1" title="복사"><i class="fa-regular fa-copy"></i></button>
-                        <button onclick="SalesModule.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-1" title="수정"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="SalesModule.delete(${row.id})" class="text-red-400 hover:text-red-600 p-1" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </td>
-            </tr>`;
+<tr class="hover:bg-slate-50 border-b transition text-sm">
+    <td class="text-center p-2">${row.date}</td>
+    <td class="text-center font-bold p-2">${row.partner_name}</td>
+    <td class="text-center p-2 text-xs">${row.manager || '-'}</td>
+    <td class="text-right p-2 text-slate-600">${formatNumber(row.total_supply)}</td>
+    <td class="text-right p-2 text-slate-400 text-xs">${formatNumber(row.total_vat)}</td>
+    <td class="text-right p-2 font-bold">${formatNumber(row.total_amount)}</td>
+    
+    <!-- 비고: 내용이 길면 말줄임표(...) 처리 -->
+    <td class="text-left p-2 text-xs truncate max-w-[150px]">${row.note || ''}</td>
+    
+    <!-- 계산서 상태 -->
+    <td class="text-center p-2 text-lg">${taxIcon}</td>
+    
+    <!-- 관리 버튼 영역 (수정됨) -->
+    <td class="p-2">
+        <div class="flex justify-center items-center gap-2">
+            <!-- p-1 -> p-2 로 변경, 아이콘에 fa-lg 추가 -->
+            <button onclick="printDocument('sales', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
+                <i class="fa-solid fa-print fa-lg"></i>
+            </button>
+            <button onclick="SalesModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
+                <i class="fa-regular fa-copy fa-lg"></i>
+            </button>
+            <button onclick="SalesModule.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정">
+                <i class="fa-solid fa-pen-to-square fa-lg"></i>
+            </button>
+            <button onclick="SalesModule.delete(${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제">
+                <i class="fa-solid fa-trash-can fa-lg"></i>
+            </button>
+        </div>
+    </td>
+</tr>`;
+
         }).join('');
     },
     
