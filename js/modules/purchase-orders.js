@@ -236,28 +236,22 @@ const PurchaseOrdersModule = {
                         <input id="poNote" class="input-box">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3 mb-2">
-                    <div>
-                        <label class="text-xs text-slate-500">EndUser</label>
-                        <input id="poEndUser" class="input-box">
-                    </div>
                     <div class="grid grid-cols-3 gap-3 mb-2">
-    <div>
-        <label class="text-xs text-slate-500">EndUser</label>
-        <input id="poEndUser" class="input-box">
+        <div>
+            <label class="text-xs text-slate-500">EndUser</label>
+            <input id="poEndUser" class="input-box">
+        </div>
+        <div>
+            <label class="text-xs text-slate-500">담당자(우리측)</label>
+            <input id="poManager" class="input-box">
+        </div>
+        <div>
+            <label class="text-xs font-bold text-blue-600">송금액(결제금액)</label>
+            <input type="number" id="poRemittedAmount" class="input-box" placeholder="숫자만 입력">
+        </div>
     </div>
-    <div>
-        <label class="text-xs text-slate-500">담당자(우리측)</label>
-        <input id="poManager" class="input-box">
-    </div>
-    <!-- 송금액 입력 필드 추가 -->
-    <div>
-        <label class="text-xs font-bold text-blue-600">송금액(결제금액)</label>
-        <input type="number" id="poRemittedAmount" class="input-box" placeholder="숫자만 입력">
-    </div>
-</div>
+</div> <!-- 상단 배경 블록 끝 -->
 
-                    <div>
                         <label class="text-xs text-slate-500">담당자(우리측)</label>
                         <input id="poManager" class="input-box">
                     </div>
