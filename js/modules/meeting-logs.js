@@ -57,16 +57,18 @@ const MeetingLogsModule = {
                 : row.content || '';
             
             return `
-                <tr class="hover:bg-slate-50 border-b transition">
-                    <td class="text-center font-bold text-slate-700">${row.date}</td>
-                    <td class="text-center font-bold text-blue-600">${row.partner_name}</td>
-                    <td class="text-center text-xs">${row.attendees || '-'}</td>
-                    <td class="text-xs text-slate-600 cursor-pointer hover:text-blue-500" onclick="MeetingLogsModule.openEditModal('${dataId}')">
-                        ${summary}
-                    </td>
-                    <td class="text-xs text-red-500">${row.next_step || ''}</td>
-                    <td>${this.getActionButtons(dataId, row.id)}</td>
-                </tr>`;
+    <tr class="hover:bg-slate-50 border-b transition">
+        <td class="text-center font-bold text-slate-700">${row.date}</td>
+        <td class="text-center font-bold text-blue-600">${row.partner_name}</td>
+        <td class="text-center text-xs">${row.attendees || '-'}</td>
+        <!-- 이 부분의 함수명을 openViewModal로 변경 -->
+        <td class="text-xs text-slate-600 cursor-pointer hover:text-blue-500" onclick="MeetingLogsModule.openViewModal('${dataId}')">
+            ${summary}
+        </td>
+        <td class="text-xs text-red-500">${row.next_step || ''}</td>
+        <td>${this.getActionButtons(dataId, row.id)}</td>
+    </tr>`;
+
         }).join('');
     },
     
@@ -84,7 +86,61 @@ const MeetingLogsModule = {
                 </button>
             </div>`;
     },
-    
+        openViewModal(dataId) {
+        const row = getRowData(dataId);
+        if (!row) return alert('데이터 오류');
+        
+        openModal('미팅 일지 상세 내역');
+        
+        const body = document.getElementById('modalBody');
+        body.innerHTML = this.getViewHtml(row, dataId);
+    },
+
+    /**
+     * 상세 보기 HTML
+     */
+    getViewHtml(row, dataId) {
+        return `
+            <div class="space-y-6 p-2 text-left">
+                <div class="grid grid-cols-2 gap-4 pb-4 border-b border-slate-100">
+                    <div>
+                        <p class="text-[11px] font-semibold text-slate-400 uppercase">미팅 날짜</p>
+                        <p class="text-sm font-bold text-slate-800">${row.date}</p>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-semibold text-slate-400 uppercase">업체명</p>
+                        <p class="text-sm font-bold text-blue-600">${row.partner_name}</p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-[11px] font-semibold text-slate-400 uppercase">참석자</p>
+                        <p class="text-sm text-slate-700 font-medium">${row.attendees || '-'}</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase mb-2">미팅 상세 내용</p>
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 min-h-[200px] text-sm leading-relaxed text-slate-800 whitespace-pre-wrap">
+                        ${row.content || '기록된 내용이 없습니다.'}
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold text-red-400 uppercase mb-2">향후 계획 / 조치 사항</p>
+                    <div class="bg-red-50 p-3 rounded-lg border border-red-100 text-sm text-red-700 font-medium">
+                        ${row.next_step || '없음'}
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-4">
+                    <button onclick="MeetingLogsModule.openEditModal('${dataId}')" 
+                        class="flex-1 bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 transition">
+                        수정하기
+                    </button>
+                    <button onclick="closeModal()" 
+                        class="w-24 bg-slate-200 text-slate-600 py-3 rounded font-bold hover:bg-slate-300 transition">
+                        닫기
+                    </button>
+                </div>
+            </div>`;
+    },
+
     /**
      * 신규 등록 모달 열기
      */
