@@ -278,6 +278,10 @@ const PurchaseOrdersModule = {
                             <th class="p-2 border">단가</th>
                             <th class="p-2 border">공급가액</th>
                             <th class="p-2 border w-10">삭제</th>
+                            <th class="p-2 border w-20">송금완료</th>
+                            <th class="p-2 border">송금액</th>
+                            <th class="p-2 border">관리</th>
+
                         </tr>
                     </thead>
                     <tbody id="itemGrid"></tbody>
