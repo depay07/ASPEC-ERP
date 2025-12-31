@@ -7,21 +7,20 @@ const PurchaseOrdersModule = {
      * 검색
      */
     async search() {
-        showTableLoading(7);
+        // 컬럼이 9개로 늘어났으므로 9로 수정
+        showTableLoading(9);
         
         let query = supabaseClient
             .from(this.tableName)
             .select('*')
             .order('created_at', { ascending: false });
         
-        // 날짜 필터
         const startDate = el('searchStartDate');
         const endDate = el('searchEndDate');
         if (startDate && endDate) {
             query = query.gte('date', startDate).lte('date', endDate);
         }
         
-        // 필터
         const partnerFilter = el('search_sPartner');
         const endUserFilter = el('search_sEndUser');
         const itemFilter = el('search_sItem');
@@ -36,7 +35,6 @@ const PurchaseOrdersModule = {
             return;
         }
         
-        // 품목명 필터 (클라이언트 사이드)
         let resultData = data || [];
         if (itemFilter) {
             const lowerItem = itemFilter.toLowerCase();
@@ -49,48 +47,47 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 테이블 렌더링
+     * 테이블 렌더링 (메인 리스트)
      */
     renderTable(data) {
-    const tbody = document.getElementById('listBody');
-    
-    if (!data || data.length === 0) {
-        showEmptyTable(9); // 컬럼이 9개로 늘어남 (기존 7 + 2)
-        return;
-    }
-    
-    tbody.innerHTML = data.map(row => {
-        const dataId = storeRowData(row);
-        const itemsSummary = row.items && row.items.length > 0 
-            ? `${row.items[0].name} 외 ${row.items.length - 1}건` 
-            : '-';
+        const tbody = document.getElementById('listBody');
         
-        // 송금 완료 로직 계산
-        const totalAmount = row.total_amount || 0;
-        const remittedAmount = row.remitted_amount || 0;
-        // 총액이 0보다 크고, 송금액과 일치할 때 완료로 간주
-        const isPaid = totalAmount > 0 && totalAmount === remittedAmount;
+        if (!data || data.length === 0) {
+            showEmptyTable(9); // 헤더 개수에 맞게 9로 설정
+            return;
+        }
         
-        const statusIcon = isPaid 
-            ? '<i class="fa-solid fa-circle text-green-500" title="송금완료"></i>' 
-            : '<i class="fa-solid fa-circle-xmark text-orange-500" title="미입금/금액불일치"></i>';
+        tbody.innerHTML = data.map(row => {
+            const dataId = storeRowData(row);
+            const itemsSummary = row.items && row.items.length > 0 
+                ? `${row.items[0].name} 외 ${row.items.length - 1}건` 
+                : '-';
+            
+            // 송금 완료 로직 계산
+            const totalAmount = row.total_amount || 0;
+            const remittedAmount = row.remitted_amount || 0;
+            // 총액이 존재하고, 송금액이 총액 이상일 때 완료 처리
+            const isPaid = totalAmount > 0 && remittedAmount >= totalAmount;
+            
+            const statusIcon = isPaid 
+                ? '<i class="fa-solid fa-circle text-green-500" title="송금완료"></i>' 
+                : '<i class="fa-solid fa-circle-xmark text-orange-500" title="미입금/금액불일치"></i>';
 
-        return `
-            <tr class="hover:bg-slate-50 border-b transition text-sm">
-                <td class="font-bold text-blue-600 text-center">${row.po_number}</td>
-                <td>${row.partner_name}</td>
-                <td class="text-center text-xs">${row.end_user || '-'}</td>
-                <td class="text-xs">${itemsSummary}</td>
-                <td class="font-bold text-right">${formatNumber(totalAmount)}</td>
-                <td class="text-center">${row.date}</td>
-                <!-- 송금 정보 추가 -->
-                <td class="text-center text-lg">${statusIcon}</td>
-                <td class="text-right font-bold text-slate-600">${formatNumber(remittedAmount)}</td>
-                <td>${this.getActionButtons(dataId, row.id)}</td>
-            </tr>`;
-    }).join('');
-}
-
+            return `
+                <tr class="hover:bg-slate-50 border-b transition text-sm">
+                    <td class="font-bold text-blue-600 text-center">${row.po_number}</td>
+                    <td>${row.partner_name}</td>
+                    <td class="text-center text-xs">${row.end_user || '-'}</td>
+                    <td class="text-xs">${itemsSummary}</td>
+                    <td class="font-bold text-right">${formatNumber(totalAmount)}</td>
+                    <td class="text-center">${row.date}</td>
+                    <!-- 추가된 송금 상태 및 금액 컬럼 -->
+                    <td class="text-center text-lg">${statusIcon}</td>
+                    <td class="text-right font-bold text-slate-600">${formatNumber(remittedAmount)}</td>
+                    <td>${this.getActionButtons(dataId, row.id)}</td>
+                </tr>`;
+        }).join('');
+    },
     
     /**
      * 액션 버튼
@@ -121,7 +118,6 @@ const PurchaseOrdersModule = {
         AppState.tempItems = [];
         openModal('발주 등록');
         
-        // PO 번호 자동 생성
         const today = getToday();
         const { count } = await supabaseClient
             .from(this.tableName)
@@ -155,7 +151,7 @@ const PurchaseOrdersModule = {
         
         this.fillFormData(row);
     },
-    
+
     /**
      * 복사
      */
@@ -166,7 +162,6 @@ const PurchaseOrdersModule = {
         AppState.currentEditId = null;
         openModal('발주 복사 등록');
         
-        // 새 PO 번호 생성
         const today = getToday();
         const { count } = await supabaseClient
             .from(this.tableName)
@@ -190,7 +185,7 @@ const PurchaseOrdersModule = {
      */
     getFormHtml(poNumber, date) {
         return `
-            <div class="bg-slate-50 p-4 rounded mb-4 border">
+            <div class="bg-slate-50 p-4 rounded mb-4 border text-left">
                 <div class="grid grid-cols-3 gap-3 mb-2">
                     <div>
                         <label class="text-xs text-slate-500">PO# (자동생성)</label>
@@ -236,24 +231,19 @@ const PurchaseOrdersModule = {
                         <input id="poNote" class="input-box">
                     </div>
                 </div>
-                    <div class="grid grid-cols-3 gap-3 mb-2">
-        <div>
-            <label class="text-xs text-slate-500">EndUser</label>
-            <input id="poEndUser" class="input-box">
-        </div>
-        <div>
-            <label class="text-xs text-slate-500">담당자(우리측)</label>
-            <input id="poManager" class="input-box">
-        </div>
-        <div>
-            <label class="text-xs font-bold text-blue-600">송금액(결제금액)</label>
-            <input type="number" id="poRemittedAmount" class="input-box" placeholder="숫자만 입력">
-        </div>
-    </div>
-</div> <!-- 상단 배경 블록 끝 -->
-
+                <!-- 송금액 필드 포함된 하단 3개 섹션 -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-xs text-slate-500">EndUser</label>
+                        <input id="poEndUser" class="input-box">
+                    </div>
+                    <div>
                         <label class="text-xs text-slate-500">담당자(우리측)</label>
                         <input id="poManager" class="input-box">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-blue-600">송금액 (결제금액)</label>
+                        <input type="number" id="poRemittedAmount" class="input-box border-blue-300" placeholder="숫자만 입력">
                     </div>
                 </div>
             </div>
@@ -272,10 +262,6 @@ const PurchaseOrdersModule = {
                             <th class="p-2 border">단가</th>
                             <th class="p-2 border">공급가액</th>
                             <th class="p-2 border w-10">삭제</th>
-                            <th class="p-2 border w-20">송금완료</th>
-                            <th class="p-2 border">송금액</th>
-                            <th class="p-2 border">관리</th>
-
                         </tr>
                     </thead>
                     <tbody id="itemGrid"></tbody>
@@ -307,9 +293,6 @@ const PurchaseOrdersModule = {
             <datalist id="dl_prod_po"></datalist>`;
     },
     
-    /**
-     * 거래처 정보 자동 채우기
-     */
     fillPartnerInfo(partnerName) {
         const partner = AppState.partnerList.find(p => p.name === partnerName);
         if (partner) {
@@ -320,9 +303,6 @@ const PurchaseOrdersModule = {
         }
     },
     
-    /**
-     * 폼 데이터 채우기
-     */
     fillFormData(row) {
         setTimeout(() => {
             document.getElementById('poNum').value = row.po_number || '';
@@ -337,9 +317,7 @@ const PurchaseOrdersModule = {
             document.getElementById('poEmail').value = row.email || '';
             document.getElementById('poAddr').value = row.partner_address || '';
             document.getElementById('poRemittedAmount').value = row.remitted_amount || 0;
-
             
-            // 품목 데이터
             AppState.tempItems = (row.items || []).map(item => {
                 if (!item.spec) {
                     const prod = AppState.productList.find(p => p.name === item.name);
@@ -354,9 +332,6 @@ const PurchaseOrdersModule = {
         }, 50);
     },
     
-    /**
-     * 저장
-     */
     async save() {
         if (AppState.tempItems.length === 0) {
             alert("품목을 추가해주세요.");
@@ -391,7 +366,6 @@ const PurchaseOrdersModule = {
             total_amount: tTotal
         };
         
-        // 신규 등록 시 PO 번호 재생성
         if (!AppState.currentEditId) {
             const { count } = await supabaseClient
                 .from(this.tableName)
@@ -425,9 +399,6 @@ const PurchaseOrdersModule = {
         this.search();
     },
     
-    /**
-     * 삭제
-     */
     async delete(id) {
         if (!confirm("정말 삭제하시겠습니까?")) return;
         
