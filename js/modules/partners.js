@@ -150,24 +150,34 @@ var PartnersModule = {
     },
 
     save: async function() {
-        var name = el('pName');
-        if (!name) return alert('상호명은 필수입니다.');
+        // 1. 필수 값 체크
+        var nameInput = document.getElementById('pName');
+        var name = nameInput ? nameInput.value.trim() : "";
         
-        showFullLoading(true); // 저장 중 로딩 표시 시작
+        if (!name) {
+            alert('상호명은 필수입니다.');
+            return;
+        }
+        
+        // 로딩 함수가 없을 경우를 대비해 예외처리
+        try { if (typeof showFullLoading === 'function') showFullLoading(true); } catch(e) {}
         
         try {
+            // 2. 데이터 수집 (안전한 방식)
             var data = {
-                name: name.trim(),
-                biz_num: el('pBiz'),
-                owner_name: el('pOwner'),
-                manager_name: el('pManager'),
-                phone: el('pPhone'),
-                email: el('pEmail'),
-                address: el('pAddr'),
-                note: el('pNote')
+                name: name,
+                biz_num: document.getElementById('pBiz').value || null,
+                owner_name: document.getElementById('pOwner').value || null,
+                manager_name: document.getElementById('pManager').value || null,
+                phone: document.getElementById('pPhone').value || null,
+                email: document.getElementById('pEmail').value || null,
+                address: document.getElementById('pAddr').value || null,
+                note: document.getElementById('pNote').value || null
             };
             
-            // 4개의 파일 업로드 처리
+            // 3. 파일 업로드 처리 (4개)
+            console.log("파일 업로드 시작...");
+            
             var url1 = await this.uploadProcess('p_file_biz1', 'biz1');
             if (url1) data.biz_file_url = url1;
 
@@ -180,6 +190,9 @@ var PartnersModule = {
             var url4 = await this.uploadProcess('p_file_bank2', 'bank2');
             if (url4) data.bank_file_url2 = url4;
             
+            console.log("업로드 완료, DB 저장 시도:", data);
+
+            // 4. DB 저장
             var result;
             if (AppState.currentEditId) {
                 result = await supabaseClient.from(this.tableName).update(data).eq('id', AppState.currentEditId);
@@ -190,14 +203,23 @@ var PartnersModule = {
             if (result.error) throw result.error;
             
             alert("저장되었습니다.");
-            await afterDataChange(this.tableName, true);
+            
+            // 5. 후처리
+            if (typeof afterDataChange === 'function') {
+                await afterDataChange(this.tableName, true);
+            } else {
+                closeModal();
+                this.search(true);
+            }
             
         } catch (e) {
-            alert("오류 발생: " + e.message);
+            console.error("Save Error:", e);
+            alert("저장 중 오류가 발생했습니다: " + e.message);
         } finally {
-            showFullLoading(false);
+            try { if (typeof showFullLoading === 'function') showFullLoading(false); } catch(e) {}
         }
     },
+
     
     delete: async function(id) {
         if (!confirm("정말 삭제하시겠습니까?")) return;
