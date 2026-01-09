@@ -227,7 +227,7 @@ const DocumentBaseModule = {
             <div class="flex justify-between items-center mb-2">
                 <h3 class="font-bold text-slate-700">품목 상세</h3>
                 <button onclick="DocumentBaseModule.addItem()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition">
-                    <i class="fa-solid fa-plus"></i> 행 추가
+                    <i class="fa-solid fa-plus"></i> 품목 추가
                 </button>
             </div>
         `;
