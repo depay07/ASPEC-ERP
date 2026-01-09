@@ -1,11 +1,12 @@
-// js/modules/document-base.js - 문서 공통 모듈 (견적, 발주, 주문 공통 기능)
+// js/modules/document-base.js - 견적/주문/판매 공통 베이스 모듈
 
 const DocumentBaseModule = {
+    
     /**
-     * 공통 검색 기능
+     * 공통 검색 로직
      */
-    async baseSearch(tableName) {
-        showTableLoading(8);
+    async baseSearch(tableName, colspan = 8) {
+        showTableLoading(colspan);
         
         let query = supabaseClient
             .from(tableName)
@@ -19,153 +20,160 @@ const DocumentBaseModule = {
             query = query.gte('date', startDate).lte('date', endDate);
         }
         
-        // 파트너(업체) 필터
+        // 공통 필터
         const partnerFilter = el('search_sPartner');
-        if (partnerFilter) {
-            query = query.ilike('partner_name', `%${partnerFilter}%`);
-        }
-
+        const managerFilter = el('search_sManager');
+        const noteFilter = el('search_sNote');
+        
+        if (partnerFilter) query = query.ilike('partner_name', `%${partnerFilter}%`);
+        if (managerFilter) query = query.ilike('manager', `%${managerFilter}%`);
+        if (noteFilter) query = query.ilike('note', `%${noteFilter}%`);
+        
         const { data, error } = await query;
         
         if (error) {
             alert("검색 실패: " + error.message);
             return null;
         }
-
-        // 품목명 필터 (클라이언트 사이드)
-        const itemFilter = el('search_sItem');
-        let resultData = data || [];
         
-        if (itemFilter) {
-            const lowerItem = itemFilter.toLowerCase();
-            resultData = resultData.filter(r => 
-                r.items && r.items.some(i => i.name.toLowerCase().includes(lowerItem))
-            );
-        }
-        
-        return resultData;
+        return data;
     },
-
+    
     /**
-     * [수정됨] 문서별 테이블 행(Row) 렌더링 - 견적/주문 디자인 원상복구
+     * 공통 테이블 행 렌더링
      */
-    renderDocumentRow(row, type) {
+    renderDocumentRow(row, tab) {
         const dataId = storeRowData(row);
         
-        // 품목 요약 텍스트
-        const itemsSummary = row.items && row.items.length > 0 
-            ? `${row.items[0].name} 외 ${row.items.length - 1}건` 
-            : '-';
-            
-        // 금액 콤마
-        const totalAmt = row.total_amount ? Number(row.total_amount).toLocaleString() : '0';
-        const dateStr = row.date || '-'; // 날짜가 없으면 - 표시
-
-        // 모듈명 및 번호 필드 설정
-        let moduleName = '';
-        let numberVal = '';
+        let actions = '<div class="flex justify-center items-center gap-3">';
+        actions += `<button onclick="printDocument('${tab}', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄"><i class="fa-solid fa-print fa-lg"></i></button>`;
+        actions += `<button onclick="${this.getModuleName(tab)}.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사"><i class="fa-regular fa-copy fa-lg"></i></button>`;
+        actions += `<button onclick="${this.getModuleName(tab)}.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정"><i class="fa-solid fa-pen-to-square fa-lg"></i></button>`;
+        actions += `<button onclick="${this.getModuleName(tab)}.delete(${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제"><i class="fa-solid fa-trash-can fa-lg"></i></button>`;
+        actions += '</div>';
         
-        if (type === 'quotes') {
-            moduleName = 'QuotesModule';
-            numberVal = row.quote_number;
-        } else if (type === 'orders') {
-            moduleName = 'OrdersModule';
-            numberVal = row.order_number;
-        }
-
-        // 견적 및 주문 리스트 HTML (기존 디자인 유지)
         return `
-            <tr class="hover:bg-slate-50 border-b transition text-sm">
-                <td class="font-bold text-blue-600 text-center p-3">${numberVal}</td>
-                
-                <td class="pl-2 font-bold text-slate-700">${row.partner_name || '-'}</td>
-                
-                <td class="text-center text-xs text-slate-500">${row.end_user || '-'}</td>
-                
-                <td class="pl-2 text-xs text-slate-600">${itemsSummary}</td>
-                
-                <td class="font-bold text-right pr-4 text-blue-900">${totalAmt}</td>
-                
-                <td class="text-center">${dateStr}</td>
-                
-                <td class="text-center text-xs">${row.manager || '-'}</td>
-                
-                <td>
-                    <div class="flex justify-center items-center gap-2">
-                        <button onclick="printDocument('${type}', '${dataId}')" class="text-slate-500 hover:text-black p-1 rounded hover:bg-slate-200 transition" title="인쇄">
-                            <i class="fa-solid fa-print"></i>
-                        </button>
-                        <button onclick="${moduleName}.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-1 rounded hover:bg-green-50 transition" title="복사">
-                            <i class="fa-regular fa-copy"></i>
-                        </button>
-                        <button onclick="${moduleName}.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition" title="수정">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="${moduleName}.delete(${row.id})" class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition" title="삭제">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                </td>
+            <tr class="hover:bg-slate-50 border-b transition">
+                <td class="text-center">${row.date}</td>
+                <td class="font-bold">${row.partner_name || '-'}</td>
+                <td class="text-center">${row.manager || '-'}</td>
+                <td class="text-right text-slate-600">${formatNumber(row.total_supply)}</td>
+                <td class="text-right text-slate-400 text-xs">${formatNumber(row.total_vat)}</td>
+                <td class="text-right font-bold text-cyan-700">${formatNumber(row.total_amount)}</td>
+                <td>${row.note || ''}</td>
+                <td>${actions}</td>
             </tr>`;
+    },
+    updateItemValue(idx, field, value) {
+        const item = AppState.tempItems[idx];
+        if (!item) return;
+
+        // 수량(qty)과 단가(price)는 숫자로 변환하여 저장
+        if (field === 'qty' || field === 'price') {
+            item[field] = Number(value);
+            
+            // 금액 재계산
+            item.supply = (item.price || 0) * (item.qty || 0);
+            item.vat = Math.floor(item.supply * 0.1);
+            item.total = item.supply + item.vat;
+
+            // 해당 행의 공급가액(텍스트)만 업데이트 (전체 렌더링 방지 -> 포커스 유지 위함)
+            const supplyCell = document.getElementById(`row-supply-${idx}`);
+            if (supplyCell) supplyCell.innerText = formatNumber(item.supply);
+
+            // 전체 합계 재계산
+            this.recalculateTotals();
+        } else {
+            // 이름, 규격 등 텍스트 데이터 업데이트
+            item[field] = value;
+        }
     },
 
     /**
-     * 공통 입력 폼 HTML 생성
+     * [신규] 전체 합계 재계산 로직
      */
-    getDocumentFormHtml(type, extraButton = '') {
-        let numberLabel = type === 'quotes' ? '견적번호' : '주문번호';
-        let dateLabel = type === 'quotes' ? '견적일자' : '주문일자';
+    recalculateTotals() {
+        let tSupply = 0, tVat = 0, tTotal = 0;
+        AppState.tempItems.forEach(item => {
+            tSupply += item.supply || 0;
+            tVat += item.vat || 0;
+            tTotal += item.total || 0;
+        });
+        this.updateFooterTotals(tSupply, tVat, tTotal);
+    },
 
+    /**
+     * [신규] 하단 합계 HTML 업데이트
+     */
+    updateFooterTotals(supply, vat, total) {
+        const elSupply = document.getElementById('tSupply');
+        const elVat = document.getElementById('tVat');
+        const elTotal = document.getElementById('tTotal');
+
+        if (elSupply) elSupply.innerText = formatNumber(supply);
+        if (elVat) elVat.innerText = formatNumber(vat);
+        if (elTotal) elTotal.innerText = formatNumber(total);
+    },
+    /**
+     * 모듈명 가져오기
+     */
+    getModuleName(tab) {
+        const map = {
+            quotes: 'QuotesModule',
+            orders: 'OrdersModule',
+            sales: 'SalesModule'
+        };
+        return map[tab] || '';
+    },
+    
+    /**
+     * 공통 폼 HTML
+     */
+    getDocumentFormHtml(tab, loadButtonHtml = '') {
+        const addressField = tab === 'quotes' ? '' : `
+            <div>
+                <label class="text-xs text-slate-500">주소</label>
+                <input id="sAddr" class="input-box">
+            </div>`;
+        
         return `
-            <div class="bg-slate-50 p-4 rounded mb-4 border text-left">
-                <div class="grid grid-cols-3 gap-3 mb-2">
+            <div class="bg-slate-50 p-4 rounded mb-4 border">
+                <div class="grid grid-cols-2 gap-3 mb-2">
                     <div>
-                        <label class="text-xs text-slate-500 font-bold">${numberLabel} (자동생성)</label>
-                        <input id="docNum" class="input-box bg-gray-100" readonly placeholder="저장 시 생성됨">
+                        <label class="text-xs text-slate-500">일자</label>
+                        <input type="date" id="sDate" class="input-box" value="${getToday()}">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500 font-bold">${dateLabel}</label>
-                        <input type="date" id="sDate" class="input-box">
+                        <label class="text-xs text-slate-500">거래처 ${loadButtonHtml}</label>
+                        <input id="sPartner" class="input-box" list="dl_part_doc" onchange="DocumentBaseModule.fillPartnerInfo(this.value)" placeholder="거래처 검색">
                     </div>
-                    <div>
-                        <label class="text-xs text-slate-500 font-bold">거래처 (필수)</label>
-                        <div class="flex">
-                            <input id="sPartner" class="input-box" list="dl_product_list" onchange="DocumentBaseModule.fillPartnerInfo(this.value)" placeholder="업체 선택/입력">
-                            ${extraButton}
-                        </div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-3 mb-2">
-                    <div>
-                        <label class="text-xs text-slate-500 font-bold">거래처 담당자</label>
-                        <input id="sPManager" class="input-box">
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-500 font-bold">연락처</label>
-                        <input id="sPhone" class="input-box">
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-500 font-bold">이메일</label>
-                        <input id="sEmail" class="input-box">
-                    </div>
-                </div>
-                <div class="mb-2">
-                    <label class="text-xs text-slate-500 font-bold">사업장 주소</label>
-                    <input id="sAddr" class="input-box">
                 </div>
                 <div class="grid grid-cols-2 gap-3 mb-2">
                     <div>
-                        <label class="text-xs text-slate-500 font-bold">EndUser (실수요처)</label>
-                        <input id="sEndUser" class="input-box">
+                        <label class="text-xs text-slate-500">담당자 (거래처)</label>
+                        <input id="sPManager" class="input-box">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500 font-bold">담당자 (우리측)</label>
-                        <input id="sManager" class="input-box">
+                        <label class="text-xs text-slate-500">연락처</label>
+                        <input id="sContact" class="input-box">
                     </div>
                 </div>
-                <div>
-                    <label class="text-xs text-slate-500 font-bold">비고</label>
-                    <input id="sNote" class="input-box">
+                <div class="grid grid-cols-2 gap-3 mb-2">
+                    <div>
+                        <label class="text-xs text-slate-500">이메일</label>
+                        <input id="sEmail" class="input-box">
+                    </div>
+                    ${addressField}
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-2">
+                    <div>
+                        <label class="text-xs text-slate-500">담당자 (우리측)</label>
+                        <input id="sManager" class="input-box">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500">비고</label>
+                        <input id="sNote" class="input-box">
+                    </div>
                 </div>
             </div>
             
@@ -188,7 +196,7 @@ const DocumentBaseModule = {
                     <tbody id="itemGrid"></tbody>
                     <tfoot class="bg-slate-50 font-bold">
                         <tr>
-                            <td colspan="6" class="p-2 text-right border">합계 (공급가액)</td>
+                            <td colspan="6" class="p-2 text-right border">합계 (공급가액 + 세액)</td>
                             <td class="p-2 text-right border" id="tSupply">0</td>
                             <td class="p-2 border"></td>
                         </tr>
@@ -206,245 +214,246 @@ const DocumentBaseModule = {
                 </table>
             </div>
             
-            <button onclick="${type === 'quotes' ? 'QuotesModule' : 'OrdersModule'}.save()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
+            <button onclick="${this.getModuleName(tab)}.save()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
                 저장하기
             </button>
             
             <datalist id="dl_part_doc"></datalist>
-            <datalist id="dl_product_list"></datalist>
-        `;
+            <datalist id="dl_prod_doc"></datalist>`;
     },
-
+    
     /**
-     * [수정됨] 품목 입력 상단 버튼명 '행 추가' -> '품목 추가'로 복구
+     * 품목 입력 영역 HTML
      */
     getItemInputHtml() {
         return `
-            <div class="flex justify-between items-center mb-2">
-                <h3 class="font-bold text-slate-700">품목 상세</h3>
-                <button onclick="DocumentBaseModule.addItem()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition">
-                    <i class="fa-solid fa-plus"></i> 품목 추가
-                </button>
-            </div>
-        `;
+            <div class="bg-white border p-3 rounded mb-4 shadow-sm">
+                <div class="flex flex-wrap gap-2 items-end">
+                    <div class="w-[22%] min-w-[150px]">
+                        <label class="text-xs text-slate-500 font-bold">품목명</label>
+                        <input id="iName" class="input-box" list="dl_prod_doc" onchange="DocumentBaseModule.fillProductInfo(this.value)" placeholder="품목 검색">
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="text-xs text-slate-500 font-bold">규격</label>
+                        <input id="iSpec" class="input-box">
+                    </div>
+                    <div class="w-14">
+                        <label class="text-xs text-slate-500">단위</label>
+                        <input id="iUnit" class="input-box" value="EA">
+                    </div>
+                    <div class="w-16">
+                        <label class="text-xs text-slate-500 font-bold">수량</label>
+                        <input type="number" id="iQty" class="input-box" value="1" onkeypress="if(event.key==='Enter') document.getElementById('iPrice').focus()">
+                    </div>
+                    <div class="w-28">
+                        <label class="text-xs text-slate-500 font-bold">단가</label>
+                        <input type="number" id="iPrice" class="input-box" onkeypress="if(event.key==='Enter') DocumentBaseModule.addItem()">
+                    </div>
+                    <button onclick="DocumentBaseModule.addItem()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded font-bold text-sm h-[38px] transition">
+                        <i class="fa-solid fa-plus"></i> 추가
+                    </button>
+                </div>
+            </div>`;
     },
-
+    
     /**
-     * 품목 리스트 렌더링 (Input 기능 유지)
-     */
-    renderItemGrid() {
-        const tbody = document.getElementById('itemGrid');
-        if (!tbody) return;
-
-        tbody.innerHTML = AppState.tempItems.map((item, index) => {
-            const qty = Number(item.quantity) || 0;
-            const price = Number(item.unit_price) || 0;
-            
-            item.supply = qty * price;
-            item.vat = Math.floor(item.supply * 0.1);
-            item.total = item.supply + item.vat;
-
-            return `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-2 text-center border text-slate-500">${index + 1}</td>
-                    <td class="p-2 border">
-                        <input type="text" class="w-full bg-transparent outline-none font-bold text-blue-900" 
-                               list="dl_product_list"
-                               value="${item.name || ''}" 
-                               placeholder="품목 검색"
-                               onchange="DocumentBaseModule.updateItemValue(${index}, 'name', this.value)">
-                    </td>
-                    <td class="p-2 border">
-                        <input type="text" class="w-full bg-transparent outline-none" 
-                               value="${item.spec || ''}" 
-                               onchange="DocumentBaseModule.updateItemValue(${index}, 'spec', this.value)">
-                    </td>
-                    <td class="p-2 border">
-                        <input type="text" class="w-full text-center bg-transparent outline-none" 
-                               value="${item.unit || ''}" 
-                               onchange="DocumentBaseModule.updateItemValue(${index}, 'unit', this.value)">
-                    </td>
-                    <td class="p-2 border">
-                        <input type="number" class="w-full text-right font-bold bg-orange-50 px-1 outline-none focus:bg-orange-100" 
-                               value="${qty}" 
-                               onchange="DocumentBaseModule.updateItemValue(${index}, 'quantity', this.value)">
-                    </td>
-                    <td class="p-2 border">
-                        <input type="number" class="w-full text-right font-bold bg-blue-50 px-1 outline-none focus:bg-blue-100" 
-                               value="${price}" 
-                               onchange="DocumentBaseModule.updateItemValue(${index}, 'unit_price', this.value)">
-                    </td>
-                    <td class="p-2 border text-right pr-2 text-slate-700" id="row-supply-${index}">
-                        ${(item.supply || 0).toLocaleString()}
-                    </td>
-                    <td class="p-2 border text-center">
-                        <button onclick="DocumentBaseModule.removeItem(${index})" 
-                                class="text-red-400 hover:text-red-600 transition">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        this.updateFooterTotals();
-    },
-
-    /**
-     * 값 변경 시 자동채우기 및 계산 로직
-     */
-    updateItemValue(index, field, value) {
-        const item = AppState.tempItems[index];
-        if (!item) return;
-
-        if (field === 'name') {
-            item.name = value;
-            const product = AppState.productList.find(p => p.name === value);
-            if (product) {
-                item.spec = product.spec || '';
-                item.unit = product.unit || '';
-                item.unit_price = product.price || 0;
-                this.renderItemGrid(); 
-                return;
-            }
-        } else if (field === 'quantity' || field === 'unit_price') {
-            item[field] = Number(value);
-            item.supply = (item.quantity || 0) * (item.unit_price || 0);
-            item.vat = Math.floor(item.supply * 0.1);
-            item.total = item.supply + item.vat;
-
-            const supplyCell = document.getElementById(`row-supply-${index}`);
-            if (supplyCell) supplyCell.innerText = item.supply.toLocaleString();
-            
-            this.updateFooterTotals();
-        } else {
-            item[field] = value;
-        }
-    },
-
-    /**
-     * 하단 합계 업데이트
-     */
-    updateFooterTotals() {
-        let tSupply = 0, tVat = 0, tTotal = 0;
-        AppState.tempItems.forEach(i => {
-            tSupply += (i.supply || 0);
-            tVat += (i.vat || 0);
-            tTotal += (i.total || 0);
-        });
-        
-        const elSupply = document.getElementById('tSupply');
-        const elVat = document.getElementById('tVat');
-        const elTotal = document.getElementById('tTotal');
-
-        if (elSupply) elSupply.innerText = tSupply.toLocaleString();
-        if (elVat) elVat.innerText = tVat.toLocaleString();
-        if (elTotal) elTotal.innerText = tTotal.toLocaleString();
-    },
-
-    /**
-     * 품목 추가
-     */
-    addItem() {
-        AppState.tempItems.push({
-            name: '', spec: '', unit: '', quantity: 0, unit_price: 0, supply: 0, vat: 0, total: 0
-        });
-        this.renderItemGrid();
-    },
-
-    /**
-     * 품목 삭제
-     */
-    removeItem(index) {
-        AppState.tempItems.splice(index, 1);
-        this.renderItemGrid();
-    },
-
-    /**
-     * 거래처 정보 자동 입력
+     * 거래처 정보 자동 채우기
      */
     fillPartnerInfo(partnerName) {
         const partner = AppState.partnerList.find(p => p.name === partnerName);
         if (partner) {
-            const setVal = (id, val) => {
-                const el = document.getElementById(id);
-                if (el) el.value = val || '';
-            };
-            setVal('sPManager', partner.manager_name);
-            setVal('sPhone', partner.phone);
-            setVal('sEmail', partner.email);
-            setVal('sAddr', partner.address);
+            const pManager = document.getElementById('sPManager');
+            const contact = document.getElementById('sContact');
+            const addr = document.getElementById('sAddr');
+            const email = document.getElementById('sEmail');
+            
+            if (pManager) pManager.value = partner.manager_name || '';
+            if (contact) contact.value = partner.phone || '';
+            if (addr) addr.value = partner.address || '';
+            if (email) email.value = partner.email || '';
         }
     },
-
+    
     /**
-     * 폼 데이터 채우기 (수정 모드)
+     * 품목 정보 자동 채우기
      */
-    fillFormData(row) {
-        setTimeout(() => {
-            const setVal = (id, val) => {
-                const el = document.getElementById(id);
-                if (el) el.value = val || '';
-            };
-
-            setVal('docNum', row.quote_number || row.order_number);
-            setVal('sDate', row.date);
-            setVal('sPartner', row.partner_name);
-            setVal('sEndUser', row.end_user);
-            setVal('sManager', row.manager);
-            setVal('sNote', row.note);
-            
-            setVal('sPManager', row.partner_manager);
-            setVal('sPhone', row.phone);
-            setVal('sEmail', row.email);
-            setVal('sAddr', row.partner_address);
-
-            AppState.tempItems = (row.items || []).map(item => ({...item}));
-            this.renderItemGrid();
-            
-            fillDatalist('dl_part_doc', AppState.partnerList);
-            fillDatalist('dl_product_list', AppState.productList);
-        }, 50);
+    fillProductInfo(productName) {
+        const product = AppState.productList.find(p => p.name === productName);
+        if (product) {
+            const spec = document.getElementById('iSpec');
+            if (spec) spec.value = product.spec || '';
+        }
     },
-
+    
     /**
-     * 저장 데이터 생성
+     * 품목 추가
      */
-    buildSaveData(type) {
+    addItem() {
+        const name = el('iName');
+        const spec = el('iSpec');
+        const unit = el('iUnit');
+        const qty = parseInt(el('iQty')) || 0;
+        const price = parseInt(el('iPrice')) || 0;
+        
+        if (!name) return alert("품목명은 필수입니다.");
+        
+        const supply = price * qty;
+        const vat = Math.floor(supply * 0.1);
+        const total = supply + vat;
+        
+        AppState.tempItems.push({
+            name, spec, unit, qty, price, supply, vat, total,
+            manufacturer: '', serial_no: ''
+        });
+        
+        // 입력 필드 초기화
+        document.getElementById('iName').value = '';
+        document.getElementById('iSpec').value = '';
+        document.getElementById('iQty').value = '1';
+        document.getElementById('iPrice').value = '';
+        document.getElementById('iName').focus();
+        
+        this.renderItemGrid();
+    },
+    
+    /**
+     * 품목 그리드 렌더링
+     */
+    renderItemGrid() {
+        const tbody = document.getElementById('itemGrid');
+        if (!tbody) return;
+        
+        // 전체 합계 계산 변수
+        let tSupply = 0, tVat = 0, tTotal = 0;
+        
+        tbody.innerHTML = AppState.tempItems.map((item, idx) => {
+            // 데이터 무결성을 위해 렌더링 시점에도 재계산
+            item.supply = (item.price || 0) * (item.qty || 0);
+            item.vat = Math.floor(item.supply * 0.1);
+            item.total = item.supply + item.vat;
+
+            tSupply += item.supply;
+            tVat += item.vat;
+            tTotal += item.total;
+            
+            return `
+                <tr class="hover:bg-slate-50 border-b group">
+                    <td class="p-2 border text-slate-400 text-center">
+                        ${idx + 1}
+                    </td>
+                    <td class="p-2 border">
+                        <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
+                               value="${item.name || ''}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'name', this.value)">
+                    </td>
+                    <td class="p-2 border">
+                        <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1 text-xs" 
+                               value="${item.spec || ''}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'spec', this.value)">
+                    </td>
+                    <td class="p-2 border">
+                        <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1 text-center text-xs" 
+                               value="${item.unit || 'EA'}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'unit', this.value)">
+                    </td>
+                    <td class="p-2 border">
+                        <input type="number" class="w-full text-center font-bold bg-orange-50 outline-none focus:bg-white focus:ring-1 focus:ring-orange-300 px-1" 
+                               value="${item.qty || 0}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'qty', this.value)">
+                    </td>
+                    <td class="p-2 border">
+                        <input type="number" class="w-full text-right text-slate-600 bg-blue-50 outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
+                               value="${item.price || 0}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'price', this.value)">
+                    </td>
+                    <td class="p-2 border text-right font-bold text-slate-700" id="row-supply-${idx}">
+                        ${formatNumber(item.supply)}
+                    </td>
+                    <td class="p-2 border text-center">
+                        <button onclick="DocumentBaseModule.removeItem(${idx})" class="text-red-400 hover:text-red-600 transition">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </td>
+                </tr>`;
+        }).join('');
+        
+        // 하단 합계 업데이트
+        this.updateFooterTotals(tSupply, tVat, tTotal);
+    },
+    
+    /**
+     * 품목 제거
+     */
+    removeItem(idx) {
+        AppState.tempItems.splice(idx, 1);
+        this.renderItemGrid();
+    },
+    
+    /**
+     * 공통 저장 데이터 생성
+     */
+    buildSaveData(tab) {
         if (AppState.tempItems.length === 0) {
-            alert("품목을 최소 하나 이상 추가해주세요.");
+            alert("품목을 추가해주세요.");
             return null;
         }
-
+        
         let tSupply = 0, tVat = 0, tTotal = 0;
         AppState.tempItems.forEach(i => {
-            tSupply += i.supply || 0;
-            tVat += i.vat || 0;
-            tTotal += i.total || 0;
+            tSupply += i.supply;
+            tVat += i.vat;
+            tTotal += i.total;
         });
-
-        const commonData = {
-            date: el('sDate') || getToday(),
-            partner_name: el('sPartner'),
-            end_user: el('sEndUser'),
-            manager: el('sManager'),
-            note: el('sNote'),
-            partner_manager: el('sPManager'),
-            phone: el('sPhone'),
-            email: el('sEmail'),
-            partner_address: el('sAddr'),
+        
+        return {
             items: AppState.tempItems,
             total_supply: tSupply,
             total_vat: tVat,
-            total_amount: tTotal
+            total_amount: tTotal,
+            date: el('sDate') || getToday(),
+            partner_name: el('sPartner'),
+            manager: el('sManager'),
+            note: el('sNote'),
+            email: el('sEmail'),
+            partner_manager: el('sPManager'),
+            phone: el('sContact'),
+            partner_address: el('sAddr') || ''
         };
-
-        if (type === 'quotes') {
-            commonData.quote_number = el('docNum'); 
-        } else if (type === 'orders') {
-            commonData.order_number = el('docNum');
-        }
-
-        return commonData;
+    },
+    
+    /**
+     * 폼에 데이터 채우기 (수정/복사용)
+     */
+    fillFormData(row) {
+        setTimeout(() => {
+            document.getElementById('sDate').value = row.date || '';
+            document.getElementById('sPartner').value = row.partner_name || '';
+            document.getElementById('sManager').value = row.manager || '';
+            
+            const sPManager = document.getElementById('sPManager');
+            const sContact = document.getElementById('sContact');
+            const sAddr = document.getElementById('sAddr');
+            const sEmail = document.getElementById('sEmail');
+            const sNote = document.getElementById('sNote');
+            
+            if (sPManager) sPManager.value = row.partner_manager || '';
+            if (sContact) sContact.value = row.phone || '';
+            if (sAddr) sAddr.value = row.partner_address || '';
+            if (sEmail) sEmail.value = row.email || '';
+            if (sNote) sNote.value = row.note || '';
+            
+            // 품목 데이터 복사
+            AppState.tempItems = (row.items || []).map(item => {
+                if (!item.spec) {
+                    const prod = AppState.productList.find(p => p.name === item.name);
+                    if (prod) item.spec = prod.spec;
+                }
+                return { ...item };
+            });
+            
+            this.renderItemGrid();
+            fillDatalist('dl_part_doc', AppState.partnerList);
+            fillDatalist('dl_prod_doc', AppState.productList);
+        }, 50);
     }
 };
