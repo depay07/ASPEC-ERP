@@ -43,7 +43,7 @@ const OrdersModule = {
         body.innerHTML = DocumentBaseModule.getDocumentFormHtml('orders', loadBtn);
         
         fillDatalist('dl_part_doc', AppState.partnerList);
-        fillDatalist('dl_product_list', AppState.productList);
+        fillDatalist('dl_prod_doc', AppState.productList);
         DocumentBaseModule.renderItemGrid();
     },
     
