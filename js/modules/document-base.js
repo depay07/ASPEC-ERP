@@ -64,30 +64,66 @@ const DocumentBaseModule = {
                 <td>${actions}</td>
             </tr>`;
     },
-    updateItemValue(idx, field, value) {
-        const item = AppState.tempItems[idx];
+    updateItemValue(index, field, value) {
+        const item = AppState.tempItems[index];
         if (!item) return;
 
-        // 수량(qty)과 단가(price)는 숫자로 변환하여 저장
-        if (field === 'qty' || field === 'price') {
+        // 1. 품목명 변경 시 -> 저장된 품목 리스트에서 정보 찾아서 자동 채우기
+        if (field === 'name') {
+            item.name = value;
+            // AppState.productList에서 일치하는 품목 찾기
+            const product = AppState.productList.find(p => p.name === value);
+            if (product) {
+                item.spec = product.spec || '';
+                item.unit = product.unit || '';
+                item.unit_price = product.price || 0; // DB컬럼명에 따라 price 또는 unit_price
+                
+                // 화면도 즉시 갱신 (리렌더링)
+                this.renderItemGrid();
+                return; // 리렌더링 했으므로 종료
+            }
+        } 
+        
+        // 2. 수량/단가 변경 시 -> 숫자 변환 및 계산
+        else if (field === 'quantity' || field === 'unit_price') {
             item[field] = Number(value);
-            
-            // 금액 재계산
-            item.supply = (item.price || 0) * (item.qty || 0);
+            item.supply = item.quantity * item.unit_price;
             item.vat = Math.floor(item.supply * 0.1);
             item.total = item.supply + item.vat;
 
-            // 해당 행의 공급가액(텍스트)만 업데이트 (전체 렌더링 방지 -> 포커스 유지 위함)
-            const supplyCell = document.getElementById(`row-supply-${idx}`);
-            if (supplyCell) supplyCell.innerText = formatNumber(item.supply);
-
-            // 전체 합계 재계산
-            this.recalculateTotals();
-        } else {
-            // 이름, 규격 등 텍스트 데이터 업데이트
+            // 해당 칸 숫자만 업데이트 (포커스 유지)
+            const supplyCell = document.getElementById(`row-supply-${index}`);
+            if (supplyCell) supplyCell.innerText = item.supply.toLocaleString();
+            
+            this.updateFooterTotals();
+        } 
+        
+        // 3. 기타 텍스트 변경
+        else {
             item[field] = value;
         }
     },
+
+    /**
+     * 하단 합계 업데이트 (이전 답변과 동일)
+     */
+    updateFooterTotals() {
+        let tSupply = 0, tVat = 0, tTotal = 0;
+        AppState.tempItems.forEach(i => {
+            tSupply += (i.supply || 0);
+            tVat += (i.vat || 0);
+            tTotal += (i.total || 0);
+        });
+        document.getElementById('tSupply').innerText = tSupply.toLocaleString();
+        document.getElementById('tVat').innerText = tVat.toLocaleString();
+        document.getElementById('tTotal').innerText = tTotal.toLocaleString();
+    },
+    
+    removeItem(index) {
+        AppState.tempItems.splice(index, 1);
+        this.renderItemGrid();
+    }
+};
 
     /**
      * [신규] 전체 합계 재계산 로직
@@ -322,63 +358,57 @@ const DocumentBaseModule = {
     renderItemGrid() {
         const tbody = document.getElementById('itemGrid');
         if (!tbody) return;
-        
-        // 전체 합계 계산 변수
-        let tSupply = 0, tVat = 0, tTotal = 0;
-        
-        tbody.innerHTML = AppState.tempItems.map((item, idx) => {
-            // 데이터 무결성을 위해 렌더링 시점에도 재계산
-            item.supply = (item.price || 0) * (item.qty || 0);
+
+        tbody.innerHTML = AppState.tempItems.map((item, index) => {
+            // 계산 로직
+            item.supply = (item.quantity || 0) * (item.unit_price || 0);
             item.vat = Math.floor(item.supply * 0.1);
             item.total = item.supply + item.vat;
 
-            tSupply += item.supply;
-            tVat += item.vat;
-            tTotal += item.total;
-            
             return `
-                <tr class="hover:bg-slate-50 border-b group">
-                    <td class="p-2 border text-slate-400 text-center">
-                        ${idx + 1}
-                    </td>
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-2 text-center border text-slate-500">${index + 1}</td>
                     <td class="p-2 border">
-                        <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
+                        <input type="text" class="w-full bg-transparent outline-none font-bold text-blue-900" 
+                               list="dl_product_list"
                                value="${item.name || ''}" 
-                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'name', this.value)">
+                               placeholder="품목 검색"
+                               onchange="DocumentBaseModule.updateItemValue(${index}, 'name', this.value)">
                     </td>
                     <td class="p-2 border">
-                        <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1 text-xs" 
+                        <input type="text" class="w-full bg-transparent outline-none" 
                                value="${item.spec || ''}" 
-                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'spec', this.value)">
+                               onchange="DocumentBaseModule.updateItemValue(${index}, 'spec', this.value)">
                     </td>
                     <td class="p-2 border">
-                        <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1 text-center text-xs" 
-                               value="${item.unit || 'EA'}" 
-                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'unit', this.value)">
+                        <input type="text" class="w-full text-center bg-transparent outline-none" 
+                               value="${item.unit || ''}" 
+                               onchange="DocumentBaseModule.updateItemValue(${index}, 'unit', this.value)">
                     </td>
                     <td class="p-2 border">
-                        <input type="number" class="w-full text-center font-bold bg-orange-50 outline-none focus:bg-white focus:ring-1 focus:ring-orange-300 px-1" 
-                               value="${item.qty || 0}" 
-                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'qty', this.value)">
+                        <input type="number" class="w-full text-right font-bold bg-orange-50 px-1 outline-none focus:bg-orange-100" 
+                               value="${item.quantity || 0}" 
+                               onchange="DocumentBaseModule.updateItemValue(${index}, 'quantity', this.value)">
                     </td>
                     <td class="p-2 border">
-                        <input type="number" class="w-full text-right text-slate-600 bg-blue-50 outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
-                               value="${item.price || 0}" 
-                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'price', this.value)">
+                        <input type="number" class="w-full text-right font-bold bg-blue-50 px-1 outline-none focus:bg-blue-100" 
+                               value="${item.unit_price || 0}" 
+                               onchange="DocumentBaseModule.updateItemValue(${index}, 'unit_price', this.value)">
                     </td>
-                    <td class="p-2 border text-right font-bold text-slate-700" id="row-supply-${idx}">
-                        ${formatNumber(item.supply)}
+                    <td class="p-2 border text-right pr-2 text-slate-700" id="row-supply-${index}">
+                        ${(item.supply || 0).toLocaleString()}
                     </td>
                     <td class="p-2 border text-center">
-                        <button onclick="DocumentBaseModule.removeItem(${idx})" class="text-red-400 hover:text-red-600 transition">
-                            <i class="fa-solid fa-xmark"></i>
+                        <button onclick="DocumentBaseModule.removeItem(${index})" 
+                                class="text-red-400 hover:text-red-600 transition">
+                            <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </td>
-                </tr>`;
+                </tr>
+            `;
         }).join('');
-        
-        // 하단 합계 업데이트
-        this.updateFooterTotals(tSupply, tVat, tTotal);
+
+        this.updateFooterTotals();
     },
     
     /**
