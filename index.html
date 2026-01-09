@@ -6,6 +6,16 @@
     <title>ASPEC ERP - 로그인</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* 캡차 텍스트 스타일 */
+        #captchaCanvas {
+            background: #e2e8f0;
+            letter-spacing: 5px;
+            font-weight: bold;
+            font-style: italic;
+            user-select: none;
+        }
+    </style>
 </head>
 <body class="bg-slate-100 h-screen flex items-center justify-center">
 
@@ -29,6 +39,17 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1">비밀번호</label>
                 <input type="password" id="password" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="••••••">
             </div>
+
+            <!-- 캡차 영역 (기본적으로 숨김) -->
+            <div id="captchaArea" class="hidden space-y-2 border-t pt-4">
+                <label class="block text-sm font-bold text-red-600 mb-1">보안 문자 입력 (2회 실패 방지)</label>
+                <div class="flex items-center space-x-2">
+                    <div id="captchaCanvas" class="flex-1 text-center py-2 rounded border border-slate-400 text-xl tracking-widest strike line-through"></div>
+                    <button onclick="generateCaptcha()" class="p-2 bg-slate-200 rounded hover:bg-slate-300">🔄</button>
+                </div>
+                <input type="text" id="captchaInput" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="위 문자를 입력하세요">
+            </div>
+
             <button onclick="handleLogin()" class="w-full bg-cyan-600 text-white py-3 rounded-lg font-bold hover:bg-cyan-700 transition shadow-lg shadow-cyan-500/30">
                 로그인
             </button>
@@ -37,38 +58,68 @@
     </div>
 
     <script>
-        // ==========================================
-        // [수정됨] 따옴표('')가 추가되었습니다!
-        // ==========================================
         const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8';
-        // ==========================================
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRpmdpqotrkbdbstuuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8';
+        
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 'supabase' 대신 'supabaseClient'라는 이름을 사용합니다.
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let failCount = 0; // 실패 횟수 추적
+        let currentCaptcha = ""; // 생성된 캡차 문자열
 
-window.onload = async () => {
-    const { data: { session } } = await supabaseClient.auth.getSession(); // 변수명 변경 적용
-    if (session) window.location.href = 'erp.html';
-}
+        window.onload = async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) window.location.href = 'erp.html';
+        }
 
-async function handleLogin() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const msg = document.getElementById('errorMsg');
+        // 캡차 문자 생성 함수
+        function generateCaptcha() {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 헷갈리는 문지(0, O, 1, I) 제외
+            let result = "";
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            currentCaptcha = result;
+            document.getElementById('captchaCanvas').innerText = result;
+            document.getElementById('captchaInput').value = "";
+        }
 
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ // 변수명 변경 적용
-        email: email,
-        password: password,
-    });
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const msg = document.getElementById('errorMsg');
+            const captchaInput = document.getElementById('captchaInput').value;
+
+            // 1. 캡차 검증 (실패 횟수가 2회 이상일 때만)
+            if (failCount >= 2) {
+                if (captchaInput.toUpperCase() !== currentCaptcha) {
+                    msg.innerText = "보안 문자가 일치하지 않습니다.";
+                    msg.classList.remove('hidden');
+                    generateCaptcha(); // 실패 시 캡차 새로고침
+                    return;
+                }
+            }
+
+            // 2. Supabase 로그인 시도
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
 
             if (error) {
                 console.error("에러 발생:", error.message);
-                msg.innerText = "로그인 실패: 아이디나 비번을 확인하세요.";
+                failCount++; // 실패 횟수 증가
+                
+                msg.innerText = `로그인 실패: 아이디나 비번을 확인하세요. (실패 ${failCount}회)`;
                 msg.classList.remove('hidden');
+
+                // 2회 실패 시 캡차 영역 표시
+                if (failCount >= 2) {
+                    document.getElementById('captchaArea').classList.remove('hidden');
+                    generateCaptcha();
+                }
             } else {
                 console.log("로그인 성공!");
-                // 로그인 성공 시 erp.html로 이동
+                failCount = 0; // 성공 시 카운트 초기화
                 window.location.href = 'erp.html';
             }
         }
