@@ -1,4 +1,4 @@
-// js/modules/orders.js - 주문 관리 모듈
+// js/modules/orders.js - 주문 관리 모듈 (수정됨)
 
 const OrdersModule = {
     tableName: 'orders',
@@ -12,19 +12,67 @@ const OrdersModule = {
     },
     
     /**
-     * 테이블 렌더링
+     * 테이블 렌더링 (순서 강제 수정)
      */
     renderTable(data) {
         const tbody = document.getElementById('listBody');
         
         if (!data || data.length === 0) {
-            showEmptyTable(8);
+            // DocumentBaseModule에 showEmptyTable이 있다고 가정
+            if (typeof showEmptyTable === 'function') showEmptyTable(8);
+            else tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">데이터가 없습니다.</td></tr>';
             return;
         }
         
-        tbody.innerHTML = data.map(row => 
-            DocumentBaseModule.renderDocumentRow(row, 'orders')
-        ).join('');
+        // DocumentBaseModule.renderDocumentRow를 쓰지 않고 직접 그립니다.
+        tbody.innerHTML = data.map(row => `
+            <tr class="hover:bg-slate-50 border-b transition-colors">
+                <td class="p-3 text-center text-slate-500">
+                    ${row.date || (row.created_at ? row.created_at.substring(0, 10) : '-')}
+                </td>
+                
+                <td class="p-3 font-bold text-slate-700">
+                    ${row.partner_name || '-'}
+                </td>
+                
+                <td class="p-3 text-center text-slate-600">
+                    ${row.manager_name || '-'}
+                </td>
+                
+                <td class="p-3 text-right font-mono text-blue-600 font-semibold">
+                    ${(row.supply_price || 0).toLocaleString()}
+                </td>
+                
+                <td class="p-3 text-right font-mono text-slate-500">
+                    ${(row.vat_amount || 0).toLocaleString()}
+                </td>
+                
+                <td class="p-3 text-right font-bold text-slate-800 font-mono">
+                    ${(row.total_amount || 0).toLocaleString()}
+                </td>
+                
+                <td class="p-3 text-slate-400 text-sm truncate max-w-[150px]">
+                    ${row.remarks || ''}
+                </td>
+                
+                <td class="p-3 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                        <button onclick="DocumentBaseModule.print('${this.tableName}', ${row.id})" class="text-slate-400 hover:text-slate-600" title="인쇄">
+                            <i class="fa-solid fa-print"></i>
+                        </button>
+                        <button onclick="OrdersModule.duplicate(${row.id})" class="text-green-400 hover:text-green-600" title="복사">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                        <button onclick="OrdersModule.openEditModal(${row.id})" class="text-blue-400 hover:text-blue-600" title="수정">
+                            <i class="fa-regular fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="OrdersModule.delete(${row.id})" class="text-red-400 hover:text-red-600" title="삭제">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
     },
     
     /**
@@ -43,7 +91,7 @@ const OrdersModule = {
         body.innerHTML = DocumentBaseModule.getDocumentFormHtml('orders', loadBtn);
         
         fillDatalist('dl_part_doc', AppState.partnerList);
-        fillDatalist('dl_product_list', AppState.productList);
+        fillDatalist('dl_prod_doc', AppState.productList);
         DocumentBaseModule.renderItemGrid();
     },
     
@@ -65,7 +113,7 @@ const OrdersModule = {
             <tr class="hover:bg-slate-50 cursor-pointer" onclick="OrdersModule.loadFromQuote(${row.id})">
                 <td class="p-3">${row.date}</td>
                 <td class="p-3 font-bold">${row.partner_name}</td>
-                <td class="p-3 text-right">${formatNumber(row.total_amount)}</td>
+                <td class="p-3 text-right">${(row.total_amount || 0).toLocaleString()}</td>
                 <td class="p-3">
                     <button class="bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold">선택</button>
                 </td>
