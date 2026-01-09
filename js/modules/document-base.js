@@ -64,7 +64,56 @@ const DocumentBaseModule = {
                 <td>${actions}</td>
             </tr>`;
     },
-    
+    updateItemValue(idx, field, value) {
+        const item = AppState.tempItems[idx];
+        if (!item) return;
+
+        // 수량(qty)과 단가(price)는 숫자로 변환하여 저장
+        if (field === 'qty' || field === 'price') {
+            item[field] = Number(value);
+            
+            // 금액 재계산
+            item.supply = (item.price || 0) * (item.qty || 0);
+            item.vat = Math.floor(item.supply * 0.1);
+            item.total = item.supply + item.vat;
+
+            // 해당 행의 공급가액(텍스트)만 업데이트 (전체 렌더링 방지 -> 포커스 유지 위함)
+            const supplyCell = document.getElementById(`row-supply-${idx}`);
+            if (supplyCell) supplyCell.innerText = formatNumber(item.supply);
+
+            // 전체 합계 재계산
+            this.recalculateTotals();
+        } else {
+            // 이름, 규격 등 텍스트 데이터 업데이트
+            item[field] = value;
+        }
+    },
+
+    /**
+     * [신규] 전체 합계 재계산 로직
+     */
+    recalculateTotals() {
+        let tSupply = 0, tVat = 0, tTotal = 0;
+        AppState.tempItems.forEach(item => {
+            tSupply += item.supply || 0;
+            tVat += item.vat || 0;
+            tTotal += item.total || 0;
+        });
+        this.updateFooterTotals(tSupply, tVat, tTotal);
+    },
+
+    /**
+     * [신규] 하단 합계 HTML 업데이트
+     */
+    updateFooterTotals(supply, vat, total) {
+        const elSupply = document.getElementById('tSupply');
+        const elVat = document.getElementById('tVat');
+        const elTotal = document.getElementById('tTotal');
+
+        if (elSupply) elSupply.innerText = formatNumber(supply);
+        if (elVat) elVat.innerText = formatNumber(vat);
+        if (elTotal) elTotal.innerText = formatNumber(total);
+    },
     /**
      * 모듈명 가져오기
      */
@@ -274,24 +323,52 @@ const DocumentBaseModule = {
         const tbody = document.getElementById('itemGrid');
         if (!tbody) return;
         
+        // 전체 합계 계산 변수
         let tSupply = 0, tVat = 0, tTotal = 0;
         
         tbody.innerHTML = AppState.tempItems.map((item, idx) => {
-            tSupply += item.supply || 0;
-            tVat += item.vat || 0;
-            tTotal += item.total || 0;
+            // 데이터 무결성을 위해 렌더링 시점에도 재계산
+            item.supply = (item.price || 0) * (item.qty || 0);
+            item.vat = Math.floor(item.supply * 0.1);
+            item.total = item.supply + item.vat;
+
+            tSupply += item.supply;
+            tVat += item.vat;
+            tTotal += item.total;
             
             return `
-                <tr class="hover:bg-slate-50 border-b group" draggable="true">
-                    <td class="p-2 border text-slate-400 cursor-move">
-                        <i class="fa-solid fa-bars"></i> ${idx + 1}
+                <tr class="hover:bg-slate-50 border-b group">
+                    <td class="p-2 border text-slate-400 text-center">
+                        ${idx + 1}
                     </td>
-                    <td class="p-2 border text-left font-bold text-slate-700">${item.name}</td>
-                    <td class="p-2 border text-xs text-slate-500">${item.spec || ''}</td>
-                    <td class="p-2 border text-center text-xs">${item.unit}</td>
-                    <td class="p-2 border text-center font-bold">${item.qty}</td>
-                    <td class="p-2 border text-right text-slate-600">${formatNumber(item.price)}</td>
-                    <td class="p-2 border text-right font-bold">${formatNumber(item.supply)}</td>
+                    <td class="p-2 border">
+                        <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
+                               value="${item.name || ''}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'name', this.value)">
+                    </td>
+                    <td class="p-2 border">
+                        <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1 text-xs" 
+                               value="${item.spec || ''}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'spec', this.value)">
+                    </td>
+                    <td class="p-2 border">
+                        <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1 text-center text-xs" 
+                               value="${item.unit || 'EA'}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'unit', this.value)">
+                    </td>
+                    <td class="p-2 border">
+                        <input type="number" class="w-full text-center font-bold bg-orange-50 outline-none focus:bg-white focus:ring-1 focus:ring-orange-300 px-1" 
+                               value="${item.qty || 0}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'qty', this.value)">
+                    </td>
+                    <td class="p-2 border">
+                        <input type="number" class="w-full text-right text-slate-600 bg-blue-50 outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
+                               value="${item.price || 0}" 
+                               onchange="DocumentBaseModule.updateItemValue(${idx}, 'price', this.value)">
+                    </td>
+                    <td class="p-2 border text-right font-bold text-slate-700" id="row-supply-${idx}">
+                        ${formatNumber(item.supply)}
+                    </td>
                     <td class="p-2 border text-center">
                         <button onclick="DocumentBaseModule.removeItem(${idx})" class="text-red-400 hover:text-red-600 transition">
                             <i class="fa-solid fa-xmark"></i>
@@ -300,9 +377,8 @@ const DocumentBaseModule = {
                 </tr>`;
         }).join('');
         
-        document.getElementById('tSupply').innerText = formatNumber(tSupply);
-        document.getElementById('tVat').innerText = formatNumber(tVat);
-        document.getElementById('tTotal').innerText = formatNumber(tTotal);
+        // 하단 합계 업데이트
+        this.updateFooterTotals(tSupply, tVat, tTotal);
     },
     
     /**
