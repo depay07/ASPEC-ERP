@@ -295,7 +295,7 @@ const PurchaseOrdersModule = {
             </button>
             
             <datalist id="dl_part_po"></datalist>
-            <datalist id="dl_product_list"></datalist>`;
+            <datalist id="dl_prod_doc"></datalist>`;
     },
     
     /**
