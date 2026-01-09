@@ -137,7 +137,7 @@ const PurchaseOrdersModule = {
         body.innerHTML = this.getFormHtml(autoPO, today);
         
         fillDatalist('dl_part_po', AppState.partnerList);
-        fillDatalist('dl_prod_po', AppState.productList);
+        fillDatalist('dl_product_list', AppState.productList);
         DocumentBaseModule.renderItemGrid();
     },
     
