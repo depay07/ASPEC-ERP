@@ -343,7 +343,7 @@ const PurchaseOrdersModule = {
             
             DocumentBaseModule.renderItemGrid();
             fillDatalist('dl_part_po', AppState.partnerList);
-            fillDatalist('dl_prod_po', AppState.productList);
+            fillDatalist('dl_prod_doc', AppState.productList);
         }, 50);
     },
     
