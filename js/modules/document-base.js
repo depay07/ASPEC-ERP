@@ -1,12 +1,11 @@
-// js/modules/document-base.js - 견적/주문/판매 공통 베이스 모듈
+// js/modules/document-base.js - 문서 공통 모듈 (견적, 발주, 주문 공통 기능)
 
 const DocumentBaseModule = {
-    
     /**
-     * 공통 검색 로직
+     * 공통 검색 기능
      */
-    async baseSearch(tableName, colspan = 8) {
-        showTableLoading(colspan);
+    async baseSearch(tableName) {
+        showTableLoading(8);
         
         let query = supabaseClient
             .from(tableName)
@@ -20,196 +19,157 @@ const DocumentBaseModule = {
             query = query.gte('date', startDate).lte('date', endDate);
         }
         
-        // 공통 필터
+        // 파트너(업체) 필터
         const partnerFilter = el('search_sPartner');
-        const managerFilter = el('search_sManager');
-        const noteFilter = el('search_sNote');
-        
-        if (partnerFilter) query = query.ilike('partner_name', `%${partnerFilter}%`);
-        if (managerFilter) query = query.ilike('manager', `%${managerFilter}%`);
-        if (noteFilter) query = query.ilike('note', `%${noteFilter}%`);
-        
+        if (partnerFilter) {
+            query = query.ilike('partner_name', `%${partnerFilter}%`);
+        }
+
+        // 품목명 필터 (변수명 통일: search_sItem)
+        const itemFilter = el('search_sItem');
+
         const { data, error } = await query;
         
         if (error) {
             alert("검색 실패: " + error.message);
             return null;
         }
+
+        // 클라이언트 사이드 품목명 필터링
+        let resultData = data || [];
+        if (itemFilter) {
+            const lowerItem = itemFilter.toLowerCase();
+            resultData = resultData.filter(r => 
+                r.items && r.items.some(i => i.name.toLowerCase().includes(lowerItem))
+            );
+        }
         
-        return data;
+        return resultData;
     },
-    
+
     /**
-     * 공통 테이블 행 렌더링
+     * 공통 테이블 행(Row) 렌더링 (리스트 화면용)
      */
-    renderDocumentRow(row, tab) {
+    renderDocumentRow(row, type) {
         const dataId = storeRowData(row);
+        const itemsSummary = row.items && row.items.length > 0 
+            ? `${row.items[0].name} 외 ${row.items.length - 1}건` 
+            : '-';
         
-        let actions = '<div class="flex justify-center items-center gap-3">';
-        actions += `<button onclick="printDocument('${tab}', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄"><i class="fa-solid fa-print fa-lg"></i></button>`;
-        actions += `<button onclick="${this.getModuleName(tab)}.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사"><i class="fa-regular fa-copy fa-lg"></i></button>`;
-        actions += `<button onclick="${this.getModuleName(tab)}.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정"><i class="fa-solid fa-pen-to-square fa-lg"></i></button>`;
-        actions += `<button onclick="${this.getModuleName(tab)}.delete(${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제"><i class="fa-solid fa-trash-can fa-lg"></i></button>`;
-        actions += '</div>';
+        // 타입별 설정 (견적/주문/발주)
+        let typeName = '';
+        let moduleName = '';
+        let numberField = ''; // 문서번호 필드명
         
+        if (type === 'quotes') {
+            typeName = '견적';
+            moduleName = 'QuotesModule';
+            numberField = row.quote_number;
+        } else if (type === 'orders') {
+            typeName = '주문';
+            moduleName = 'OrdersModule';
+            numberField = row.order_number;
+        } else {
+            typeName = '문서';
+            // 발주는 별도 렌더링을 쓰므로 여기로 안 올 수 있음
+        }
+
         return `
-            <tr class="hover:bg-slate-50 border-b transition">
+            <tr class="hover:bg-slate-50 border-b transition text-sm">
+                <td class="font-bold text-blue-600 text-center">${numberField}</td>
+                <td class="pl-2">${row.partner_name}</td>
+                <td class="text-center text-xs">${row.end_user || '-'}</td>
+                <td class="pl-2 text-xs">${itemsSummary}</td>
+                <td class="font-bold text-right pr-2">${formatNumber(row.total_amount)}</td>
                 <td class="text-center">${row.date}</td>
-                <td class="font-bold">${row.partner_name || '-'}</td>
-                <td class="text-center">${row.manager || '-'}</td>
-                <td class="text-right text-slate-600">${formatNumber(row.total_supply)}</td>
-                <td class="text-right text-slate-400 text-xs">${formatNumber(row.total_vat)}</td>
-                <td class="text-right font-bold text-cyan-700">${formatNumber(row.total_amount)}</td>
-                <td>${row.note || ''}</td>
-                <td>${actions}</td>
+                <td class="text-center text-xs">${row.manager}</td>
+                <td>
+                    <div class="flex justify-center items-center gap-3">
+                        <button onclick="printDocument('${type}', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
+                            <i class="fa-solid fa-print fa-lg"></i>
+                        </button>
+                        <button onclick="${moduleName}.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
+                            <i class="fa-regular fa-copy fa-lg"></i>
+                        </button>
+                        <button onclick="${moduleName}.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정">
+                            <i class="fa-solid fa-pen-to-square fa-lg"></i>
+                        </button>
+                        <button onclick="${moduleName}.delete(${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제">
+                            <i class="fa-solid fa-trash-can fa-lg"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>`;
     },
-    updateItemValue(index, field, value) {
-        const item = AppState.tempItems[index];
-        if (!item) return;
 
-        // 1. 품목명 변경 시 -> 저장된 품목 리스트에서 정보 찾아서 자동 채우기
-        if (field === 'name') {
-            item.name = value;
-            // AppState.productList에서 일치하는 품목 찾기
-            const product = AppState.productList.find(p => p.name === value);
-            if (product) {
-                item.spec = product.spec || '';
-                item.unit = product.unit || '';
-                item.unit_price = product.price || 0; // DB컬럼명에 따라 price 또는 unit_price
-                
-                // 화면도 즉시 갱신 (리렌더링)
-                this.renderItemGrid();
-                return; // 리렌더링 했으므로 종료
-            }
-        } 
-        
-        // 2. 수량/단가 변경 시 -> 숫자 변환 및 계산
-        else if (field === 'quantity' || field === 'unit_price') {
-            item[field] = Number(value);
-            item.supply = item.quantity * item.unit_price;
-            item.vat = Math.floor(item.supply * 0.1);
-            item.total = item.supply + item.vat;
+    /**
+     * 공통 입력 폼 HTML 생성 (모달 내부용)
+     */
+    getDocumentFormHtml(type, extraButton = '') {
+        // 타입별 라벨 설정
+        let numberLabel = '문서번호';
+        let dateLabel = '일자';
+        let partnerLabel = '거래처';
+        let partnerId = 'dl_product_list'; // 기본값
 
-            // 해당 칸 숫자만 업데이트 (포커스 유지)
-            const supplyCell = document.getElementById(`row-supply-${index}`);
-            if (supplyCell) supplyCell.innerText = item.supply.toLocaleString();
-            
-            this.updateFooterTotals();
-        } 
-        
-        // 3. 기타 텍스트 변경
-        else {
-            item[field] = value;
+        if (type === 'quotes') {
+            numberLabel = '견적번호';
+            dateLabel = '견적일자';
+        } else if (type === 'orders') {
+            numberLabel = '주문번호';
+            dateLabel = '주문일자';
         }
-    },
 
-    /**
-     * 하단 합계 업데이트 (이전 답변과 동일)
-     */
-    updateFooterTotals() {
-        let tSupply = 0, tVat = 0, tTotal = 0;
-        AppState.tempItems.forEach(i => {
-            tSupply += (i.supply || 0);
-            tVat += (i.vat || 0);
-            tTotal += (i.total || 0);
-        });
-        document.getElementById('tSupply').innerText = tSupply.toLocaleString();
-        document.getElementById('tVat').innerText = tVat.toLocaleString();
-        document.getElementById('tTotal').innerText = tTotal.toLocaleString();
-    },
-    
-    removeItem(index) {
-        AppState.tempItems.splice(index, 1);
-        this.renderItemGrid();
-    }
-};
-
-    /**
-     * [신규] 전체 합계 재계산 로직
-     */
-    recalculateTotals() {
-        let tSupply = 0, tVat = 0, tTotal = 0;
-        AppState.tempItems.forEach(item => {
-            tSupply += item.supply || 0;
-            tVat += item.vat || 0;
-            tTotal += item.total || 0;
-        });
-        this.updateFooterTotals(tSupply, tVat, tTotal);
-    },
-
-    /**
-     * [신규] 하단 합계 HTML 업데이트
-     */
-    updateFooterTotals(supply, vat, total) {
-        const elSupply = document.getElementById('tSupply');
-        const elVat = document.getElementById('tVat');
-        const elTotal = document.getElementById('tTotal');
-
-        if (elSupply) elSupply.innerText = formatNumber(supply);
-        if (elVat) elVat.innerText = formatNumber(vat);
-        if (elTotal) elTotal.innerText = formatNumber(total);
-    },
-    /**
-     * 모듈명 가져오기
-     */
-    getModuleName(tab) {
-        const map = {
-            quotes: 'QuotesModule',
-            orders: 'OrdersModule',
-            sales: 'SalesModule'
-        };
-        return map[tab] || '';
-    },
-    
-    /**
-     * 공통 폼 HTML
-     */
-    getDocumentFormHtml(tab, loadButtonHtml = '') {
-        const addressField = tab === 'quotes' ? '' : `
-            <div>
-                <label class="text-xs text-slate-500">주소</label>
-                <input id="sAddr" class="input-box">
-            </div>`;
-        
         return `
-            <div class="bg-slate-50 p-4 rounded mb-4 border">
-                <div class="grid grid-cols-2 gap-3 mb-2">
+            <div class="bg-slate-50 p-4 rounded mb-4 border text-left">
+                <div class="grid grid-cols-3 gap-3 mb-2">
                     <div>
-                        <label class="text-xs text-slate-500">일자</label>
-                        <input type="date" id="sDate" class="input-box" value="${getToday()}">
+                        <label class="text-xs text-slate-500 font-bold">${numberLabel} (자동생성)</label>
+                        <input id="docNum" class="input-box bg-gray-100" readonly placeholder="저장 시 생성됨">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">거래처 ${loadButtonHtml}</label>
-                        <input id="sPartner" class="input-box" list="dl_part_doc" onchange="DocumentBaseModule.fillPartnerInfo(this.value)" placeholder="거래처 검색">
+                        <label class="text-xs text-slate-500 font-bold">${dateLabel}</label>
+                        <input type="date" id="sDate" class="input-box">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500 font-bold">${partnerLabel} (필수)</label>
+                        <div class="flex">
+                            <input id="sPartner" class="input-box" list="dl_part_doc" onchange="DocumentBaseModule.fillPartnerInfo(this.value)" placeholder="업체 선택/입력">
+                            ${extraButton}
+                        </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3 mb-2">
+                <div class="grid grid-cols-3 gap-3 mb-2">
                     <div>
-                        <label class="text-xs text-slate-500">담당자 (거래처)</label>
+                        <label class="text-xs text-slate-500 font-bold">거래처 담당자</label>
                         <input id="sPManager" class="input-box">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">연락처</label>
-                        <input id="sContact" class="input-box">
+                        <label class="text-xs text-slate-500 font-bold">연락처</label>
+                        <input id="sPhone" class="input-box">
                     </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mb-2">
                     <div>
-                        <label class="text-xs text-slate-500">이메일</label>
+                        <label class="text-xs text-slate-500 font-bold">이메일</label>
                         <input id="sEmail" class="input-box">
                     </div>
-                    ${addressField}
+                </div>
+                <div class="mb-2">
+                    <label class="text-xs text-slate-500 font-bold">사업장 주소</label>
+                    <input id="sAddr" class="input-box">
                 </div>
                 <div class="grid grid-cols-2 gap-3 mb-2">
                     <div>
-                        <label class="text-xs text-slate-500">담당자 (우리측)</label>
-                        <input id="sManager" class="input-box">
+                        <label class="text-xs text-slate-500 font-bold">EndUser (실수요처)</label>
+                        <input id="sEndUser" class="input-box">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">비고</label>
-                        <input id="sNote" class="input-box">
+                        <label class="text-xs text-slate-500 font-bold">담당자 (우리측)</label>
+                        <input id="sManager" class="input-box">
                     </div>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 font-bold">비고</label>
+                    <input id="sNote" class="input-box">
                 </div>
             </div>
             
@@ -232,7 +192,7 @@ const DocumentBaseModule = {
                     <tbody id="itemGrid"></tbody>
                     <tfoot class="bg-slate-50 font-bold">
                         <tr>
-                            <td colspan="6" class="p-2 text-right border">합계 (공급가액 + 세액)</td>
+                            <td colspan="6" class="p-2 text-right border">합계 (공급가액)</td>
                             <td class="p-2 text-right border" id="tSupply">0</td>
                             <td class="p-2 border"></td>
                         </tr>
@@ -250,118 +210,42 @@ const DocumentBaseModule = {
                 </table>
             </div>
             
-            <button onclick="${this.getModuleName(tab)}.save()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
+            <button onclick="${type === 'quotes' ? 'QuotesModule' : 'OrdersModule'}.save()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
                 저장하기
             </button>
             
             <datalist id="dl_part_doc"></datalist>
-            <datalist id="dl_prod_doc"></datalist>`;
+            <datalist id="dl_product_list"></datalist>
+        `;
     },
-    
+
     /**
-     * 품목 입력 영역 HTML
+     * 품목 입력 상단 HTML (추가 버튼)
      */
     getItemInputHtml() {
         return `
-            <div class="bg-white border p-3 rounded mb-4 shadow-sm">
-                <div class="flex flex-wrap gap-2 items-end">
-                    <div class="w-[22%] min-w-[150px]">
-                        <label class="text-xs text-slate-500 font-bold">품목명</label>
-                        <input id="iName" class="input-box" list="dl_prod_doc" onchange="DocumentBaseModule.fillProductInfo(this.value)" placeholder="품목 검색">
-                    </div>
-                    <div class="flex-1 min-w-[200px]">
-                        <label class="text-xs text-slate-500 font-bold">규격</label>
-                        <input id="iSpec" class="input-box">
-                    </div>
-                    <div class="w-14">
-                        <label class="text-xs text-slate-500">단위</label>
-                        <input id="iUnit" class="input-box" value="EA">
-                    </div>
-                    <div class="w-16">
-                        <label class="text-xs text-slate-500 font-bold">수량</label>
-                        <input type="number" id="iQty" class="input-box" value="1" onkeypress="if(event.key==='Enter') document.getElementById('iPrice').focus()">
-                    </div>
-                    <div class="w-28">
-                        <label class="text-xs text-slate-500 font-bold">단가</label>
-                        <input type="number" id="iPrice" class="input-box" onkeypress="if(event.key==='Enter') DocumentBaseModule.addItem()">
-                    </div>
-                    <button onclick="DocumentBaseModule.addItem()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded font-bold text-sm h-[38px] transition">
-                        <i class="fa-solid fa-plus"></i> 추가
-                    </button>
-                </div>
-            </div>`;
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-bold text-slate-700">품목 상세</h3>
+                <button onclick="DocumentBaseModule.addItem()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition">
+                    <i class="fa-solid fa-plus"></i> 행 추가
+                </button>
+            </div>
+        `;
     },
-    
+
     /**
-     * 거래처 정보 자동 채우기
-     */
-    fillPartnerInfo(partnerName) {
-        const partner = AppState.partnerList.find(p => p.name === partnerName);
-        if (partner) {
-            const pManager = document.getElementById('sPManager');
-            const contact = document.getElementById('sContact');
-            const addr = document.getElementById('sAddr');
-            const email = document.getElementById('sEmail');
-            
-            if (pManager) pManager.value = partner.manager_name || '';
-            if (contact) contact.value = partner.phone || '';
-            if (addr) addr.value = partner.address || '';
-            if (email) email.value = partner.email || '';
-        }
-    },
-    
-    /**
-     * 품목 정보 자동 채우기
-     */
-    fillProductInfo(productName) {
-        const product = AppState.productList.find(p => p.name === productName);
-        if (product) {
-            const spec = document.getElementById('iSpec');
-            if (spec) spec.value = product.spec || '';
-        }
-    },
-    
-    /**
-     * 품목 추가
-     */
-    addItem() {
-        const name = el('iName');
-        const spec = el('iSpec');
-        const unit = el('iUnit');
-        const qty = parseInt(el('iQty')) || 0;
-        const price = parseInt(el('iPrice')) || 0;
-        
-        if (!name) return alert("품목명은 필수입니다.");
-        
-        const supply = price * qty;
-        const vat = Math.floor(supply * 0.1);
-        const total = supply + vat;
-        
-        AppState.tempItems.push({
-            name, spec, unit, qty, price, supply, vat, total,
-            manufacturer: '', serial_no: ''
-        });
-        
-        // 입력 필드 초기화
-        document.getElementById('iName').value = '';
-        document.getElementById('iSpec').value = '';
-        document.getElementById('iQty').value = '1';
-        document.getElementById('iPrice').value = '';
-        document.getElementById('iName').focus();
-        
-        this.renderItemGrid();
-    },
-    
-    /**
-     * 품목 그리드 렌더링
+     * [핵심] 품목 리스트 렌더링 (Input 태그 생성 및 이벤트 연결)
      */
     renderItemGrid() {
         const tbody = document.getElementById('itemGrid');
         if (!tbody) return;
 
         tbody.innerHTML = AppState.tempItems.map((item, index) => {
-            // 계산 로직
-            item.supply = (item.quantity || 0) * (item.unit_price || 0);
+            // 안전한 계산을 위해 숫자 변환
+            const qty = Number(item.quantity) || 0;
+            const price = Number(item.unit_price) || 0;
+            
+            item.supply = qty * price;
             item.vat = Math.floor(item.supply * 0.1);
             item.total = item.supply + item.vat;
 
@@ -387,12 +271,12 @@ const DocumentBaseModule = {
                     </td>
                     <td class="p-2 border">
                         <input type="number" class="w-full text-right font-bold bg-orange-50 px-1 outline-none focus:bg-orange-100" 
-                               value="${item.quantity || 0}" 
+                               value="${qty}" 
                                onchange="DocumentBaseModule.updateItemValue(${index}, 'quantity', this.value)">
                     </td>
                     <td class="p-2 border">
                         <input type="number" class="w-full text-right font-bold bg-blue-50 px-1 outline-none focus:bg-blue-100" 
-                               value="${item.unit_price || 0}" 
+                               value="${price}" 
                                onchange="DocumentBaseModule.updateItemValue(${index}, 'unit_price', this.value)">
                     </td>
                     <td class="p-2 border text-right pr-2 text-slate-700" id="row-supply-${index}">
@@ -410,80 +294,190 @@ const DocumentBaseModule = {
 
         this.updateFooterTotals();
     },
-    
+
     /**
-     * 품목 제거
+     * [핵심] 값 변경 시 자동채우기 및 계산 로직
      */
-    removeItem(idx) {
-        AppState.tempItems.splice(idx, 1);
-        this.renderItemGrid();
-    },
-    
-    /**
-     * 공통 저장 데이터 생성
-     */
-    buildSaveData(tab) {
-        if (AppState.tempItems.length === 0) {
-            alert("품목을 추가해주세요.");
-            return null;
-        }
+    updateItemValue(index, field, value) {
+        const item = AppState.tempItems[index];
+        if (!item) return;
+
+        // 1. 품목명 변경 시 -> 자동 검색 및 채우기
+        if (field === 'name') {
+            item.name = value;
+            const product = AppState.productList.find(p => p.name === value);
+            if (product) {
+                item.spec = product.spec || '';
+                item.unit = product.unit || '';
+                item.unit_price = product.price || 0; // DB컬럼 확인 필요 (price 또는 unit_price)
+                
+                // 정보가 바뀌었으니 그리드 전체 다시 그리기
+                this.renderItemGrid(); 
+                return;
+            }
+        } 
         
+        // 2. 수량/단가 변경 시 -> 계산
+        else if (field === 'quantity' || field === 'unit_price') {
+            item[field] = Number(value);
+            
+            const qty = item.quantity || 0;
+            const price = item.unit_price || 0;
+            
+            item.supply = qty * price;
+            item.vat = Math.floor(item.supply * 0.1);
+            item.total = item.supply + item.vat;
+
+            // 해당 칸 숫자만 업데이트 (성능 최적화 및 포커스 유지)
+            const supplyCell = document.getElementById(`row-supply-${index}`);
+            if (supplyCell) supplyCell.innerText = item.supply.toLocaleString();
+            
+            this.updateFooterTotals();
+        } 
+        
+        // 3. 기타 텍스트 변경
+        else {
+            item[field] = value;
+        }
+    },
+
+    /**
+     * 하단 합계 업데이트
+     */
+    updateFooterTotals() {
         let tSupply = 0, tVat = 0, tTotal = 0;
         AppState.tempItems.forEach(i => {
-            tSupply += i.supply;
-            tVat += i.vat;
-            tTotal += i.total;
+            tSupply += (i.supply || 0);
+            tVat += (i.vat || 0);
+            tTotal += (i.total || 0);
         });
         
-        return {
-            items: AppState.tempItems,
-            total_supply: tSupply,
-            total_vat: tVat,
-            total_amount: tTotal,
-            date: el('sDate') || getToday(),
-            partner_name: el('sPartner'),
-            manager: el('sManager'),
-            note: el('sNote'),
-            email: el('sEmail'),
-            partner_manager: el('sPManager'),
-            phone: el('sContact'),
-            partner_address: el('sAddr') || ''
-        };
+        const elSupply = document.getElementById('tSupply');
+        const elVat = document.getElementById('tVat');
+        const elTotal = document.getElementById('tTotal');
+
+        if (elSupply) elSupply.innerText = tSupply.toLocaleString();
+        if (elVat) elVat.innerText = tVat.toLocaleString();
+        if (elTotal) elTotal.innerText = tTotal.toLocaleString();
     },
-    
+
     /**
-     * 폼에 데이터 채우기 (수정/복사용)
+     * 행 추가 (빈 행)
+     */
+    addItem() {
+        AppState.tempItems.push({
+            name: '', spec: '', unit: '', quantity: 0, unit_price: 0, supply: 0, vat: 0, total: 0
+        });
+        this.renderItemGrid();
+    },
+
+    /**
+     * 행 삭제
+     */
+    removeItem(index) {
+        AppState.tempItems.splice(index, 1);
+        this.renderItemGrid();
+    },
+
+    /**
+     * 거래처 정보 자동 입력
+     */
+    fillPartnerInfo(partnerName) {
+        const partner = AppState.partnerList.find(p => p.name === partnerName);
+        if (partner) {
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val || '';
+            };
+            
+            setVal('sPManager', partner.manager_name);
+            setVal('sPhone', partner.phone);
+            setVal('sEmail', partner.email);
+            setVal('sAddr', partner.address);
+        }
+    },
+
+    /**
+     * 폼 데이터 채우기 (수정 시)
      */
     fillFormData(row) {
         setTimeout(() => {
-            document.getElementById('sDate').value = row.date || '';
-            document.getElementById('sPartner').value = row.partner_name || '';
-            document.getElementById('sManager').value = row.manager || '';
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val || '';
+            };
+
+            setVal('docNum', row.quote_number || row.order_number);
+            setVal('sDate', row.date);
+            setVal('sPartner', row.partner_name);
+            setVal('sEndUser', row.end_user);
+            setVal('sManager', row.manager);
+            setVal('sNote', row.note);
             
-            const sPManager = document.getElementById('sPManager');
-            const sContact = document.getElementById('sContact');
-            const sAddr = document.getElementById('sAddr');
-            const sEmail = document.getElementById('sEmail');
-            const sNote = document.getElementById('sNote');
-            
-            if (sPManager) sPManager.value = row.partner_manager || '';
-            if (sContact) sContact.value = row.phone || '';
-            if (sAddr) sAddr.value = row.partner_address || '';
-            if (sEmail) sEmail.value = row.email || '';
-            if (sNote) sNote.value = row.note || '';
-            
-            // 품목 데이터 복사
-            AppState.tempItems = (row.items || []).map(item => {
-                if (!item.spec) {
-                    const prod = AppState.productList.find(p => p.name === item.name);
-                    if (prod) item.spec = prod.spec;
-                }
-                return { ...item };
-            });
-            
+            setVal('sPManager', row.partner_manager);
+            setVal('sPhone', row.phone);
+            setVal('sEmail', row.email);
+            setVal('sAddr', row.partner_address);
+
+            // 품목 데이터 복원
+            AppState.tempItems = (row.items || []).map(item => ({...item}));
             this.renderItemGrid();
+            
+            // 리스트 다시 연결
             fillDatalist('dl_part_doc', AppState.partnerList);
-            fillDatalist('dl_prod_doc', AppState.productList);
+            fillDatalist('dl_product_list', AppState.productList);
         }, 50);
+    },
+
+    /**
+     * 저장 데이터 생성
+     */
+    buildSaveData(type) {
+        if (AppState.tempItems.length === 0) {
+            alert("품목을 최소 하나 이상 추가해주세요.");
+            return null;
+        }
+
+        // 최종 재계산
+        let tSupply = 0, tVat = 0, tTotal = 0;
+        AppState.tempItems.forEach(i => {
+            tSupply += i.supply || 0;
+            tVat += i.vat || 0;
+            tTotal += i.total || 0;
+        });
+
+        const commonData = {
+            date: el('sDate') || getToday(),
+            partner_name: el('sPartner'),
+            end_user: el('sEndUser'),
+            manager: el('sManager'),
+            note: el('sNote'),
+            partner_manager: el('sPManager'),
+            phone: el('sPhone'),
+            email: el('sEmail'),
+            partner_address: el('sAddr'),
+            items: AppState.tempItems,
+            total_supply: tSupply,
+            total_vat: tVat,
+            total_amount: tTotal
+        };
+
+        // 문서 번호 생성 로직 (신규일 때만)
+        if (!AppState.currentEditId) {
+            const prefix = type === 'quotes' ? 'Q' : 'O';
+            const dateStr = commonData.date.slice(2).replace(/-/g, '');
+            // 임시 번호 (실제 로직은 서버나 별도 함수에서 카운트 조회 후 생성 필요)
+            // 여기서는 단순 날짜 기반으로 처리하거나, 각 모듈의 save()에서 처리하도록 비워둠
+            // 각 모듈의 save 함수에서 insert 직전에 번호 생성 로직이 있으므로 여기선 데이터만 리턴
+        }
+
+        // 타입별 필드 매핑
+        if (type === 'quotes') {
+            commonData.quote_number = el('docNum'); 
+        } else if (type === 'orders') {
+            commonData.order_number = el('docNum');
+        }
+
+        return commonData;
     }
 };
