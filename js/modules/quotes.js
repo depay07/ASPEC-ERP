@@ -1,4 +1,4 @@
-// js/modules/quotes.js - 견적 관리 모듈 (수정됨)
+// js/modules/quotes.js - 견적 관리 모듈 (최종 수정)
 
 const QuotesModule = {
     tableName: 'quotes',
@@ -12,7 +12,7 @@ const QuotesModule = {
     },
     
     /**
-     * 테이블 렌더링 (순서 강제 수정)
+     * 테이블 렌더링
      */
     renderTable(data) {
         const tbody = document.getElementById('listBody');
@@ -23,7 +23,6 @@ const QuotesModule = {
             return;
         }
         
-        // DocumentBaseModule.renderDocumentRow를 사용하지 않고 직접 매핑
         tbody.innerHTML = data.map(row => `
             <tr class="hover:bg-slate-50 border-b transition-colors">
                 <td class="p-3 text-center text-slate-500">
@@ -39,15 +38,15 @@ const QuotesModule = {
                 </td>
                 
                 <td class="p-3 text-right font-mono text-blue-600 font-semibold">
-                    ${(row.supply_price || 0).toLocaleString()}
+                    ${formatNumber(row.total_supply || 0)}
                 </td>
                 
                 <td class="p-3 text-right font-mono text-slate-500">
-                    ${(row.vat_amount || 0).toLocaleString()}
+                    ${formatNumber(row.total_vat || 0)}
                 </td>
                 
                 <td class="p-3 text-right font-bold text-slate-800 font-mono">
-                    ${(row.total_amount || 0).toLocaleString()}
+                    ${formatNumber(row.total_amount || 0)}
                 </td>
                 
                 <td class="p-3 text-slate-400 text-sm truncate max-w-[150px]">
@@ -56,16 +55,16 @@ const QuotesModule = {
                 
                 <td class="p-3 text-center">
                     <div class="flex items-center justify-center gap-2">
-                        <button onclick="DocumentBaseModule.print('${this.tableName}', ${row.id})" class="text-slate-400 hover:text-slate-600" title="인쇄">
+                        <button onclick="DocumentBaseModule.print('${this.tableName}', ${row.id})" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
                             <i class="fa-solid fa-print"></i>
                         </button>
-                        <button onclick="QuotesModule.duplicate(${row.id})" class="text-green-400 hover:text-green-600" title="복사">
-                            <i class="fa-solid fa-copy"></i>
+                        <button onclick="QuotesModule.duplicate(${row.id})" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
+                            <i class="fa-regular fa-copy"></i>
                         </button>
-                        <button onclick="QuotesModule.openEditModal(${row.id})" class="text-blue-400 hover:text-blue-600" title="수정">
-                            <i class="fa-regular fa-pen-to-square"></i>
+                        <button onclick="QuotesModule.openEditModal(${row.id})" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정">
+                            <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <button onclick="QuotesModule.delete(${row.id})" class="text-red-400 hover:text-red-600" title="삭제">
+                        <button onclick="QuotesModule.delete(${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
