@@ -84,45 +84,54 @@
         }
 
         async function handleLogin() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const msg = document.getElementById('errorMsg');
-            const captchaInput = document.getElementById('captchaInput').value;
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const msg = document.getElementById('errorMsg');
+    const captchaInput = document.getElementById('captchaInput').value.trim(); // 공백 제거
 
-            // 1. 캡차 검증 (실패 횟수가 2회 이상일 때만)
-            if (failCount >= 2) {
-                if (captchaInput.toUpperCase() !== currentCaptcha) {
-                    msg.innerText = "보안 문자가 일치하지 않습니다.";
-                    msg.classList.remove('hidden');
-                    generateCaptcha(); // 실패 시 캡차 새로고침
-                    return;
-                }
-            }
-
-            // 2. Supabase 로그인 시도
-            const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
-
-            if (error) {
-                console.error("에러 발생:", error.message);
-                failCount++; // 실패 횟수 증가
-                
-                msg.innerText = `로그인 실패: 아이디나 비번을 확인하세요. (실패 ${failCount}회)`;
-                msg.classList.remove('hidden');
-
-                // 2회 실패 시 캡차 영역 표시
-                if (failCount >= 2) {
-                    document.getElementById('captchaArea').classList.remove('hidden');
-                    generateCaptcha();
-                }
-            } else {
-                console.log("로그인 성공!");
-                failCount = 0; // 성공 시 카운트 초기화
-                window.location.href = 'erp.html';
-            }
+    // [체크 1] 캡차 검증 로직 (실패 횟수가 2회 이상일 때만 실행)
+    if (failCount >= 2) {
+        // 입력값이 없거나 생성된 캡차와 대문자 기준 일치하지 않을 때
+        if (!captchaInput || captchaInput.toUpperCase() !== currentCaptcha.toUpperCase()) {
+            msg.innerText = "⚠️ 보안 문자가 틀렸습니다. 다시 입력해주세요.";
+            msg.classList.remove('hidden');
+            generateCaptcha(); // 실패 시 캡차 즉시 갱신
+            return; // 여기서 함수 종료 (서버에 로그인 요청 자체를 안 함)
         }
+    }
+
+    // [체크 2] 실제 Supabase 로그인 시도
+    // 캡차를 통과했거나, 실패 횟수가 2회 미만인 경우에만 이 아래가 실행됩니다.
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password,
+    });
+
+    if (error) {
+        console.error("로그인 서버 에러:", error.message);
+        failCount++; 
+        
+        // 캡차는 맞았는데 로그인이 실패한 경우를 구분해서 표시
+        if (failCount > 2) {
+            msg.innerText = "✅ 보안 문자는 맞았으나, 이메일 또는 비번이 틀립니다.";
+        } else {
+            msg.innerText = "❌ 로그인 실패: 이메일이나 비번을 확인하세요.";
+        }
+        
+        msg.classList.remove('hidden');
+
+        // 2회 실패 시점부터 캡차 영역 표시
+        if (failCount >= 2) {
+            document.getElementById('captchaArea').classList.remove('hidden');
+            generateCaptcha();
+        }
+    } else {
+        console.log("로그인 성공!");
+        failCount = 0; 
+        window.location.href = 'erp.html';
+    }
+}
+
     </script>
 </body>
 </html>
