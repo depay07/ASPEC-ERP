@@ -1,4 +1,4 @@
-// js/modules/quotes.js - 견적 관리 모듈 (최종 수정)
+// js/modules/quotes.js - 견적 관리 모듈
 
 const QuotesModule = {
     tableName: 'quotes',
@@ -18,59 +18,13 @@ const QuotesModule = {
         const tbody = document.getElementById('listBody');
         
         if (!data || data.length === 0) {
-             if (typeof showEmptyTable === 'function') showEmptyTable(8);
-             else tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">데이터가 없습니다.</td></tr>';
+            showEmptyTable(8);
             return;
         }
         
-        tbody.innerHTML = data.map(row => `
-            <tr class="hover:bg-slate-50 border-b transition-colors">
-                <td class="p-3 text-center text-slate-500">
-                    ${row.date || (row.created_at ? row.created_at.substring(0, 10) : '-')}
-                </td>
-                
-                <td class="p-3 font-bold text-slate-700">
-                    ${row.partner_name || '-'}
-                </td>
-                
-                <td class="p-3 text-center text-slate-600">
-                    ${row.manager_name || '-'}
-                </td>
-                
-                <td class="p-3 text-right font-mono text-blue-600 font-semibold">
-                    ${formatNumber(row.total_supply || 0)}
-                </td>
-                
-                <td class="p-3 text-right font-mono text-slate-500">
-                    ${formatNumber(row.total_vat || 0)}
-                </td>
-                
-                <td class="p-3 text-right font-bold text-slate-800 font-mono">
-                    ${formatNumber(row.total_amount || 0)}
-                </td>
-                
-                <td class="p-3 text-slate-400 text-sm truncate max-w-[150px]">
-                    ${row.remarks || ''}
-                </td>
-                
-                <td class="p-3 text-center">
-                    <div class="flex items-center justify-center gap-2">
-                        <button onclick="DocumentBaseModule.print('${this.tableName}', ${row.id})" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
-                            <i class="fa-solid fa-print"></i>
-                        </button>
-                        <button onclick="QuotesModule.duplicate(${row.id})" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
-                            <i class="fa-regular fa-copy"></i>
-                        </button>
-                        <button onclick="QuotesModule.openEditModal(${row.id})" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="QuotesModule.delete(${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = data.map(row => 
+            DocumentBaseModule.renderDocumentRow(row, 'quotes')
+        ).join('');
     },
     
     /**
