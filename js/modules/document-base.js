@@ -25,9 +25,6 @@ const DocumentBaseModule = {
             query = query.ilike('partner_name', `%${partnerFilter}%`);
         }
 
-        // 품목명 필터 (변수명 통일: search_sItem)
-        const itemFilter = el('search_sItem');
-
         const { data, error } = await query;
         
         if (error) {
@@ -35,8 +32,10 @@ const DocumentBaseModule = {
             return null;
         }
 
-        // 클라이언트 사이드 품목명 필터링
+        // 품목명 필터 (클라이언트 사이드)
+        const itemFilter = el('search_sItem');
         let resultData = data || [];
+        
         if (itemFilter) {
             const lowerItem = itemFilter.toLowerCase();
             resultData = resultData.filter(r => 
@@ -48,54 +47,62 @@ const DocumentBaseModule = {
     },
 
     /**
-     * 공통 테이블 행(Row) 렌더링 (리스트 화면용)
+     * [수정됨] 문서별 테이블 행(Row) 렌더링 - 견적/주문 디자인 원상복구
      */
     renderDocumentRow(row, type) {
         const dataId = storeRowData(row);
+        
+        // 품목 요약 텍스트
         const itemsSummary = row.items && row.items.length > 0 
             ? `${row.items[0].name} 외 ${row.items.length - 1}건` 
             : '-';
-        
-        // 타입별 설정 (견적/주문/발주)
-        let typeName = '';
+            
+        // 금액 콤마
+        const totalAmt = row.total_amount ? Number(row.total_amount).toLocaleString() : '0';
+        const dateStr = row.date || '-'; // 날짜가 없으면 - 표시
+
+        // 모듈명 및 번호 필드 설정
         let moduleName = '';
-        let numberField = ''; // 문서번호 필드명
+        let numberVal = '';
         
         if (type === 'quotes') {
-            typeName = '견적';
             moduleName = 'QuotesModule';
-            numberField = row.quote_number;
+            numberVal = row.quote_number;
         } else if (type === 'orders') {
-            typeName = '주문';
             moduleName = 'OrdersModule';
-            numberField = row.order_number;
-        } else {
-            typeName = '문서';
-            // 발주는 별도 렌더링을 쓰므로 여기로 안 올 수 있음
+            numberVal = row.order_number;
         }
 
+        // 견적 및 주문 리스트 HTML (기존 디자인 유지)
         return `
             <tr class="hover:bg-slate-50 border-b transition text-sm">
-                <td class="font-bold text-blue-600 text-center">${numberField}</td>
-                <td class="pl-2">${row.partner_name}</td>
-                <td class="text-center text-xs">${row.end_user || '-'}</td>
-                <td class="pl-2 text-xs">${itemsSummary}</td>
-                <td class="font-bold text-right pr-2">${formatNumber(row.total_amount)}</td>
-                <td class="text-center">${row.date}</td>
-                <td class="text-center text-xs">${row.manager}</td>
+                <td class="font-bold text-blue-600 text-center p-3">${numberVal}</td>
+                
+                <td class="pl-2 font-bold text-slate-700">${row.partner_name || '-'}</td>
+                
+                <td class="text-center text-xs text-slate-500">${row.end_user || '-'}</td>
+                
+                <td class="pl-2 text-xs text-slate-600">${itemsSummary}</td>
+                
+                <td class="font-bold text-right pr-4 text-blue-900">${totalAmt}</td>
+                
+                <td class="text-center">${dateStr}</td>
+                
+                <td class="text-center text-xs">${row.manager || '-'}</td>
+                
                 <td>
-                    <div class="flex justify-center items-center gap-3">
-                        <button onclick="printDocument('${type}', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
-                            <i class="fa-solid fa-print fa-lg"></i>
+                    <div class="flex justify-center items-center gap-2">
+                        <button onclick="printDocument('${type}', '${dataId}')" class="text-slate-500 hover:text-black p-1 rounded hover:bg-slate-200 transition" title="인쇄">
+                            <i class="fa-solid fa-print"></i>
                         </button>
-                        <button onclick="${moduleName}.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
-                            <i class="fa-regular fa-copy fa-lg"></i>
+                        <button onclick="${moduleName}.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-1 rounded hover:bg-green-50 transition" title="복사">
+                            <i class="fa-regular fa-copy"></i>
                         </button>
-                        <button onclick="${moduleName}.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정">
-                            <i class="fa-solid fa-pen-to-square fa-lg"></i>
+                        <button onclick="${moduleName}.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition" title="수정">
+                            <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <button onclick="${moduleName}.delete(${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제">
-                            <i class="fa-solid fa-trash-can fa-lg"></i>
+                        <button onclick="${moduleName}.delete(${row.id})" class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition" title="삭제">
+                            <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
                 </td>
@@ -103,22 +110,11 @@ const DocumentBaseModule = {
     },
 
     /**
-     * 공통 입력 폼 HTML 생성 (모달 내부용)
+     * 공통 입력 폼 HTML 생성
      */
     getDocumentFormHtml(type, extraButton = '') {
-        // 타입별 라벨 설정
-        let numberLabel = '문서번호';
-        let dateLabel = '일자';
-        let partnerLabel = '거래처';
-        let partnerId = 'dl_product_list'; // 기본값
-
-        if (type === 'quotes') {
-            numberLabel = '견적번호';
-            dateLabel = '견적일자';
-        } else if (type === 'orders') {
-            numberLabel = '주문번호';
-            dateLabel = '주문일자';
-        }
+        let numberLabel = type === 'quotes' ? '견적번호' : '주문번호';
+        let dateLabel = type === 'quotes' ? '견적일자' : '주문일자';
 
         return `
             <div class="bg-slate-50 p-4 rounded mb-4 border text-left">
@@ -132,9 +128,9 @@ const DocumentBaseModule = {
                         <input type="date" id="sDate" class="input-box">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500 font-bold">${partnerLabel} (필수)</label>
+                        <label class="text-xs text-slate-500 font-bold">거래처 (필수)</label>
                         <div class="flex">
-                            <input id="sPartner" class="input-box" list="dl_part_doc" onchange="DocumentBaseModule.fillPartnerInfo(this.value)" placeholder="업체 선택/입력">
+                            <input id="sPartner" class="input-box" list="dl_product_list" onchange="DocumentBaseModule.fillPartnerInfo(this.value)" placeholder="업체 선택/입력">
                             ${extraButton}
                         </div>
                     </div>
@@ -220,7 +216,7 @@ const DocumentBaseModule = {
     },
 
     /**
-     * 품목 입력 상단 HTML (추가 버튼)
+     * [수정됨] 품목 입력 상단 버튼명 '행 추가' -> '품목 추가'로 복구
      */
     getItemInputHtml() {
         return `
@@ -234,14 +230,13 @@ const DocumentBaseModule = {
     },
 
     /**
-     * [핵심] 품목 리스트 렌더링 (Input 태그 생성 및 이벤트 연결)
+     * 품목 리스트 렌더링 (Input 기능 유지)
      */
     renderItemGrid() {
         const tbody = document.getElementById('itemGrid');
         if (!tbody) return;
 
         tbody.innerHTML = AppState.tempItems.map((item, index) => {
-            // 안전한 계산을 위해 숫자 변환
             const qty = Number(item.quantity) || 0;
             const price = Number(item.unit_price) || 0;
             
@@ -296,47 +291,33 @@ const DocumentBaseModule = {
     },
 
     /**
-     * [핵심] 값 변경 시 자동채우기 및 계산 로직
+     * 값 변경 시 자동채우기 및 계산 로직
      */
     updateItemValue(index, field, value) {
         const item = AppState.tempItems[index];
         if (!item) return;
 
-        // 1. 품목명 변경 시 -> 자동 검색 및 채우기
         if (field === 'name') {
             item.name = value;
             const product = AppState.productList.find(p => p.name === value);
             if (product) {
                 item.spec = product.spec || '';
                 item.unit = product.unit || '';
-                item.unit_price = product.price || 0; // DB컬럼 확인 필요 (price 또는 unit_price)
-                
-                // 정보가 바뀌었으니 그리드 전체 다시 그리기
+                item.unit_price = product.price || 0;
                 this.renderItemGrid(); 
                 return;
             }
-        } 
-        
-        // 2. 수량/단가 변경 시 -> 계산
-        else if (field === 'quantity' || field === 'unit_price') {
+        } else if (field === 'quantity' || field === 'unit_price') {
             item[field] = Number(value);
-            
-            const qty = item.quantity || 0;
-            const price = item.unit_price || 0;
-            
-            item.supply = qty * price;
+            item.supply = (item.quantity || 0) * (item.unit_price || 0);
             item.vat = Math.floor(item.supply * 0.1);
             item.total = item.supply + item.vat;
 
-            // 해당 칸 숫자만 업데이트 (성능 최적화 및 포커스 유지)
             const supplyCell = document.getElementById(`row-supply-${index}`);
             if (supplyCell) supplyCell.innerText = item.supply.toLocaleString();
             
             this.updateFooterTotals();
-        } 
-        
-        // 3. 기타 텍스트 변경
-        else {
+        } else {
             item[field] = value;
         }
     },
@@ -362,7 +343,7 @@ const DocumentBaseModule = {
     },
 
     /**
-     * 행 추가 (빈 행)
+     * 품목 추가
      */
     addItem() {
         AppState.tempItems.push({
@@ -372,7 +353,7 @@ const DocumentBaseModule = {
     },
 
     /**
-     * 행 삭제
+     * 품목 삭제
      */
     removeItem(index) {
         AppState.tempItems.splice(index, 1);
@@ -389,7 +370,6 @@ const DocumentBaseModule = {
                 const el = document.getElementById(id);
                 if (el) el.value = val || '';
             };
-            
             setVal('sPManager', partner.manager_name);
             setVal('sPhone', partner.phone);
             setVal('sEmail', partner.email);
@@ -398,7 +378,7 @@ const DocumentBaseModule = {
     },
 
     /**
-     * 폼 데이터 채우기 (수정 시)
+     * 폼 데이터 채우기 (수정 모드)
      */
     fillFormData(row) {
         setTimeout(() => {
@@ -419,11 +399,9 @@ const DocumentBaseModule = {
             setVal('sEmail', row.email);
             setVal('sAddr', row.partner_address);
 
-            // 품목 데이터 복원
             AppState.tempItems = (row.items || []).map(item => ({...item}));
             this.renderItemGrid();
             
-            // 리스트 다시 연결
             fillDatalist('dl_part_doc', AppState.partnerList);
             fillDatalist('dl_product_list', AppState.productList);
         }, 50);
@@ -438,7 +416,6 @@ const DocumentBaseModule = {
             return null;
         }
 
-        // 최종 재계산
         let tSupply = 0, tVat = 0, tTotal = 0;
         AppState.tempItems.forEach(i => {
             tSupply += i.supply || 0;
@@ -462,16 +439,6 @@ const DocumentBaseModule = {
             total_amount: tTotal
         };
 
-        // 문서 번호 생성 로직 (신규일 때만)
-        if (!AppState.currentEditId) {
-            const prefix = type === 'quotes' ? 'Q' : 'O';
-            const dateStr = commonData.date.slice(2).replace(/-/g, '');
-            // 임시 번호 (실제 로직은 서버나 별도 함수에서 카운트 조회 후 생성 필요)
-            // 여기서는 단순 날짜 기반으로 처리하거나, 각 모듈의 save()에서 처리하도록 비워둠
-            // 각 모듈의 save 함수에서 insert 직전에 번호 생성 로직이 있으므로 여기선 데이터만 리턴
-        }
-
-        // 타입별 필드 매핑
         if (type === 'quotes') {
             commonData.quote_number = el('docNum'); 
         } else if (type === 'orders') {
