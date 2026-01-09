@@ -39,7 +39,7 @@ const QuotesModule = {
         body.innerHTML = DocumentBaseModule.getDocumentFormHtml('quotes');
         
         fillDatalist('dl_part_doc', AppState.partnerList);
-        fillDatalist('dl_prod_doc', AppState.productList);
+        fillDatalist('dl_product_list', AppState.productList);
         DocumentBaseModule.renderItemGrid();
     },
     
