@@ -201,7 +201,7 @@ const PurchaseOrdersModule = {
                         <input type="date" id="poDate" class="input-box" value="${date}">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500 font-bold">발주업체 (구매처처)</label>
+                        <label class="text-xs text-slate-500 font-bold">발주업체 (구매처)</label>
                         <input id="poPartner" class="input-box" list="dl_part_po" onchange="PurchaseOrdersModule.fillPartnerInfo(this.value)" placeholder="업체 선택 또는 입력">
                     </div>
                 </div>
@@ -223,7 +223,7 @@ const PurchaseOrdersModule = {
                     </div>
                 </div>
                 <div class="mb-2">
-                    <label class="text-xs text-slate-500 font-bold">발주업 주소</label>
+                    <label class="text-xs text-slate-500 font-bold">발주업체 주소</label>
                     <input id="poAddr" class="input-box">
                 </div>
                 <div class="grid grid-cols-2 gap-3 mb-2">
