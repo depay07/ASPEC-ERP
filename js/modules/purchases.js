@@ -316,7 +316,7 @@ const PurchasesModule = {
     /**
      * 저장 (다중 입고)
      */
-    async save() {
+   async save() {
         if (AppState.tempItems.length === 0) {
             return alert("입고할 품목을 추가해주세요.");
         }
@@ -332,6 +332,7 @@ const PurchasesModule = {
         let successCount = 0;
         
         for (const item of AppState.tempItems) {
+            // 1. 구매 이력 저장 (기존 로직 유지)
             const data = {
                 date: dateVal,
                 partner_name: partnerVal,
@@ -351,9 +352,12 @@ const PurchasesModule = {
             if (!error) {
                 successCount++;
                 
-                // 재고 업데이트
+                // 2. 재고(Products) 테이블 업데이트 로직 개선
+                // 기존에 등록된 품목인지 확인
                 const prod = AppState.productList.find(p => p.name === item.name);
+                
                 if (prod) {
+                    // CASE A: 이미 존재하는 품목이면 -> 수량(Stock) 추가
                     await supabaseClient.from('products').update({
                         stock: (prod.stock || 0) + item.qty,
                         last_vendor: partnerVal,
@@ -361,6 +365,19 @@ const PurchasesModule = {
                         last_serial_no: item.serial_no,
                         manufacturer: item.manufacturer || prod.manufacturer
                     }).eq('id', prod.id);
+                } else {
+                    // CASE B: 없는 품목이면 -> 신규 품목으로 등록 (이 부분이 누락되어 있었음)
+                    // 주의: products 테이블의 필수 컬럼(예: category 등)이 있다면 기본값을 넣어줘야 에러가 안 납니다.
+                    await supabaseClient.from('products').insert({
+                        name: item.name,
+                        manufacturer: item.manufacturer,
+                        stock: item.qty, // 초기 재고
+                        category: '기타', // 카테고리 컬럼이 필수라면 기본값 설정 필요
+                        purchase_price: item.unit_price, // 매입가 참조용
+                        location: '입고대기', // 기본 위치
+                        last_vendor: partnerVal,
+                        last_serial_no: item.serial_no
+                    });
                 }
             }
         }
@@ -368,7 +385,7 @@ const PurchasesModule = {
         if (successCount > 0) {
             alert(`${successCount}건의 품목이 입고 처리되었습니다.`);
             closeModal();
-            await fetchMasterData();
+            await fetchMasterData(); // 마스터 데이터(재고 목록) 갱신
             this.search();
         } else {
             alert("저장에 실패했습니다.");
