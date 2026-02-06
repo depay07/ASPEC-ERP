@@ -2,6 +2,9 @@
 
 const DocumentBaseModule = {
     
+    // 드래그 앤 드롭을 위한 임시 변수
+    dragSrcIndex: null,
+
     /**
      * 공통 검색 로직
      */
@@ -64,33 +67,55 @@ const DocumentBaseModule = {
                 <td>${actions}</td>
             </tr>`;
     },
+
+    /**
+     * [수정됨] 그리드 내 입력값 변경 처리 (자동완성 기능 추가)
+     */
     updateItemValue(idx, field, value) {
         const item = AppState.tempItems[idx];
         if (!item) return;
 
-        // 수량(qty)과 단가(price)는 숫자로 변환하여 저장
+        // 1. 값 업데이트
         if (field === 'qty' || field === 'price') {
             item[field] = Number(value);
-            
-            // 금액 재계산
-            item.supply = (item.price || 0) * (item.qty || 0);
-            item.vat = Math.floor(item.supply * 0.1);
-            item.total = item.supply + item.vat;
-
-            // 해당 행의 공급가액(텍스트)만 업데이트 (전체 렌더링 방지 -> 포커스 유지 위함)
-            const supplyCell = document.getElementById(`row-supply-${idx}`);
-            if (supplyCell) supplyCell.innerText = formatNumber(item.supply);
-
-            // 전체 합계 재계산
-            this.recalculateTotals();
         } else {
-            // 이름, 규격 등 텍스트 데이터 업데이트
             item[field] = value;
+            
+            // [★ 추가 기능] 품목명(name) 입력 시 자동완성 로직
+            if (field === 'name') {
+                const product = AppState.productList.find(p => p.name === value);
+                if (product) {
+                    item.spec = product.spec || '';
+                    item.unit = product.unit || 'EA';
+                    
+                    // 단가도 있다면 자동 입력 (단, 기존에 입력된 값이 0이거나 없을 때만 덮어쓰기 권장)
+                    // 여기서는 무조건 덮어쓰도록 설정 (필요시 조건 추가)
+                    // product 테이블에 price 컬럼이 있다고 가정합니다. 없다면 0으로 처리.
+                    /* 예: item.price = product.price || 0; */ 
+                    
+                    // 만약 products 테이블에 단가가 없으면 기존 로직 유지
+                }
+                // 데이터가 변경되었으므로 화면(DOM)을 강제로 갱신하여 규격 등을 보여줌
+                this.renderItemGrid();
+                return; // 렌더링을 새로 했으니 이후 로직은 스킵
+            }
         }
+
+        // 2. 금액 재계산 (수량, 단가가 변경되었거나, 위에서 렌더링되지 않은 경우)
+        item.supply = (item.price || 0) * (item.qty || 0);
+        item.vat = Math.floor(item.supply * 0.1);
+        item.total = item.supply + item.vat;
+
+        // 3. 화면 부분 업데이트 (성능 및 포커스 유지)
+        const supplyCell = document.getElementById(`row-supply-${idx}`);
+        if (supplyCell) supplyCell.innerText = formatNumber(item.supply);
+
+        // 4. 전체 합계 재계산
+        this.recalculateTotals();
     },
 
     /**
-     * [신규] 전체 합계 재계산 로직
+     * 전체 합계 재계산 로직
      */
     recalculateTotals() {
         let tSupply = 0, tVat = 0, tTotal = 0;
@@ -103,7 +128,7 @@ const DocumentBaseModule = {
     },
 
     /**
-     * [신규] 하단 합계 HTML 업데이트
+     * 하단 합계 HTML 업데이트
      */
     updateFooterTotals(supply, vat, total) {
         const elSupply = document.getElementById('tSupply');
@@ -114,6 +139,7 @@ const DocumentBaseModule = {
         if (elVat) elVat.innerText = formatNumber(vat);
         if (elTotal) elTotal.innerText = formatNumber(total);
     },
+
     /**
      * 모듈명 가져오기
      */
@@ -275,13 +301,20 @@ const DocumentBaseModule = {
     },
     
     /**
-     * 품목 정보 자동 채우기
+     * 품목 정보 자동 채우기 (상단 입력칸용)
      */
     fillProductInfo(productName) {
         const product = AppState.productList.find(p => p.name === productName);
         if (product) {
             const spec = document.getElementById('iSpec');
+            const unit = document.getElementById('iUnit');
             if (spec) spec.value = product.spec || '';
+            if (unit && product.unit) unit.value = product.unit;
+            // 단가도 있다면
+            /*
+            const price = document.getElementById('iPrice');
+            if (price && product.price) price.value = product.price;
+            */
         }
     },
     
@@ -317,7 +350,7 @@ const DocumentBaseModule = {
     },
     
     /**
-     * 품목 그리드 렌더링
+     * [수정됨] 품목 그리드 렌더링 (드래그 기능 추가)
      */
     renderItemGrid() {
         const tbody = document.getElementById('itemGrid');
@@ -336,14 +369,21 @@ const DocumentBaseModule = {
             tVat += item.vat;
             tTotal += item.total;
             
+            // [★ 수정] tr에 draggable 및 이벤트 핸들러 추가
             return `
-                <tr class="hover:bg-slate-50 border-b group">
-                    <td class="p-2 border text-slate-400 text-center">
-                        ${idx + 1}
+                <tr class="hover:bg-slate-50 border-b group cursor-move" 
+                    draggable="true"
+                    ondragstart="DocumentBaseModule.dragStart(event, ${idx})"
+                    ondragover="DocumentBaseModule.dragOver(event)"
+                    ondrop="DocumentBaseModule.drop(event, ${idx})">
+                    
+                    <td class="p-2 border text-slate-400 text-center select-none" title="드래그하여 순서 변경 가능">
+                        <i class="fa-solid fa-bars text-slate-300 mr-1"></i> ${idx + 1}
                     </td>
                     <td class="p-2 border">
                         <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
                                value="${item.name || ''}" 
+                               list="dl_prod_doc"
                                onchange="DocumentBaseModule.updateItemValue(${idx}, 'name', this.value)">
                     </td>
                     <td class="p-2 border">
@@ -380,6 +420,37 @@ const DocumentBaseModule = {
         // 하단 합계 업데이트
         this.updateFooterTotals(tSupply, tVat, tTotal);
     },
+
+    // ========== [★ 추가] 드래그 앤 드롭 핸들러 시작 ==========
+    dragStart(e, idx) {
+        this.dragSrcIndex = idx;
+        e.dataTransfer.effectAllowed = 'move';
+        e.currentTarget.classList.add('bg-blue-50'); // 드래그 시작 시 효과
+    },
+
+    dragOver(e) {
+        e.preventDefault(); // 드롭 허용을 위해 필수
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    },
+
+    drop(e, dropIndex) {
+        e.stopPropagation();
+        
+        if (this.dragSrcIndex !== null && this.dragSrcIndex !== dropIndex) {
+            // 배열 순서 변경 로직
+            const items = AppState.tempItems;
+            const movedItem = items.splice(this.dragSrcIndex, 1)[0]; // 잘라내기
+            items.splice(dropIndex, 0, movedItem); // 끼워넣기
+            
+            // 변경된 순서로 다시 렌더링
+            this.renderItemGrid();
+        }
+        
+        this.dragSrcIndex = null;
+        return false;
+    },
+    // ========== 드래그 앤 드롭 핸들러 끝 ==========
     
     /**
      * 품목 제거
