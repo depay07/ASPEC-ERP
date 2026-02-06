@@ -184,7 +184,7 @@ const ProductsModule = {
         
         alert("저장되었습니다.");
         closeModal();
-        await fetchMasterData();
+        await fetchMasterData(true);
         this.search();
     },
     
