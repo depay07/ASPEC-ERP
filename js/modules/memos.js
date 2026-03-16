@@ -151,7 +151,7 @@ const MemosModule = {
             </div>`;
     },
     
-    // 7. 저장 (다중 파일 업로드 로직)
+    // 7. 저장 (에러 해결: 배열 데이터 전송 방식 수정)
     async save() {
         const content = document.getElementById('memoContent').value;
         const color = document.getElementById('memoColor').value;
@@ -166,7 +166,7 @@ const MemosModule = {
         let imageUrls = [];
 
         try {
-            // 여러 파일 업로드 처리
+            // 1. 이미지 업로드 처리
             if (fileInput.files.length > 0) {
                 for (const file of fileInput.files) {
                     const fileExt = file.name.split('.').pop();
@@ -184,15 +184,25 @@ const MemosModule = {
                 }
             }
 
-            const data = { content, color };
-            // 새 이미지가 있을 때만 배열 업데이트
-            if (imageUrls.length > 0) data.image_urls = imageUrls;
+            // 2. DB에 저장할 데이터 구성 (image_urls를 항상 배열로 전달)
+            const submitData = { 
+                content: content, 
+                color: color,
+                image_urls: imageUrls.length > 0 ? imageUrls : [] 
+            };
             
             let result;
             if (typeof AppState !== 'undefined' && AppState.currentEditId) {
-                result = await supabaseClient.from(this.tableName).update(data).eq('id', AppState.currentEditId);
+                // 수정 시: update는 단일 객체 전달
+                result = await supabaseClient
+                    .from(this.tableName)
+                    .update(submitData)
+                    .eq('id', AppState.currentEditId);
             } else {
-                result = await supabaseClient.from(this.tableName).insert(data);
+                // 등록 시: insert는 배열 [] 안에 객체 전달 (말폼 에러 방지용)
+                result = await supabaseClient
+                    .from(this.tableName)
+                    .insert([submitData]); 
             }
             
             if (result.error) throw result.error;
@@ -200,21 +210,21 @@ const MemosModule = {
             closeModal();
             this.search();
         } catch (err) {
-            alert("저장 중 오류 발생: " + err.message);
+            console.error("저장 에러:", err);
+            alert("저장 실패: " + err.message);
         } finally {
             btn.disabled = false;
             btn.innerText = "메모 저장";
         }
     },
     
-    // 8. 삭제 (Storage 파일들도 함께 삭제)
+    // 8. 삭제 (Storage 파일 일괄 삭제)
     async delete(id, imageUrls) {
         if (!confirm("삭제하시겠습니까?")) return;
         
         const { error } = await supabaseClient.from(this.tableName).delete().eq('id', id);
         if (error) return alert("삭제 실패");
 
-        // 연결된 이미지 파일들이 있다면 Storage에서도 삭제
         if (imageUrls && imageUrls.length > 0) {
             const paths = imageUrls.map(url => `uploads/${url.split('/').pop()}`);
             await supabaseClient.storage.from(this.bucketName).remove(paths);
