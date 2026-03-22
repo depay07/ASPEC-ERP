@@ -55,7 +55,7 @@ const ProjectsModule = {
                     <td>
                         <div class="flex justify-center gap-2">
                             <button onclick="ProjectsModule.openEditModal('${dataId}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded" title="수정"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="ProjectsModule.delete(${rowId})" class="text-red-400 hover:bg-red-50 p-1.5 rounded" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="ProjectsModule.delete(${row.Id})" class="text-red-400 hover:bg-red-50 p-1.5 rounded" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </td>
                 </tr>`;
