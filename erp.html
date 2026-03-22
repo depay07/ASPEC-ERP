@@ -63,6 +63,10 @@
                     <i class="fa-solid fa-chart-pie w-5"></i> 원가 관리
                 </button>
 
+                <button onclick="switchTab('projects')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+                <i class="fa-solid fa-list-check w-5"></i> 프로젝트 관리
+                </button>
+
                 <div class="px-6 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">자재/발주</div>
                 <button onclick="switchTab('purchase_orders')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white flex items-center gap-3">
                     <i class="fa-solid fa-file-import w-5"></i> 발주 관리 (PO)
@@ -307,7 +311,7 @@
     <script src="js/modules/print.js"></script>
     <script src="js/modules/bom.js"></script>
     <script src="js/router.js?v=20251231"></script>
-
+    <script src="js/modules/projects.js"></script>
 
     <!-- 앱 초기화 -->
     <script>
