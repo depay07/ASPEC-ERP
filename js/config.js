@@ -60,6 +60,7 @@ var TAB_TITLES = {
     collections: '수금 관리',
     bookkeeping: '기장 관리 (지출/비용)',
     cost_management: '원가 관리 (마진 분석)',
+    projects: '프로젝트 관리', 
     meeting_logs: '미팅 일지 (영업 활동)',
     memos: '메모장'
 };
