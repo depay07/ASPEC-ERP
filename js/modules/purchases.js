@@ -127,6 +127,119 @@ const PurchasesModule = {
             fillDatalist('dl_prod_pur', AppState.productList);
         }, 50);
     },
+
+    /**
+     * 발주서 불러오기 모달 (오버레이) 표시
+     */
+    async showPOSelector() {
+        // 최근 발주 내역 20건 조회
+        const { data, error } = await supabaseClient
+            .from('purchase_orders')
+            .select('id, po_number, date, partner_name, items, total_amount')
+            .order('date', { ascending: false })
+            .limit(20);
+
+        if (error) {
+            alert("발주 내역을 불러오는데 실패했습니다: " + error.message);
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            alert("불러올 수 있는 발주 내역이 없습니다.");
+            return;
+        }
+
+        // 오버레이 UI 생성
+        const overlayHtml = `
+            <div id="poSelectorOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+                <div class="bg-white rounded-lg shadow-xl w-[700px] max-h-[80vh] flex flex-col">
+                    <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-lg">
+                        <h3 class="font-bold text-lg text-slate-800">발주서 불러오기</h3>
+                        <button onclick="document.getElementById('poSelectorOverlay').remove()" class="text-gray-400 hover:text-red-500 transition">
+                            <i class="fa-solid fa-xmark fa-xl"></i>
+                        </button>
+                    </div>
+                    <div class="p-4 overflow-y-auto flex-1">
+                        <table class="w-full text-sm border-collapse text-center">
+                            <thead class="bg-slate-100 border-y sticky top-0">
+                                <tr>
+                                    <th class="p-2">발주일자</th>
+                                    <th class="p-2">PO 번호</th>
+                                    <th class="p-2">매입처</th>
+                                    <th class="p-2">품목수</th>
+                                    <th class="p-2">발주총액</th>
+                                    <th class="p-2">선택</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.map(po => `
+                                    <tr class="border-b hover:bg-slate-50 transition">
+                                        <td class="p-2">${po.date}</td>
+                                        <td class="p-2 text-blue-600 font-bold">${po.po_number}</td>
+                                        <td class="p-2">${po.partner_name}</td>
+                                        <td class="p-2">${po.items ? po.items.length : 0}건</td>
+                                        <td class="p-2 text-right">${formatNumber(po.total_amount)}원</td>
+                                        <td class="p-2">
+                                            <button onclick="PurchasesModule.loadPOData(${po.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 font-bold shadow-sm">
+                                                적용
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>`;
+        
+        document.body.insertAdjacentHTML('beforeend', overlayHtml);
+    },
+
+    /**
+     * 선택한 발주 데이터를 입고 폼에 적용
+     */
+    async loadPOData(poId) {
+        // 상세 데이터 조회
+        const { data: po, error } = await supabaseClient
+            .from('purchase_orders')
+            .select('*')
+            .eq('id', poId)
+            .single();
+
+        if (error || !po) {
+            alert("발주 상세 데이터를 불러오는데 실패했습니다.");
+            return;
+        }
+
+        // 모달창 닫기
+        const overlay = document.getElementById('poSelectorOverlay');
+        if (overlay) overlay.remove();
+
+        // 매입처 및 비고 세팅
+        document.getElementById('purPartner').value = po.partner_name || '';
+        document.getElementById('purNote').value = po.po_number ? `[${po.po_number}] 발주 연동` : '';
+
+        // 품목 데이터를 입고 배열(AppState.tempItems) 형식에 맞게 변환하여 세팅
+        if (po.items && Array.isArray(po.items)) {
+            AppState.tempItems = po.items.map(item => {
+                // 발주 데이터의 key와 입고 데이터의 key 매핑
+                const qty = Number(item.qty) || 1;
+                const price = Number(item.price) || Number(item.unit_price) || 0;
+                
+                return {
+                    name: item.name || '',
+                    manufacturer: item.manufacturer || '', 
+                    serial_no: '', // 입고 시 검수용으로 비워둠
+                    qty: qty,
+                    unit_price: price,
+                    total_amount: qty * price
+                };
+            });
+            
+            // 그리드 화면 재렌더링
+            this.renderItemGrid();
+        }
+    },
     
     /**
      * 폼 HTML (다중 품목 입고)
@@ -140,7 +253,12 @@ const PurchasesModule = {
                         <input type="date" id="purDate" class="input-box">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500">매입처 (공통)</label>
+                        <div class="flex justify-between items-end mb-1">
+                            <label class="text-xs text-slate-500">매입처 (공통)</label>
+                            <button type="button" onclick="PurchasesModule.showPOSelector()" class="bg-orange-500 text-white px-2 py-0.5 rounded text-xs font-bold hover:bg-orange-600 transition shadow-sm">
+                                <i class="fa-solid fa-cloud-arrow-down"></i> 발주서 불러오기
+                            </button>
+                        </div>
                         <input id="purPartner" class="input-box" list="dl_part_pur">
                     </div>
                 </div>
@@ -366,8 +484,7 @@ const PurchasesModule = {
                         manufacturer: item.manufacturer || prod.manufacturer
                     }).eq('id', prod.id);
                 } else {
-                    // CASE B: 없는 품목이면 -> 신규 품목으로 등록 (이 부분이 누락되어 있었음)
-                    // 주의: products 테이블의 필수 컬럼(예: category 등)이 있다면 기본값을 넣어줘야 에러가 안 납니다.
+                    // CASE B: 없는 품목이면 -> 신규 품목으로 등록
                     await supabaseClient.from('products').insert({
                         name: item.name,
                         manufacturer: item.manufacturer,
