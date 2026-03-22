@@ -63,9 +63,6 @@ async function runSearch(tab, forceRefresh) {
             break;
         case 'sales':
             await SalesModule.search(forceRefresh);
-            break;
-        case 'projects':                                      
-            ProjectsModule.openNewModal();                    
             break;                                            
         case 'collections':
             await CollectionsModule.search(forceRefresh);
