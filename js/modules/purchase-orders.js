@@ -1,4 +1,4 @@
-// js/modules/purchase-orders.js - 발주 관리 모듈
+// js/modules/purchase-orders.js - 발주 관리 모듈 (입고일 필드 추가 버전)
 
 const PurchaseOrdersModule = {
     tableName: 'purchase_orders',
@@ -7,8 +7,8 @@ const PurchaseOrdersModule = {
      * 검색 실행
      */
     async search() {
-        // 컬럼이 9개(기존 7 + 송금여부, 송금액)로 늘어났으므로 로딩바 칸수를 9로 설정
-        showTableLoading(9);
+        // 컬럼이 10개(기존 9 + 입고일)로 늘어났으므로 로딩바 칸수를 10으로 설정
+        showTableLoading(10);
         
         let query = supabaseClient
             .from(this.tableName)
@@ -56,7 +56,7 @@ const PurchaseOrdersModule = {
         const tbody = document.getElementById('listBody');
         
         if (!data || data.length === 0) {
-            showEmptyTable(9); // 9칸 전체에 '데이터 없음' 표시
+            showEmptyTable(10); // 10칸 전체에 '데이터 없음' 표시
             return;
         }
         
@@ -84,6 +84,8 @@ const PurchaseOrdersModule = {
                     <td class="pl-2 text-xs">${itemsSummary}</td>
                     <td class="font-bold text-right pr-2">${formatNumber(totalAmount)}</td>
                     <td class="text-center">${row.date}</td>
+                    <!-- 입고일 표시 칸 -->
+                    <td class="text-center text-slate-500">${row.incoming_date || '-'}</td>
                     <!-- 송금 완료 여부 아이콘 칸 -->
                     <td class="text-center text-lg">${statusIcon}</td>
                     <!-- 송금액 표시 칸 -->
@@ -94,7 +96,7 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 테이블 우측 액션 버튼 HTML
+     * 테이블 우측 액션 버튼 HTML (기존 유지)
      */
     getActionButtons(dataId, rowId) {
         return `
@@ -122,7 +124,6 @@ const PurchaseOrdersModule = {
         AppState.tempItems = [];
         openModal('발주 등록');
         
-        // 오늘 날짜 기준 PO 번호 자동 생성
         const today = getToday();
         const { count } = await supabaseClient
             .from(this.tableName)
@@ -186,12 +187,12 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 입력 폼 HTML 생성 (송금액 필드 포함)
+     * 입력 폼 HTML 생성 (입고일 필드 추가)
      */
     getFormHtml(poNumber, date) {
         return `
             <div class="bg-slate-50 p-4 rounded mb-4 border text-left">
-                <div class="grid grid-cols-3 gap-3 mb-2">
+                <div class="grid grid-cols-4 gap-3 mb-2"> <!-- 입고일 추가를 위해 4열로 조정 -->
                     <div>
                         <label class="text-xs text-slate-500 font-bold">PO# (자동생성)</label>
                         <input id="poNum" class="input-box bg-gray-100" value="${poNumber}" readonly>
@@ -199,6 +200,10 @@ const PurchaseOrdersModule = {
                     <div>
                         <label class="text-xs text-slate-500 font-bold">발주일자</label>
                         <input type="date" id="poDate" class="input-box" value="${date}">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-orange-600">입고일 (납품일)</label>
+                        <input type="date" id="poIncomingDate" class="input-box border-orange-200">
                     </div>
                     <div>
                         <label class="text-xs text-slate-500 font-bold">발주업체 (구매처)</label>
@@ -245,7 +250,6 @@ const PurchaseOrdersModule = {
                         <label class="text-xs text-slate-500 font-bold">담당자 (우리측)</label>
                         <input id="poManager" class="input-box">
                     </div>
-                    <!-- 송금액 입력 필드 (리스트 상태 업데이트용) -->
                     <div>
                         <label class="text-xs font-bold text-blue-600">실제 송금액 (결제금액)</label>
                         <input type="number" id="poRemittedAmount" class="input-box border-blue-300 bg-blue-50" placeholder="금액 입력">
@@ -312,12 +316,13 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 모달창에 기존 데이터 세팅
+     * 모달창에 기존 데이터 세팅 (입고일 추가)
      */
     fillFormData(row) {
         setTimeout(() => {
             document.getElementById('poNum').value = row.po_number || '';
             document.getElementById('poDate').value = row.date || '';
+            document.getElementById('poIncomingDate').value = row.incoming_date || ''; // 입고일 세팅
             document.getElementById('poPartner').value = row.partner_name || '';
             document.getElementById('poEndUser').value = row.end_user || '';
             document.getElementById('poManager').value = row.manager || '';
@@ -348,7 +353,7 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 데이터 저장 (DB 전송)
+     * 데이터 저장 (DB 전송 - 입고일 포함)
      */
     async save() {
         if (AppState.tempItems.length === 0) {
@@ -369,6 +374,7 @@ const PurchaseOrdersModule = {
         const data = {
             po_number: el('poNum'),
             date: dateVal,
+            incoming_date: el('poIncomingDate'), // 입고일 저장
             partner_name: el('poPartner'),
             end_user: el('poEndUser'),
             manager: el('poManager'),
@@ -379,7 +385,6 @@ const PurchaseOrdersModule = {
             email: el('poEmail'),
             partner_address: el('poAddr'),
             items: AppState.tempItems,
-            // 새 컬럼: 송금액 저장
             remitted_amount: Number(document.getElementById('poRemittedAmount').value) || 0,
             total_supply: tSupply,
             total_vat: tVat,
@@ -421,7 +426,7 @@ const PurchaseOrdersModule = {
     },
     
     /**
-     * 데이터 삭제
+     * 데이터 삭제 (기존 유지)
      */
     async delete(id) {
         if (!confirm("정말 삭제하시겠습니까? 관련 데이터가 모두 삭제됩니다.")) return;
