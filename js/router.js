@@ -73,6 +73,9 @@ async function runSearch(tab, forceRefresh) {
         case 'cost_management':
             await CostManagementModule.search(forceRefresh);
             break;
+        case 'projects':                                      
+            await ProjectsModule.search(forceRefresh);        
+            break;                                            
         case 'memos':
             await MemosModule.search();
             break;
