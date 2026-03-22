@@ -115,7 +115,23 @@ function getTabSpecificFilters(tab) {
                     <input type="text" id="search_memoContent" class="input-box" placeholder="내용 키워드 검색" onkeypress="handleSearchKeyPress(event, '${tab}')">
                 </div>`;
 
-        // ▼▼▼▼▼ 여기가 수정된 부분입니다 ▼▼▼▼▼
+        case 'projects':
+            return `
+                <div>
+                    <span class="search-label">상태</span>
+                    <select id="search_pStatus" class="input-box h-[38px]" onchange="runSearch('${tab}')">
+                        <option value="">전체 상태</option>
+                        <option value="대기">대기</option>
+                        <option value="광학테스트">광학테스트</option>
+                        <option value="개발중">개발중</option>
+                        <option value="현장셋업">현장셋업</option>
+                        <option value="완료">완료</option>
+                        <option value="보류">보류</option>
+                    </select>
+                </div>
+                <div><span class="search-label">프로젝트명</span><input type="text" id="search_pName" class="input-box" placeholder="프로젝트명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">고객사</span><input type="text" id="search_pClient" class="input-box" placeholder="고객사명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+        
         case 'bookkeeping':
             return `
                 <div><span class="search-label">계정과목</span>
