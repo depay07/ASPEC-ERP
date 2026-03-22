@@ -11,7 +11,6 @@ const ProjectsModule = {
             .select('*')
             .order('created_at', { ascending: false });
         
-        // 날짜 필터 (ui.js에서 자동 생성되는 기간 조회 연동)
         const startDate = document.getElementById('searchStartDate')?.value;
         const endDate = document.getElementById('searchEndDate')?.value;
         if (startDate && endDate) {
@@ -38,7 +37,7 @@ const ProjectsModule = {
         if (!data || data.length === 0) return showEmptyTable(9);
         
         tbody.innerHTML = data.map(row => {
-            const dataId = storeRowData(row); // 공통 함수 사용 가정
+            const dataId = storeRowData(row);
             const statusBadge = this.getStatusBadge(row.status);
             const progressBar = this.getProgressBar(row.progress || 0);
             
@@ -53,9 +52,10 @@ const ProjectsModule = {
                     <td class="text-left text-xs truncate max-w-[150px]" title="${row.optical_condition || ''}">${row.optical_condition || '-'}</td>
                     <td class="text-left text-xs text-slate-500 truncate max-w-[100px]" title="${row.note || ''}">${row.note || '-'}</td>
                     <td>
-                        <div class="flex justify-center gap-2">
+                        <div class="flex justify-center gap-1">
+                            <button onclick="ProjectsModule.openViewModal('${dataId}')" class="text-green-600 hover:bg-green-50 p-1.5 rounded" title="상세보기"><i class="fa-solid fa-eye"></i></button>
                             <button onclick="ProjectsModule.openEditModal('${dataId}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded" title="수정"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="ProjectsModule.delete(${row.Id})" class="text-red-400 hover:bg-red-50 p-1.5 rounded" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="ProjectsModule.delete(${row.id})" class="text-red-400 hover:bg-red-50 p-1.5 rounded" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </td>
                 </tr>`;
@@ -86,26 +86,107 @@ const ProjectsModule = {
         `;
     },
     
+    // ======== 새롭게 추가된 '상세 보기(읽기 전용)' 창 ========
+    openViewModal(dataId) {
+        const row = getRowData(dataId);
+        if (!row) return alert('데이터 오류');
+
+        openModal('프로젝트 상세 정보');
+        const body = document.getElementById('modalBody');
+        
+        body.innerHTML = `
+            <div class="space-y-4 text-left">
+                <div class="bg-white p-5 rounded-lg border shadow-sm">
+                    <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2"><i class="fa-solid fa-folder-open text-blue-500 mr-1"></i> 기본 정보</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <span class="text-xs text-slate-500 block mb-1">프로젝트명</span>
+                            <div class="font-bold text-xl text-slate-800">${row.project_name}</div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-500 block mb-1">고객사(업체명)</span>
+                            <div class="font-medium text-slate-700">${row.client_name || '-'}</div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-500 block mb-1">EndUser</span>
+                            <div class="font-medium text-slate-700">${row.manager || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-lg border shadow-sm">
+                    <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2"><i class="fa-solid fa-chart-line text-green-500 mr-1"></i> 진행 현황</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-xs text-slate-500 block mb-2">현재 상태</span>
+                            <div>${this.getStatusBadge(row.status)}</div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-500 block mb-2">진척도</span>
+                            <div class="w-3/4">${this.getProgressBar(row.progress || 0)}</div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-500 block mb-1">시작일</span>
+                            <div class="font-medium text-slate-700">${row.start_date || '-'}</div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-500 block mb-1">목표 완료일</span>
+                            <div class="font-medium text-slate-700">${row.target_date || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-5 rounded-lg border border-blue-100 shadow-sm">
+                    <h4 class="text-sm font-bold text-blue-800 mb-4 border-b border-blue-200 pb-2"><i class="fa-solid fa-camera text-blue-600 mr-1"></i> 머신비전 엔지니어링 스펙</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <span class="text-xs text-blue-700 block mb-1">검사 종류</span>
+                            <div class="font-medium text-slate-800 whitespace-pre-wrap">${row.inspection_type || '-'}</div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-blue-700 block mb-1">광학 조건 (카메라/렌즈/조명)</span>
+                            <div class="font-medium text-slate-800 whitespace-pre-wrap bg-white p-3 rounded border border-blue-100">${row.optical_condition || '-'}</div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-blue-700 block mb-1">S/W 툴 및 하드웨어</span>
+                            <div class="font-medium text-slate-800 whitespace-pre-wrap">${row.sw_tool || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-xs text-slate-500 block mb-1 font-bold">메모 / 이슈사항</span>
+                    <div class="bg-slate-50 p-4 rounded-lg border whitespace-pre-wrap min-h-[80px] text-sm text-slate-700 leading-relaxed">${row.note || '-'}</div>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <button onclick="closeModal()" class="w-full bg-slate-700 text-white py-3 rounded font-bold shadow-lg hover:bg-slate-800 transition">
+                    닫기
+                </button>
+            </div>
+        `;
+    },
+    
     openNewModal() {
         AppState.currentEditId = null;
         openModal('신규 프로젝트 등록');
         document.getElementById('modalBody').innerHTML = this.getFormHtml();
-        // getToday() 공통 함수 사용 가정
         if(typeof getToday === 'function') document.getElementById('projStart').value = getToday(); 
     },
     
     openEditModal(dataId) {
-        const row = getRowData(dataId); // 공통 함수 사용
+        const row = getRowData(dataId);
         if (!row) return alert('데이터 오류');
         
         AppState.currentEditId = row.id;
-        openModal('프로젝트 상세/수정');
+        openModal('프로젝트 정보 수정');
         document.getElementById('modalBody').innerHTML = this.getFormHtml();
         
         setTimeout(() => {
             document.getElementById('projName').value = row.project_name || '';
             document.getElementById('projClient').value = row.client_name || '';
-            document.getElementById('projManager').value = row.manager || '';
+            document.getElementById('projEndUser').value = row.manager || ''; // DB의 manager를 EndUser로 불러옴
             document.getElementById('projStatus').value = row.status || '대기';
             document.getElementById('projProgress').value = row.progress || 0;
             this.updateProgressText(row.progress || 0);
@@ -133,8 +214,8 @@ const ProjectsModule = {
                             <input id="projClient" class="input-box" placeholder="고객사 이름">
                         </div>
                         <div>
-                            <label class="text-xs text-slate-500">담당자</label>
-                            <input id="projManager" class="input-box" value="이창현">
+                            <label class="text-xs text-slate-500">EndUser</label>
+                            <input id="projEndUser" class="input-box" placeholder="최종 사용처">
                         </div>
                     </div>
                 </div>
@@ -209,7 +290,7 @@ const ProjectsModule = {
         const data = {
             project_name: projectName,
             client_name: document.getElementById('projClient').value,
-            manager: document.getElementById('projManager').value,
+            manager: document.getElementById('projEndUser').value, // 화면의 EndUser 값을 DB의 manager에 저장
             status: document.getElementById('projStatus').value,
             progress: parseInt(document.getElementById('projProgress').value) || 0,
             start_date: document.getElementById('projStart').value || null,
