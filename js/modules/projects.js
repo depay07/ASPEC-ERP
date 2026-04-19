@@ -11,18 +11,28 @@ const ProjectsModule = {
             .select('*')
             .order('created_at', { ascending: false });
         
+        // 1. 날짜 필터
         const startDate = document.getElementById('searchStartDate')?.value;
         const endDate = document.getElementById('searchEndDate')?.value;
         if (startDate && endDate) {
             query = query.gte('start_date', startDate).lte('start_date', endDate);
         }
         
-        const statusFilter = document.getElementById('search_pStatus')?.value;
-        if (statusFilter) query = query.eq('status', statusFilter);
+        // 2. 상태 필터 (체크박스 다중 선택 로직으로 변경)
+        // HTML에서 name="search_pStatus"를 가진 체크박스들을 가져옵니다.
+        const statusCheckboxes = document.querySelectorAll('input[name="search_pStatus"]:checked');
+        const selectedStatuses = Array.from(statusCheckboxes).map(cb => cb.value);
         
+        // 체크된 항목이 있을 때만 필터링 (아무것도 체크 안 하면 전체 검색 혹은 조건 없음)
+        if (selectedStatuses.length > 0) {
+            query = query.in('status', selectedStatuses);
+        }
+        
+        // 3. 프로젝트명 필터
         const nameFilter = document.getElementById('search_pName')?.value;
         if (nameFilter) query = query.ilike('project_name', `%${nameFilter}%`);
 
+        // 4. 고객사 필터
         const clientFilter = document.getElementById('search_pClient')?.value;
         if (clientFilter) query = query.ilike('client_name', `%${clientFilter}%`);
         
@@ -86,7 +96,7 @@ const ProjectsModule = {
         `;
     },
     
-    // ======== 새롭게 추가된 '상세 보기(읽기 전용)' 창 ========
+    // ======== 상세 보기 창 ========
     openViewModal(dataId) {
         const row = getRowData(dataId);
         if (!row) return alert('데이터 오류');
@@ -186,7 +196,7 @@ const ProjectsModule = {
         setTimeout(() => {
             document.getElementById('projName').value = row.project_name || '';
             document.getElementById('projClient').value = row.client_name || '';
-            document.getElementById('projEndUser').value = row.manager || ''; // DB의 manager를 EndUser로 불러옴
+            document.getElementById('projEndUser').value = row.manager || '';
             document.getElementById('projStatus').value = row.status || '대기';
             document.getElementById('projProgress').value = row.progress || 0;
             this.updateProgressText(row.progress || 0);
@@ -200,6 +210,7 @@ const ProjectsModule = {
     },
     
     getFormHtml() {
+        // 등록/수정 시에는 여전히 단일 선택(select)을 유지하는 것이 데이터 정합성에 좋습니다.
         return `
             <div class="space-y-4 text-left">
                 <div class="bg-white p-4 rounded-lg border shadow-sm">
@@ -290,7 +301,7 @@ const ProjectsModule = {
         const data = {
             project_name: projectName,
             client_name: document.getElementById('projClient').value,
-            manager: document.getElementById('projEndUser').value, // 화면의 EndUser 값을 DB의 manager에 저장
+            manager: document.getElementById('projEndUser').value,
             status: document.getElementById('projStatus').value,
             progress: parseInt(document.getElementById('projProgress').value) || 0,
             start_date: document.getElementById('projStart').value || null,
