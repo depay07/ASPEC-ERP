@@ -22,6 +22,13 @@ async function switchTab(tab) {
         await CalendarModule.render();
         return;
     }
+
+    // [추가] 프로젝트 탭 - 전용 초기화 로직 실행 (전용 검색바 사용)
+    if (tab === 'projects') {
+        renderTabContent(tab, container); // 테이블 구조 먼저 생성
+        ProjectsModule.init(); // 전용 검색바 생성 및 데이터 로드
+        return;
+    }
     
     // 일반 탭 - 마스터 데이터는 캐시 사용
     await fetchMasterData(false);
@@ -74,7 +81,7 @@ async function runSearch(tab, forceRefresh) {
             await CostManagementModule.search(forceRefresh);
             break;
         case 'projects':                                      
-            await ProjectsModule.search(forceRefresh);        
+            await ProjectsModule.search(); // 프로젝트는 전용 검색 로직 사용
             break;                                            
         case 'memos':
             await MemosModule.search();
@@ -89,42 +96,18 @@ async function runSearch(tab, forceRefresh) {
  */
 function openNewModal(tab) {
     switch (tab) {
-        case 'partners':
-            PartnersModule.openNewModal();
-            break;
-        case 'products':
-            ProductsModule.openNewModal();
-            break;
-        case 'bookkeeping':
-            BookkeepingModule.openNewModal();
-            break;
-        case 'meeting_logs':
-            MeetingLogsModule.openNewModal();
-            break;
-        case 'purchases':
-            PurchasesModule.openNewModal();
-            break;
-        case 'purchase_orders':
-            PurchaseOrdersModule.openNewModal();
-            break;
-        case 'quotes':
-            QuotesModule.openNewModal();
-            break;
-        case 'orders':
-            OrdersModule.openNewModal();
-            break;
-        case 'sales':
-            SalesModule.openNewModal();
-            break;
-        case 'projects':
-            ProjectsModule.openNewModal();
-            break;
-        case 'memos':
-            console.log("MemosModule 모달 호출 시도"); 
-            MemosModule.openNewModal();
-            break;
-        default:
-            console.warn('Unknown tab for modal:', tab);
+        case 'partners': PartnersModule.openNewModal(); break;
+        case 'products': ProductsModule.openNewModal(); break;
+        case 'bookkeeping': BookkeepingModule.openNewModal(); break;
+        case 'meeting_logs': MeetingLogsModule.openNewModal(); break;
+        case 'purchases': PurchasesModule.openNewModal(); break;
+        case 'purchase_orders': PurchaseOrdersModule.openNewModal(); break;
+        case 'quotes': QuotesModule.openNewModal(); break;
+        case 'orders': OrdersModule.openNewModal(); break;
+        case 'sales': SalesModule.openNewModal(); break;
+        case 'projects': ProjectsModule.openNewModal(); break;
+        case 'memos': MemosModule.openNewModal(); break;
+        default: console.warn('Unknown tab for modal:', tab);
     }
 }
 
@@ -155,11 +138,9 @@ function renderTabContent(tab, container) {
     html += buttonsHtml;
     html += '</div>';
 
-    // [수정됨] 메모 탭일 경우 테이블이 아닌 div 그리드 컨테이너를 생성
     if (tab === 'memos') {
         html += '<div id="listBody" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4"></div>';
     } else {
-        // 기존 테이블 구조
         html += '<div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">';
         html += '<table class="data-table">';
         html += getTableStructure(tab);
@@ -170,7 +151,6 @@ function renderTabContent(tab, container) {
     
     container.innerHTML = html;
 }
-
 
 /**
  * 탭별 버튼 HTML
@@ -194,7 +174,7 @@ function getTabButtons(tab) {
     if (tab === 'collections' || tab === 'cost_management') {
         return '';
     }
-        // memos 탭일 때 신규 등록 버튼 반환
+    
     if (tab === 'memos') {
         return '<button onclick="openNewModal(\'memos\')" class="' + commonBtnClass + '">' +
             '<i class="fa-solid fa-plus"></i> 신규 메모 등록</button>';
@@ -221,9 +201,6 @@ function getTableStructure(tab) {
         projects: '<thead><tr><th style="width:15%">프로젝트명</th><th style="width:10%">고객사</th><th style="width:8%">상태</th><th style="width:15%">진척도</th><th style="width:8%">EndUser</th><th style="width:10%">검사 종류</th><th style="width:15%">광학 조건</th><th>비고</th><th style="width:10%">관리</th></tr></thead>',
         sales: '<thead><tr><th style="width:10%">일자</th><th style="width:15%">거래처</th><th style="width:10%">담당자</th><th style="width:10%">공급가액</th><th style="width:10%">부가세</th><th style="width:10%">합계</th><th style="width:15%">비고</th><th style="width:8%">계산서</th><th style="width:12%">관리</th></tr></thead>'
     };
-    
     var defaultStructure = '<thead><tr><th style="width:10%">일자</th><th style="width:18%">거래처</th><th style="width:12%">담당자</th><th style="width:12%">공급가액</th><th style="width:10%">부가세</th><th style="width:12%">합계</th><th>비고</th><th style="width:15%">관리</th></tr></thead>';
-    
     return structures[tab] || defaultStructure;
 }
-
