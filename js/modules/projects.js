@@ -3,6 +3,88 @@
 const ProjectsModule = {
     tableName: 'projects',
     
+    // [추가] 프로젝트 페이지 진입 시 실행될 초기화 함수
+    init() {
+        this.renderSearchContainer(); // 검색바 그리기
+        this.search(); // 데이터 조회
+    },
+
+    // [추가] 검색바를 체크박스 형태로 생성하는 함수
+    renderSearchContainer() {
+        const container = document.getElementById('searchContainer');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6 no-print">
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="flex-1 min-w-[300px]">
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">프로젝트 상태 필터 (다중 선택)</label>
+                        <div class="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <label class="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-md border hover:border-cyan-500 transition shadow-sm text-sm">
+                                <input type="checkbox" name="search_pStatus" value="대기" class="w-4 h-4 accent-cyan-600"> 대기
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-md border hover:border-cyan-500 transition shadow-sm text-sm">
+                                <input type="checkbox" name="search_pStatus" value="광학테스트" class="w-4 h-4 accent-cyan-600"> 광학테스트
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-md border hover:border-cyan-500 transition shadow-sm text-sm">
+                                <input type="checkbox" name="search_pStatus" value="개발중" class="w-4 h-4 accent-cyan-600"> 개발중
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-md border hover:border-cyan-500 transition shadow-sm text-sm">
+                                <input type="checkbox" name="search_pStatus" value="현장셋업" class="w-4 h-4 accent-cyan-600"> 현장셋업
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-md border hover:border-cyan-500 transition shadow-sm text-sm">
+                                <input type="checkbox" name="search_pStatus" value="완료" class="w-4 h-4 accent-cyan-600"> 완료
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-md border hover:border-cyan-500 transition shadow-sm text-sm">
+                                <input type="checkbox" name="search_pStatus" value="보류" class="w-4 h-4 accent-cyan-600"> 보류
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="w-48">
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">프로젝트명</label>
+                        <input type="text" id="search_pName" class="input-box w-full" placeholder="검색어 입력...">
+                    </div>
+
+                    <div class="w-48">
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">고객사</label>
+                        <input type="text" id="search_pClient" class="input-box w-full" placeholder="고객사명 입력...">
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="ProjectsModule.search()" class="bg-slate-800 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-slate-700 transition flex items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass"></i> 조회
+                        </button>
+                        <button onclick="ProjectsModule.openNewModal()" class="bg-cyan-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-cyan-700 transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> 신규 등록
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="contentArea">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr class="text-slate-600 text-xs uppercase font-bold">
+                                <th class="p-4">프로젝트명</th>
+                                <th class="p-4 text-center">고객사</th>
+                                <th class="p-4 text-center">상태</th>
+                                <th class="p-4" style="width:150px">진척도</th>
+                                <th class="p-4 text-center">EndUser</th>
+                                <th class="p-4 text-center">검사종류</th>
+                                <th class="p-4">광학조건</th>
+                                <th class="p-4">비고</th>
+                                <th class="p-4 text-center">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    },
+
     async search() {
         showTableLoading(9);
         
@@ -11,28 +93,19 @@ const ProjectsModule = {
             .select('*')
             .order('created_at', { ascending: false });
         
-        // 1. 날짜 필터
-        const startDate = document.getElementById('searchStartDate')?.value;
-        const endDate = document.getElementById('searchEndDate')?.value;
-        if (startDate && endDate) {
-            query = query.gte('start_date', startDate).lte('start_date', endDate);
-        }
-        
-        // 2. 상태 필터 (체크박스 다중 선택 로직으로 변경)
-        // HTML에서 name="search_pStatus"를 가진 체크박스들을 가져옵니다.
+        // 1. 상태 필터 (체크박스 다중 선택 로직)
         const statusCheckboxes = document.querySelectorAll('input[name="search_pStatus"]:checked');
         const selectedStatuses = Array.from(statusCheckboxes).map(cb => cb.value);
         
-        // 체크된 항목이 있을 때만 필터링 (아무것도 체크 안 하면 전체 검색 혹은 조건 없음)
         if (selectedStatuses.length > 0) {
             query = query.in('status', selectedStatuses);
         }
         
-        // 3. 프로젝트명 필터
+        // 2. 프로젝트명 필터
         const nameFilter = document.getElementById('search_pName')?.value;
         if (nameFilter) query = query.ilike('project_name', `%${nameFilter}%`);
 
-        // 4. 고객사 필터
+        // 3. 고객사 필터
         const clientFilter = document.getElementById('search_pClient')?.value;
         if (clientFilter) query = query.ilike('client_name', `%${clientFilter}%`);
         
@@ -44,6 +117,7 @@ const ProjectsModule = {
     
     renderTable(data) {
         const tbody = document.getElementById('listBody');
+        if (!tbody) return;
         if (!data || data.length === 0) return showEmptyTable(9);
         
         tbody.innerHTML = data.map(row => {
@@ -53,19 +127,19 @@ const ProjectsModule = {
             
             return `
                 <tr class="hover:bg-slate-50 border-b transition text-sm">
-                    <td class="text-left font-bold text-slate-700">${row.project_name}</td>
-                    <td class="text-center">${row.client_name || '-'}</td>
-                    <td class="text-center">${statusBadge}</td>
-                    <td class="px-2">${progressBar}</td>
-                    <td class="text-center text-xs text-slate-500">${row.manager || '-'}</td>
-                    <td class="text-center text-xs">${row.inspection_type || '-'}</td>
-                    <td class="text-left text-xs truncate max-w-[150px]" title="${row.optical_condition || ''}">${row.optical_condition || '-'}</td>
-                    <td class="text-left text-xs text-slate-500 truncate max-w-[100px]" title="${row.note || ''}">${row.note || '-'}</td>
-                    <td>
+                    <td class="p-4 text-left font-bold text-slate-700">${row.project_name}</td>
+                    <td class="p-4 text-center text-slate-600">${row.client_name || '-'}</td>
+                    <td class="p-4 text-center">${statusBadge}</td>
+                    <td class="p-4">${progressBar}</td>
+                    <td class="p-4 text-center text-xs text-slate-500">${row.manager || '-'}</td>
+                    <td class="p-4 text-center text-xs text-slate-600">${row.inspection_type || '-'}</td>
+                    <td class="p-4 text-left text-xs truncate max-w-[150px] text-slate-600" title="${row.optical_condition || ''}">${row.optical_condition || '-'}</td>
+                    <td class="p-4 text-left text-xs text-slate-400 truncate max-w-[100px]" title="${row.note || ''}">${row.note || '-'}</td>
+                    <td class="p-4">
                         <div class="flex justify-center gap-1">
-                            <button onclick="ProjectsModule.openViewModal('${dataId}')" class="text-green-600 hover:bg-green-50 p-1.5 rounded" title="상세보기"><i class="fa-solid fa-eye"></i></button>
-                            <button onclick="ProjectsModule.openEditModal('${dataId}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded" title="수정"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="ProjectsModule.delete(${row.id})" class="text-red-400 hover:bg-red-50 p-1.5 rounded" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="ProjectsModule.openViewModal('${dataId}')" class="text-green-600 hover:bg-green-50 p-1.5 rounded transition" title="상세보기"><i class="fa-solid fa-eye"></i></button>
+                            <button onclick="ProjectsModule.openEditModal('${dataId}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition" title="수정"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="ProjectsModule.delete(${row.id})" class="text-red-400 hover:bg-red-50 p-1.5 rounded transition" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </td>
                 </tr>`;
@@ -82,21 +156,21 @@ const ProjectsModule = {
             '보류': 'bg-red-100 text-red-700 border-red-200'
         };
         const style = styles[status] || styles['대기'];
-        return `<span class="px-2 py-1 rounded-full text-xs font-bold border ${style}">${status || '대기'}</span>`;
+        return `<span class="px-2 py-1 rounded-full text-[11px] font-bold border ${style}">${status || '대기'}</span>`;
     },
 
     getProgressBar(progress) {
         return `
             <div class="flex items-center gap-2">
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-cyan-600 h-2 rounded-full" style="width: ${progress}%"></div>
+                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                    <div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${progress}%"></div>
                 </div>
-                <span class="text-xs font-bold text-slate-600 w-8 text-right">${progress}%</span>
+                <span class="text-[10px] font-bold text-slate-500 w-7 text-right">${progress}%</span>
             </div>
         `;
     },
     
-    // ======== 상세 보기 창 ========
+    // ======== 상세 보기/등록/수정 모달 로직 (기존과 동일하지만 UI 깔끔하게 유지) ========
     openViewModal(dataId) {
         const row = getRowData(dataId);
         if (!row) return alert('데이터 오류');
@@ -210,7 +284,6 @@ const ProjectsModule = {
     },
     
     getFormHtml() {
-        // 등록/수정 시에는 여전히 단일 선택(select)을 유지하는 것이 데이터 정합성에 좋습니다.
         return `
             <div class="space-y-4 text-left">
                 <div class="bg-white p-4 rounded-lg border shadow-sm">
@@ -301,7 +374,7 @@ const ProjectsModule = {
         const data = {
             project_name: projectName,
             client_name: document.getElementById('projClient').value,
-            manager: document.getElementById('projEndUser').value,
+            manager: document.getElementById('projEndUser').value, 
             status: document.getElementById('projStatus').value,
             progress: parseInt(document.getElementById('projProgress').value) || 0,
             start_date: document.getElementById('projStart').value || null,
