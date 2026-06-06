@@ -25,6 +25,25 @@ function getRowData(id) {
 }
 
 /**
+ * HTML에 텍스트를 안전하게 표시하기
+ */
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * HTML 속성에 값을 안전하게 넣기
+ */
+function escapeAttr(value) {
+    return escapeHtml(value);
+}
+
+/**
  * Datalist 채우기
  */
 function fillDatalist(id, list) {
