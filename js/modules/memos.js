@@ -38,12 +38,12 @@ const MemosModule = {
             const dateStr = row.created_at ? row.created_at.split('T')[0] : '';
             
             // 이미지 배열 처리 (최대 2장까지 썸네일 노출)
-            const images = row.image_urls || [];
+            const images = Array.isArray(row.image_urls) ? row.image_urls : [];
             let imageHtml = '';
             if (images.length > 0) {
                 imageHtml = `
                     <div class="grid grid-cols-2 gap-1 mb-2 h-24 overflow-hidden rounded-lg bg-slate-50 relative">
-                        ${images.slice(0, 2).map(url => `<img src="${url}" class="w-full h-full object-cover">`).join('')}
+                        ${images.slice(0, 2).map(url => `<img src="${escapeAttr(url)}" class="w-full h-full object-cover">`).join('')}
                         ${images.length > 2 ? `<div class="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 rounded-md font-bold">+${images.length - 2}</div>` : ''}
                     </div>`;
             }
@@ -59,7 +59,7 @@ const MemosModule = {
                             <button onclick="MemosModule.openEditModal('${dataId}')" class="text-slate-400 hover:text-blue-500">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button onclick="MemosModule.delete(${row.id}, ${JSON.stringify(images)})" class="text-slate-400 hover:text-red-500">
+                            <button onclick="MemosModule.deleteByDataId('${dataId}')" class="text-slate-400 hover:text-red-500">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
@@ -68,7 +68,7 @@ const MemosModule = {
                     ${imageHtml}
 
                     <div class="text-sm text-slate-700 leading-relaxed overflow-hidden">
-                        <div class="line-clamp-4 whitespace-pre-wrap">${row.content}</div>
+                        <div class="line-clamp-4 whitespace-pre-wrap">${escapeHtml(row.content)}</div>
                     </div>
                 </div>`;
         }).join('');
@@ -103,10 +103,10 @@ const MemosModule = {
         openModal('메모 상세 내용'); 
         const body = document.getElementById('modalBody');
         
-        const images = row.image_urls || [];
+        const images = Array.isArray(row.image_urls) ? row.image_urls : [];
         const imagesHtml = images.map(url => `
             <div class="mb-3">
-                <img src="${url}" class="w-full rounded-lg border shadow-sm cursor-zoom-in" onclick="window.open('${url}')">
+                <img src="${escapeAttr(url)}" class="w-full rounded-lg border shadow-sm cursor-zoom-in" onclick="window.open(this.src)">
             </div>
         `).join('');
 
@@ -117,7 +117,7 @@ const MemosModule = {
                 </div>
                 <div class="flex-1 p-4 bg-slate-50 rounded-lg border border-slate-200 overflow-y-auto max-h-[65vh]">
                     ${imagesHtml}
-                    <p class="text-slate-800 whitespace-pre-wrap leading-relaxed text-base">${row.content}</p>
+                    <p class="text-slate-800 whitespace-pre-wrap leading-relaxed text-base">${escapeHtml(row.content)}</p>
                 </div>
                 <div class="mt-4 flex justify-end gap-2">
                     <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 transition">닫기</button>
@@ -185,14 +185,20 @@ const MemosModule = {
             }
 
             // 2. DB에 저장할 데이터 구성 (image_urls를 항상 배열로 전달)
+            const editingId = typeof AppState !== 'undefined' && AppState.currentEditId;
+            const currentRow = editingId
+                ? Object.values(AppState.globalDataStore || {}).find(row => row.id === AppState.currentEditId)
+                : null;
+            const existingImageUrls = Array.isArray(currentRow?.image_urls) ? currentRow.image_urls : [];
+
             const submitData = { 
                 content: content, 
                 color: color,
-                image_urls: imageUrls.length > 0 ? imageUrls : [] 
+                image_urls: imageUrls.length > 0 ? imageUrls : existingImageUrls
             };
             
             let result;
-            if (typeof AppState !== 'undefined' && AppState.currentEditId) {
+            if (editingId) {
                 // 수정 시: update는 단일 객체 전달
                 result = await supabaseClient
                     .from(this.tableName)
@@ -219,6 +225,12 @@ const MemosModule = {
     },
     
     // 8. 삭제 (Storage 파일 일괄 삭제)
+    async deleteByDataId(dataId) {
+        const row = getRowData(dataId);
+        if (!row) return alert('데이터 오류');
+        return this.delete(row.id, row.image_urls || []);
+    },
+
     async delete(id, imageUrls) {
         if (!confirm("삭제하시겠습니까?")) return;
         
