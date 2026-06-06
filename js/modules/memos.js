@@ -12,8 +12,12 @@ const MemosModule = {
             .select('*')
             .order('created_at', { ascending: false });
         
-        const keyword = typeof el === 'function' && el('search_memoContent');
-        if (keyword) query = query.ilike('content', `%${keyword}%`);
+        const keywordEl = document.getElementById('search_memoContent');
+const keyword = keywordEl ? keywordEl.value.trim() : '';
+
+if (keyword) {
+    query = query.ilike('content', `%${keyword}%`);
+}
         
         const { data, error } = await query;
         if (error) {
