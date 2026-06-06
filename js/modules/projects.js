@@ -90,14 +90,14 @@ const ProjectsModule = {
             const dataId = storeRowData(row);
             return `
                 <tr class="hover:bg-slate-50 border-b transition text-sm">
-                    <td class="p-4 text-left font-bold text-slate-700">${row.project_name}</td>
-                    <td class="p-4 text-center text-slate-600">${row.client_name || '-'}</td>
+                    <td class="p-4 text-left font-bold text-slate-700">${escapeHtml(row.project_name)}</td>
+                    <td class="p-4 text-center text-slate-600">${escapeHtml(row.client_name || '-')}</td>
                     <td class="p-4 text-center">${this.getStatusBadge(row.status)}</td>
                     <td class="p-4">${this.getProgressBar(row.progress || 0)}</td>
-                    <td class="p-4 text-center text-xs text-slate-500">${row.manager || '-'}</td>
-                    <td class="p-4 text-center text-xs text-slate-600">${row.inspection_type || '-'}</td>
-                    <td class="p-4 text-left text-xs truncate max-w-[150px] text-slate-600" title="${row.optical_condition || ''}">${row.optical_condition || '-'}</td>
-                    <td class="p-4 text-left text-xs text-slate-400 truncate max-w-[100px]" title="${row.note || ''}">${row.note || '-'}</td>
+                    <td class="p-4 text-center text-xs text-slate-500">${escapeHtml(row.manager || '-')}</td>
+                    <td class="p-4 text-center text-xs text-slate-600">${escapeHtml(row.inspection_type || '-')}</td>
+                    <td class="p-4 text-left text-xs truncate max-w-[150px] text-slate-600" title="${escapeAttr(row.optical_condition || '')}">${escapeHtml(row.optical_condition || '-')}</td>
+                    <td class="p-4 text-left text-xs text-slate-400 truncate max-w-[100px]" title="${escapeAttr(row.note || '')}">${escapeHtml(row.note || '-')}</td>
                     <td class="p-4">
                         <div class="flex justify-center gap-1">
                             <button onclick="ProjectsModule.openViewModal('${dataId}')" class="text-green-600 hover:bg-green-50 p-1.5 rounded transition" title="상세보기"><i class="fa-solid fa-eye"></i></button>
@@ -119,16 +119,17 @@ const ProjectsModule = {
             '보류': 'bg-red-100 text-red-700 border-red-200'
         };
         const style = styles[status] || styles['대기'];
-        return `<span class="px-2 py-1 rounded-full text-[11px] font-bold border ${style}">${status || '대기'}</span>`;
+        return `<span class="px-2 py-1 rounded-full text-[11px] font-bold border ${style}">${escapeHtml(status || '대기')}</span>`;
     },
 
     getProgressBar(progress) {
+        const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
         return `
             <div class="flex items-center gap-2">
                 <div class="w-full bg-gray-200 rounded-full h-1.5">
-                    <div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${progress}%"></div>
+                    <div class="bg-cyan-600 h-1.5 rounded-full" style="width: ${safeProgress}%"></div>
                 </div>
-                <span class="text-[10px] font-bold text-slate-500 w-7 text-right">${progress}%</span>
+                <span class="text-[10px] font-bold text-slate-500 w-7 text-right">${safeProgress}%</span>
             </div>
         `;
     },
@@ -143,9 +144,9 @@ const ProjectsModule = {
                 <div class="bg-white p-5 rounded-lg border shadow-sm">
                     <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2">기본 정보</h4>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="col-span-2"><span class="text-xs text-slate-500">프로젝트명</span><div class="font-bold text-xl">${row.project_name}</div></div>
-                        <div><span class="text-xs text-slate-500">고객사</span><div>${row.client_name || '-'}</div></div>
-                        <div><span class="text-xs text-slate-500">EndUser</span><div>${row.manager || '-'}</div></div>
+                        <div class="col-span-2"><span class="text-xs text-slate-500">프로젝트명</span><div class="font-bold text-xl">${escapeHtml(row.project_name || '-')}</div></div>
+                        <div><span class="text-xs text-slate-500">고객사</span><div>${escapeHtml(row.client_name || '-')}</div></div>
+                        <div><span class="text-xs text-slate-500">EndUser</span><div>${escapeHtml(row.manager || '-')}</div></div>
                     </div>
                 </div>
                 <div class="bg-white p-5 rounded-lg border shadow-sm">
@@ -154,6 +155,17 @@ const ProjectsModule = {
                         <div><span class="text-xs text-slate-500">현재 상태</span><div>${this.getStatusBadge(row.status)}</div></div>
                         <div><span class="text-xs text-slate-500">진척도</span><div>${this.getProgressBar(row.progress || 0)}</div></div>
                     </div>
+                </div>
+                <div class="bg-white p-5 rounded-lg border shadow-sm">
+                    <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2">검사 조건</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><span class="text-xs text-slate-500">검사 종류</span><div>${escapeHtml(row.inspection_type || '-')}</div></div>
+                        <div><span class="text-xs text-slate-500">광학 조건</span><div class="whitespace-pre-wrap">${escapeHtml(row.optical_condition || '-')}</div></div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-lg border shadow-sm">
+                    <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2">비고</h4>
+                    <div class="whitespace-pre-wrap text-slate-700">${escapeHtml(row.note || '-')}</div>
                 </div>
             </div>
             <button onclick="closeModal()" class="w-full mt-6 bg-slate-700 text-white py-3 rounded font-bold">닫기</button>
@@ -177,6 +189,8 @@ const ProjectsModule = {
             document.getElementById('projName').value = row.project_name || '';
             document.getElementById('projClient').value = row.client_name || '';
             document.getElementById('projEndUser').value = row.manager || '';
+            document.getElementById('projInspectionType').value = row.inspection_type || '';
+            document.getElementById('projOpticalCondition').value = row.optical_condition || '';
             document.getElementById('projStatus').value = row.status || '대기';
             document.getElementById('projProgress').value = row.progress || 0;
             document.getElementById('projNote').value = row.note || '';
@@ -191,6 +205,10 @@ const ProjectsModule = {
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="block text-xs font-bold text-slate-500">고객사</label><input id="projClient" class="input-box w-full"></div>
                     <div><label class="block text-xs font-bold text-slate-500">EndUser</label><input id="projEndUser" class="input-box w-full"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-bold text-slate-500">검사 종류</label><input id="projInspectionType" class="input-box w-full"></div>
+                    <div><label class="block text-xs font-bold text-slate-500">광학 조건</label><input id="projOpticalCondition" class="input-box w-full"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="block text-xs font-bold text-slate-500">상태</label>
@@ -211,6 +229,8 @@ const ProjectsModule = {
             project_name: document.getElementById('projName').value,
             client_name: document.getElementById('projClient').value,
             manager: document.getElementById('projEndUser').value,
+            inspection_type: document.getElementById('projInspectionType').value,
+            optical_condition: document.getElementById('projOpticalCondition').value,
             status: document.getElementById('projStatus').value,
             progress: parseInt(document.getElementById('projProgress').value) || 0,
             note: document.getElementById('projNote').value
