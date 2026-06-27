@@ -54,6 +54,12 @@ const SalesModule = {
             <button onclick="printDocument('sales', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
                 <i class="fa-solid fa-print fa-lg"></i>
             </button>
+            <button onclick="SalesModule.openPublicDocument(${row.id})" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="거래명세서 외부 보기">
+                <i class="fa-solid fa-eye fa-lg"></i>
+            </button>
+            <button onclick="SalesModule.copyPublicLink(${row.id})" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="거래명세서 링크 복사">
+                <i class="fa-solid fa-link fa-lg"></i>
+            </button>
             <button onclick="SalesModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
                 <i class="fa-regular fa-copy fa-lg"></i>
             </button>
@@ -68,6 +74,36 @@ const SalesModule = {
 </tr>`;
 
         }).join('');
+    },
+
+    getPublicDocumentUrl(id) {
+        const url = new URL('trade-statement.html', window.location.href);
+        url.searchParams.set('id', id);
+        return url.toString();
+    },
+
+    openPublicDocument(id) {
+        window.open(this.getPublicDocumentUrl(id), '_blank', 'noopener');
+    },
+
+    async copyPublicLink(id) {
+        const url = this.getPublicDocumentUrl(id);
+
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(url);
+            } else {
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                input.remove();
+            }
+            alert('거래명세서 보기/인쇄 링크가 복사되었습니다.\n이메일 버튼 링크로 사용하시면 됩니다.');
+        } catch (e) {
+            prompt('아래 거래명세서 링크를 복사하세요.', url);
+        }
     },
     
     /**
