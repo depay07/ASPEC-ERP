@@ -188,6 +188,95 @@
 
         .notice { line-height: 1.7; }
 
+        .print-wrap {
+            width: 100%;
+            color: #f2f5f8;
+        }
+
+        .print-title-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 10px;
+            border-bottom: 2px solid currentColor;
+            padding-bottom: 5px;
+        }
+
+        .print-title-main {
+            font-size: 36px;
+            font-weight: 900;
+        }
+
+        .print-title-sub {
+            font-size: 16px;
+            font-style: italic;
+            margin-left: 10px;
+        }
+
+        .print-meta {
+            text-align: right;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .print-grid-box {
+            display: flex;
+            width: 100%;
+            border: 1px solid currentColor;
+            margin-bottom: 10px;
+        }
+
+        .print-half {
+            width: 50%;
+        }
+
+        .print-half:first-child {
+            border-right: 1px solid currentColor;
+        }
+
+        .print-header-cell {
+            text-align: center;
+            font-weight: 700;
+            padding: 5px;
+            border-bottom: 1px solid currentColor;
+            font-size: 14px;
+            background: #17212b;
+        }
+
+        .print-info-table {
+            table-layout: fixed;
+            font-size: 11px;
+        }
+
+        .print-info-table th {
+            width: 20%;
+            height: 30px;
+        }
+
+        .print-info-table td {
+            height: 30px;
+            word-break: break-all;
+        }
+
+        .addr-cell {
+            height: 55px !important;
+            vertical-align: top;
+            line-height: 1.4;
+        }
+
+        .print-items-table {
+            margin-top: 30px;
+            table-layout: fixed;
+            font-size: 11px;
+        }
+
+        .print-items-table th,
+        .print-items-table td {
+            height: 35px;
+            word-break: keep-all;
+            white-space: normal;
+        }
+
         @media (max-width: 840px) {
             .page {
                 width: calc(100% - 20px);
@@ -247,6 +336,172 @@
                 border: 1px solid #111;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+            }
+
+            .print-wrap {
+                color: black;
+            }
+        }
+
+        body {
+            background: #f1f5f9;
+            color: black;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 22px auto;
+            padding: 15mm;
+            background: white;
+            color: black;
+            box-shadow: 0 6px 22px rgba(15, 23, 42, 0.18);
+        }
+
+        .print-wrap {
+            width: 100%;
+            padding: 0;
+            margin: 0 auto;
+            color: black;
+            font-family: "Malgun Gothic", dotum, sans-serif;
+        }
+
+        .print-title-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 10px;
+            border-bottom: 2px solid black;
+            padding-bottom: 5px;
+        }
+
+        .print-title-main {
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+
+        .print-title-sub {
+            font-size: 16px;
+            font-weight: normal;
+            font-style: italic;
+            margin-left: 10px;
+        }
+
+        .print-meta {
+            text-align: right;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .print-grid-box {
+            display: flex;
+            width: 100%;
+            border: 1px solid black;
+            margin-bottom: 10px;
+        }
+
+        .print-half {
+            width: 50%;
+            padding: 0;
+            flex: 1;
+        }
+
+        .print-half:first-child {
+            border-right: 1px solid black;
+        }
+
+        .print-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            table-layout: fixed;
+            border: none;
+        }
+
+        .print-info-table th {
+            background-color: #f3f3f3;
+            color: black;
+            text-align: center;
+            padding: 5px;
+            border-bottom: 1px solid black;
+            border-right: 1px solid black;
+            width: 20%;
+            font-weight: bold;
+            height: 30px;
+        }
+
+        .print-info-table td {
+            padding: 2px 5px;
+            border-bottom: 1px solid black;
+            height: 30px;
+            vertical-align: middle;
+            font-size: 11px;
+            word-break: break-all;
+            overflow: hidden;
+        }
+
+        .print-info-table tr:last-child th,
+        .print-info-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .print-header-cell {
+            text-align: center;
+            font-weight: bold;
+            padding: 5px;
+            border-bottom: 1px solid black;
+            font-size: 14px;
+            background-color: #e6e6e6;
+            color: black;
+        }
+
+        .print-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            font-size: 11px;
+            table-layout: fixed;
+        }
+
+        .print-items-table th {
+            border: 1px solid black;
+            background-color: #f3f3f3;
+            color: black;
+            padding: 5px;
+            text-align: center;
+        }
+
+        .print-items-table td {
+            border: 1px solid black;
+            padding: 5px;
+            height: 35px;
+            word-break: keep-all;
+            white-space: normal;
+            vertical-align: middle;
+        }
+
+        .addr-cell {
+            height: 55px !important;
+            vertical-align: top !important;
+            padding-top: 5px !important;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 840px) {
+            .page {
+                width: 210mm;
+                min-width: 210mm;
+            }
+        }
+
+        @media print {
+            .page {
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0;
+                padding: 15mm;
+                box-shadow: none;
             }
         }
     </style>
@@ -354,10 +609,114 @@
             return rows.join('');
         }
 
+        function renderLegacyItems(items) {
+            const rows = [];
+            const displayItems = Array.isArray(items) ? items : [];
+
+            displayItems.forEach((item, index) => {
+                const qty = toNumber(item.qty);
+                const price = toNumber(item.price);
+                const supply = toNumber(item.supply || (qty * price));
+                rows.push(`
+                    <tr>
+                        <td style="text-align:center">${index + 1}</td>
+                        <td>${escapeHtml(item.name || '')}</td>
+                        <td style="font-size:10px">${escapeHtml(item.spec || '-')}</td>
+                        <td style="text-align:center">${escapeHtml(item.unit || 'EA')}</td>
+                        <td style="text-align:center">${formatWon(qty)}</td>
+                        <td style="text-align:right">${formatWon(price)}</td>
+                        <td style="text-align:right">${formatWon(supply)}</td>
+                    </tr>
+                `);
+            });
+
+            for (let i = displayItems.length; i < 10; i++) {
+                rows.push('<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>');
+            }
+
+            return rows.join('');
+        }
+
         function renderDocument(row, documentNo) {
             const supply = toNumber(row.total_supply);
             const vat = toNumber(row.total_vat);
             const total = toNumber(row.total_amount || supply + vat);
+
+            document.getElementById('documentPage').innerHTML = `
+                <div class="print-wrap">
+                    <div class="print-title-area">
+                        <div>
+                            <span class="print-title-main">거래명세서</span>
+                            <span class="print-title-sub">TRANSACTION STATEMENT</span>
+                        </div>
+                        <div class="print-meta">
+                            <div>문서번호: ${escapeHtml(documentNo)}</div>
+                            <div>작성일자: ${escapeHtml(row.date || '')}</div>
+                        </div>
+                    </div>
+
+                    <div class="print-grid-box">
+                        <div class="print-half">
+                            <div class="print-header-cell">공 급 받 는 자</div>
+                            <table class="print-info-table">
+                                <tr><th>상호</th><td>${escapeHtml(row.partner_name || '')}</td></tr>
+                                <tr><th>주소</th><td class="addr-cell">${escapeHtml(row.partner_address || '')}</td></tr>
+                                <tr><th>담당자</th><td>${escapeHtml(row.partner_manager || '')}</td></tr>
+                                <tr><th>TEL</th><td>${escapeHtml(row.phone || '')}</td></tr>
+                                <tr><th>E-mail</th><td>${escapeHtml(row.email || '')}</td></tr>
+                            </table>
+                        </div>
+                        <div class="print-half">
+                            <div class="print-header-cell">공 급 자</div>
+                            <table class="print-info-table">
+                                <tr><th>상호</th><td>${escapeHtml(COMPANY.name)}</td></tr>
+                                <tr><th>주소</th><td class="addr-cell" style="font-size:10px">${escapeHtml(COMPANY.address)}</td></tr>
+                                <tr><th>담당자</th><td>${escapeHtml(row.manager || '')}</td></tr>
+                                <tr><th>TEL</th><td>${escapeHtml(COMPANY.phone)}</td></tr>
+                                <tr><th>E-mail</th><td>${escapeHtml(COMPANY.email)}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <table class="print-items-table">
+                        <colgroup>
+                            <col style="width: 5%;">
+                            <col style="width: 25%;">
+                            <col style="width: 30%;">
+                            <col style="width: 8%;">
+                            <col style="width: 8%;">
+                            <col style="width: 12%;">
+                            <col style="width: 12%;">
+                        </colgroup>
+                        <thead>
+                            <tr><th>No</th><th>품명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>공급가액</th></tr>
+                        </thead>
+                        <tbody>${renderLegacyItems(row.items)}</tbody>
+                        <tfoot>
+                            <tr style="background:#f8f8f8">
+                                <td colspan="4" style="text-align:center;font-weight:bold">합 계 (Total)</td>
+                                <td style="text-align:center;font-weight:bold">${formatWon((row.items || []).reduce((sum, item) => sum + toNumber(item.qty), 0))}</td>
+                                <td style="text-align:right">공급가액</td>
+                                <td style="text-align:right;font-weight:bold">${formatWon(supply)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="5"></td>
+                                <td style="text-align:right;background:#f8f8f8">부가세 (VAT)</td>
+                                <td style="text-align:right">${formatWon(vat)}</td>
+                            </tr>
+                            <tr style="font-weight:bold">
+                                <td colspan="5"></td>
+                                <td style="text-align:right;background:#e6e6e6">총 합계</td>
+                                <td style="text-align:right;background:#e6e6e6">₩ ${formatWon(total)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="7" style="padding:10px;text-align:left"><strong>[비고]</strong> ${escapeHtml(row.note || '')}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+            return;
 
             document.getElementById('documentPage').innerHTML = `
                 <section class="title-row">
