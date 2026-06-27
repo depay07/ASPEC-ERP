@@ -449,19 +449,19 @@
 
         async function loadStatement() {
             const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
+            const token = params.get('token');
             const status = document.getElementById('status');
 
-            if (!id) {
+            if (!token) {
                 status.className = 'error';
-                status.textContent = '거래명세서 ID가 없습니다.';
+                status.textContent = '거래명세서 토큰이 없습니다.';
                 return;
             }
 
             const result = await supabaseClient
                 .from('sales')
                 .select('*')
-                .eq('id', id)
+                .eq('public_token', token)
                 .single();
 
             if (result.error || !result.data) {
