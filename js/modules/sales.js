@@ -48,30 +48,34 @@ const SalesModule = {
     <td class="text-center p-2 text-lg">${taxIcon}</td>
     
     <!-- 관리 버튼 영역 (수정됨) -->
-    <td class="p-2">
-        <div class="flex justify-center items-center gap-2">
+    <td class="p-2 action-cell">
+        <div class="doc-action-buttons">
             <!-- p-1 -> p-2 로 변경, 아이콘에 fa-lg 추가 -->
-            <button onclick="printDocument('sales', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
-                <i class="fa-solid fa-print fa-lg"></i>
-            </button>
-            <button onclick="SalesModule.openPublicDocument('${dataId}')" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="거래명세서 외부 보기">
-                <i class="fa-solid fa-eye fa-lg"></i>
-            </button>
-            <button onclick="SalesModule.copyPublicLink('${dataId}')" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="거래명세서 링크 복사">
-                <i class="fa-solid fa-link fa-lg"></i>
-            </button>
-            <button onclick="SalesModule.copyEmailButton('${dataId}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition" title="이메일용 버튼 복사">
-                <i class="fa-solid fa-envelope fa-lg"></i>
-            </button>
-            <button onclick="SalesModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
-                <i class="fa-regular fa-copy fa-lg"></i>
-            </button>
-            <button onclick="SalesModule.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정">
-                <i class="fa-solid fa-pen-to-square fa-lg"></i>
-            </button>
-            <button onclick="SalesModule.delete(${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제">
-                <i class="fa-solid fa-trash-can fa-lg"></i>
-            </button>
+            <div class="doc-action-row primary-actions">
+                <button onclick="printDocument('sales', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
+                    <i class="fa-solid fa-print fa-lg"></i>
+                </button>
+                <button onclick="SalesModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
+                    <i class="fa-regular fa-copy fa-lg"></i>
+                </button>
+                <button onclick="SalesModule.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정">
+                    <i class="fa-solid fa-pen-to-square fa-lg"></i>
+                </button>
+                <button onclick="SalesModule.delete(${row.id})" class="text-red-500 hover:text-red-700 p-2 rounded hover:bg-red-50 transition" title="삭제">
+                    <i class="fa-solid fa-trash-can fa-lg"></i>
+                </button>
+            </div>
+            <div class="doc-action-row public-actions">
+                <button onclick="SalesModule.openPublicDocument('${dataId}')" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="거래명세서 외부 보기">
+                    <i class="fa-solid fa-eye fa-lg"></i>
+                </button>
+                <button onclick="SalesModule.copyPublicLink('${dataId}')" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="거래명세서 링크 복사">
+                    <i class="fa-solid fa-link fa-lg"></i>
+                </button>
+                <button onclick="SalesModule.copyEmailButton('${dataId}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition" title="이메일용 버튼 복사">
+                    <i class="fa-solid fa-envelope fa-lg"></i>
+                </button>
+            </div>
         </div>
     </td>
 </tr>`;
