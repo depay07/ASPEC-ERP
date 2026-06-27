@@ -69,9 +69,6 @@ const SalesModule = {
                 <button onclick="SalesModule.openPublicDocument('${dataId}')" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="거래명세서 외부 보기">
                     <i class="fa-solid fa-eye fa-lg"></i>
                 </button>
-                <button onclick="SalesModule.copyPublicLink('${dataId}')" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="거래명세서 링크 복사">
-                    <i class="fa-solid fa-link fa-lg"></i>
-                </button>
                 <button onclick="SalesModule.copyEmailButton('${dataId}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition" title="이메일용 버튼 복사">
                     <i class="fa-solid fa-envelope fa-lg"></i>
                 </button>
@@ -287,7 +284,10 @@ const SalesModule = {
         this._injectTaxCheckbox(false);
         
         DocumentBaseModule.fillFormData(row);
-        document.getElementById('sDate').value = getToday();
+        setTimeout(() => {
+            const dateInput = document.getElementById('sDate');
+            if (dateInput) dateInput.value = getToday();
+        }, 80);
     },
     
     /**
