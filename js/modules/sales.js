@@ -54,10 +54,10 @@ const SalesModule = {
             <button onclick="printDocument('sales', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
                 <i class="fa-solid fa-print fa-lg"></i>
             </button>
-            <button onclick="SalesModule.openPublicDocument(${row.id})" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="거래명세서 외부 보기">
+            <button onclick="SalesModule.openPublicDocument('${dataId}')" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="거래명세서 외부 보기">
                 <i class="fa-solid fa-eye fa-lg"></i>
             </button>
-            <button onclick="SalesModule.copyPublicLink(${row.id})" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="거래명세서 링크 복사">
+            <button onclick="SalesModule.copyPublicLink('${dataId}')" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="거래명세서 링크 복사">
                 <i class="fa-solid fa-link fa-lg"></i>
             </button>
             <button onclick="SalesModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
@@ -76,18 +76,52 @@ const SalesModule = {
         }).join('');
     },
 
-    getPublicDocumentUrl(id) {
+    generatePublicToken() {
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    },
+
+    getPublicDocumentUrl(token) {
         const url = new URL('trade-statement.html', window.location.href);
-        url.searchParams.set('id', id);
+        url.searchParams.set('token', token);
         return url.toString();
     },
 
-    openPublicDocument(id) {
-        window.open(this.getPublicDocumentUrl(id), '_blank', 'noopener');
+    async ensurePublicToken(dataId) {
+        const row = getRowData(dataId);
+        if (!row) {
+            alert('데이터 오류');
+            return null;
+        }
+
+        if (row.public_token) return row.public_token;
+
+        const token = this.generatePublicToken();
+        const result = await supabaseClient
+            .from(this.tableName)
+            .update({ public_token: token })
+            .eq('id', row.id);
+
+        if (result.error) {
+            alert('공개 링크 토큰 생성에 실패했습니다.\nSupabase sales 테이블에 public_token 컬럼이 있는지 확인해 주세요.\n\n' + result.error.message);
+            return null;
+        }
+
+        row.public_token = token;
+        return token;
     },
 
-    async copyPublicLink(id) {
-        const url = this.getPublicDocumentUrl(id);
+    async openPublicDocument(dataId) {
+        const token = await this.ensurePublicToken(dataId);
+        if (!token) return;
+        window.open(this.getPublicDocumentUrl(token), '_blank', 'noopener');
+    },
+
+    async copyPublicLink(dataId) {
+        const token = await this.ensurePublicToken(dataId);
+        if (!token) return;
+        const url = this.getPublicDocumentUrl(token);
 
         try {
             if (navigator.clipboard && window.isSecureContext) {
@@ -231,6 +265,9 @@ const SalesModule = {
         // ★ 체크박스 값 읽어서 데이터 객체에 추가
         const chk = document.getElementById('chkTaxInvoice');
         data.is_tax_invoice = chk ? chk.checked : false;
+        if (!AppState.currentEditId) {
+            data.public_token = this.generatePublicToken();
+        }
         
         let result;
         if (AppState.currentEditId) {
