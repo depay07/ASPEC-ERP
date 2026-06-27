@@ -88,7 +88,7 @@ const PurchaseOrdersModule = {
                     <td class="text-center text-lg">${statusIcon}</td>
                     <!-- 송금액 표시 칸 -->
                     <td class="text-right font-bold text-slate-600 pr-2">${formatNumber(remittedAmount)}</td>
-                    <td>${this.getActionButtons(dataId, row.id)}</td>
+                    <td class="action-cell">${this.getActionButtons(dataId, row.id)}</td>
                 </tr>`;
         }).join('');
     },
@@ -98,28 +98,32 @@ const PurchaseOrdersModule = {
      */
     getActionButtons(dataId, rowId) {
         return `
-            <div class="flex justify-center items-center gap-3">
-                <button onclick="printDocument('purchase_orders', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
-                    <i class="fa-solid fa-print fa-lg"></i>
-                </button>
-                <button onclick="PurchaseOrdersModule.openPublicDocument('${dataId}')" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="발주서 외부 보기">
-                    <i class="fa-solid fa-eye fa-lg"></i>
-                </button>
-                <button onclick="PurchaseOrdersModule.copyPublicLink('${dataId}')" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="발주서 링크 복사">
-                    <i class="fa-solid fa-link fa-lg"></i>
-                </button>
-                <button onclick="PurchaseOrdersModule.copyEmailButton('${dataId}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition" title="이메일용 버튼 복사">
-                    <i class="fa-solid fa-envelope fa-lg"></i>
-                </button>
-                <button onclick="PurchaseOrdersModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
-                    <i class="fa-regular fa-copy fa-lg"></i>
-                </button>
-                <button onclick="PurchaseOrdersModule.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정">
-                    <i class="fa-solid fa-pen-to-square fa-lg"></i>
-                </button>
-                <button onclick="PurchaseOrdersModule.delete(${rowId})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제">
-                    <i class="fa-solid fa-trash-can fa-lg"></i>
-                </button>
+            <div class="doc-action-buttons">
+                <div class="doc-action-row primary-actions">
+                    <button onclick="printDocument('purchase_orders', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
+                        <i class="fa-solid fa-print fa-lg"></i>
+                    </button>
+                    <button onclick="PurchaseOrdersModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
+                        <i class="fa-regular fa-copy fa-lg"></i>
+                    </button>
+                    <button onclick="PurchaseOrdersModule.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정">
+                        <i class="fa-solid fa-pen-to-square fa-lg"></i>
+                    </button>
+                    <button onclick="PurchaseOrdersModule.delete(${rowId})" class="text-red-500 hover:text-red-700 p-2 rounded hover:bg-red-50 transition" title="삭제">
+                        <i class="fa-solid fa-trash-can fa-lg"></i>
+                    </button>
+                </div>
+                <div class="doc-action-row public-actions">
+                    <button onclick="PurchaseOrdersModule.openPublicDocument('${dataId}')" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="발주서 외부 보기">
+                        <i class="fa-solid fa-eye fa-lg"></i>
+                    </button>
+                    <button onclick="PurchaseOrdersModule.copyPublicLink('${dataId}')" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="발주서 링크 복사">
+                        <i class="fa-solid fa-link fa-lg"></i>
+                    </button>
+                    <button onclick="PurchaseOrdersModule.copyEmailButton('${dataId}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition" title="이메일용 버튼 복사">
+                        <i class="fa-solid fa-envelope fa-lg"></i>
+                    </button>
+                </div>
             </div>`;
     },
 
