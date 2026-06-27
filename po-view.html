@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>발주서 보기 / 인쇄</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #1f1f1f;
+            color: #e8edf2;
+            font-family: "Malgun Gothic", "Noto Sans KR", Arial, sans-serif;
+            font-size: 12px;
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            background: rgba(18, 18, 18, 0.94);
+            border-bottom: 1px solid #333;
+        }
+
+        .toolbar button {
+            border: 0;
+            border-radius: 6px;
+            padding: 10px 16px;
+            color: white;
+            background: #1237c8;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .toolbar button.secondary { background: #374151; }
+
+        .page {
+            width: 794px;
+            min-height: 1123px;
+            margin: 22px auto;
+            padding: 34px 32px;
+            background: #202020;
+            color: #f2f5f8;
+        }
+
+        .loading,
+        .error {
+            width: min(720px, calc(100% - 32px));
+            margin: 80px auto;
+            padding: 28px;
+            border: 1px solid #444;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        .title-row {
+            display: grid;
+            grid-template-columns: 1fr 166px;
+            align-items: start;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            margin: 16px 0 0;
+            text-align: center;
+            font-size: 28px;
+            letter-spacing: 26px;
+            font-weight: 800;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #292929;
+            padding: 5px 8px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #17212b;
+            color: #e9f2ff;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .approval {
+            width: 166px;
+            table-layout: fixed;
+            font-size: 11px;
+        }
+
+        .approval th,
+        .approval td {
+            height: 33px;
+            text-align: center;
+        }
+
+        .approval .vertical {
+            width: 24px;
+            background: #17212b;
+            writing-mode: vertical-rl;
+            letter-spacing: 4px;
+            font-weight: 700;
+        }
+
+        .top-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.25fr;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .info-table th { width: 86px; }
+        .info-table td { font-weight: 700; }
+
+        .date-line {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .company-mark {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f6f6f6;
+            color: #242424;
+            font-size: 42px;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: -3px;
+        }
+
+        .amount-bar {
+            display: grid;
+            grid-template-columns: 1fr 236px;
+            margin: 8px 0 4px;
+            border: 1px solid #2b2b2b;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .amount-bar div { padding: 6px 10px; }
+
+        .amount-bar div + div {
+            border-left: 1px solid #2b2b2b;
+            text-align: right;
+        }
+
+        .items th,
+        .items td {
+            height: 27px;
+            text-align: center;
+        }
+
+        .items .name,
+        .items .spec {
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .items .money {
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .notes { margin-top: 10px; }
+        .notes th { width: 132px; }
+        .notes td {
+            height: 50px;
+            line-height: 1.6;
+        }
+
+        .notice { line-height: 1.7; }
+
+        @media (max-width: 840px) {
+            .page {
+                width: calc(100% - 20px);
+                min-height: auto;
+                padding: 22px 14px;
+                overflow-x: auto;
+            }
+
+            h1 { letter-spacing: 16px; }
+
+            .title-row,
+            .top-grid,
+            .amount-bar,
+            .items,
+            .notes {
+                min-width: 720px;
+            }
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
+            body {
+                background: white;
+                color: black;
+            }
+
+            .toolbar { display: none; }
+
+            .page {
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0;
+                padding: 10mm 8mm;
+                background: white;
+                color: black;
+            }
+
+            th {
+                background: #e8eef4 !important;
+                color: black;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            td,
+            th,
+            .amount-bar,
+            .amount-bar div + div {
+                border-color: #111;
+            }
+
+            .company-mark {
+                border: 1px solid #111;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button onclick="window.print()"><i class="fa-solid fa-print"></i> 인쇄</button>
+        <button class="secondary" onclick="copyCurrentUrl()"><i class="fa-solid fa-link"></i> 링크 복사</button>
+    </div>
+
+    <div id="status" class="loading">발주서를 불러오는 중입니다.</div>
+    <main id="documentPage" class="page" hidden></main>
+
+    <script>
+        const COMPANY = {
+            name: '아스펙 (ASPEC)',
+            businessNo: '',
+            ceo: '',
+            address: '경기도 화성시 메타폴리스로 42, 9층 902호 (반송동, 디앤씨빌딩)',
+            phone: '010-5919-1810',
+            email: ''
+        };
+
+        function toNumber(value) {
+            return Number(value || 0);
+        }
+
+        function formatWon(value) {
+            return formatNumber(toNumber(value));
+        }
+
+        function formatKoreanDate(value) {
+            if (!value) return '';
+            const parts = value.split('-');
+            if (parts.length !== 3) return value;
+            return `${parts[0]}년 ${parts[1]}월 ${parts[2]}일`;
+        }
+
+        function numberToKorean(num) {
+            num = toNumber(num);
+            if (!num) return '영';
+
+            const units = ['', '만', '억', '조'];
+            const small = ['', '십', '백', '천'];
+            const digit = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+            const chunks = [];
+
+            while (num > 0) {
+                chunks.push(num % 10000);
+                num = Math.floor(num / 10000);
+            }
+
+            return chunks.map((chunk, chunkIndex) => {
+                if (!chunk) return '';
+                let text = '';
+                for (let i = 0; i < 4; i++) {
+                    const n = Math.floor(chunk / Math.pow(10, i)) % 10;
+                    if (!n) continue;
+                    text = digit[n] + small[i] + text;
+                }
+                return text + units[chunkIndex];
+            }).reverse().join('');
+        }
+
+        function renderItems(items) {
+            const rows = [];
+            const displayItems = Array.isArray(items) ? items : [];
+
+            displayItems.forEach((item, index) => {
+                const qty = toNumber(item.qty);
+                const price = toNumber(item.price);
+                const amount = toNumber(item.supply || (qty * price));
+                rows.push(`
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td class="name">${escapeHtml(item.name || '')}</td>
+                        <td class="spec">${escapeHtml(item.spec || '')}</td>
+                        <td>${formatWon(qty)}</td>
+                        <td>${escapeHtml(item.unit || 'EA')}</td>
+                        <td class="money">${formatWon(price)}</td>
+                        <td class="money">${formatWon(amount)}</td>
+                    </tr>
+                `);
+            });
+
+            for (let i = displayItems.length; i < 12; i++) {
+                rows.push('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>');
+            }
+
+            return rows.join('');
+        }
+
+        function renderDocument(row) {
+            const supply = toNumber(row.total_supply);
+            const vat = toNumber(row.total_vat);
+            const total = toNumber(row.total_amount || supply + vat);
+
+            document.getElementById('documentPage').innerHTML = `
+                <section class="title-row">
+                    <h1>발주서</h1>
+                    <table class="approval">
+                        <tr>
+                            <th class="vertical" rowspan="2">결재</th>
+                            <th>작성</th>
+                            <th>승인</th>
+                            <th>승인</th>
+                        </tr>
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </section>
+
+                <section class="top-grid">
+                    <div>
+                        <table class="info-table">
+                            <tr><th>발주번호</th><td>${escapeHtml(row.po_number || '')}</td></tr>
+                            <tr><th>수신</th><td>${escapeHtml(row.partner_name || '')}</td></tr>
+                            <tr><th>담당자</th><td>${escapeHtml(row.partner_manager || '')}</td></tr>
+                            <tr><th>TEL</th><td>${escapeHtml(row.phone || '')}</td></tr>
+                            <tr><th>E-mail</th><td>${escapeHtml(row.email || '')}</td></tr>
+                        </table>
+                        <div class="date-line">납기일자 : ${formatKoreanDate(row.date)}</div>
+                    </div>
+
+                    <div>
+                        <div class="company-mark">ASPEC</div>
+                        <table class="info-table">
+                            <tr><th>사업자번호</th><td>${escapeHtml(COMPANY.businessNo)}</td></tr>
+                            <tr><th>회사명/대표</th><td>${escapeHtml(COMPANY.name)} ${COMPANY.ceo ? '/ ' + escapeHtml(COMPANY.ceo) : ''}</td></tr>
+                            <tr><th>주소</th><td>${escapeHtml(COMPANY.address)}</td></tr>
+                            <tr><th>담당/연락처</th><td>${escapeHtml(row.manager || '')} / ${escapeHtml(COMPANY.phone)}</td></tr>
+                            <tr><th>e-mail</th><td>${escapeHtml(COMPANY.email)}</td></tr>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="amount-bar">
+                    <div>금 액 : ${numberToKorean(total)} 원정</div>
+                    <div>(₩: ${formatWon(total)} ) / VAT포함</div>
+                </section>
+
+                <table class="items">
+                    <colgroup>
+                        <col style="width: 6%;">
+                        <col style="width: 28%;">
+                        <col style="width: 30%;">
+                        <col style="width: 8%;">
+                        <col style="width: 8%;">
+                        <col style="width: 10%;">
+                        <col style="width: 10%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>번호</th>
+                            <th>품목</th>
+                            <th>규격</th>
+                            <th>수량</th>
+                            <th>단위</th>
+                            <th>단가</th>
+                            <th>금액</th>
+                        </tr>
+                    </thead>
+                    <tbody>${renderItems(row.items)}</tbody>
+                </table>
+
+                <table class="notes">
+                    <tr>
+                        <th>납기장소</th>
+                        <td>${escapeHtml(row.partner_address || '')}</td>
+                    </tr>
+                    <tr>
+                        <th>전자세금계산서</th>
+                        <td>담당자 : ${escapeHtml(row.partner_manager || '')}<br>전화 : ${escapeHtml(row.phone || '')} &nbsp;&nbsp; e-mail : ${escapeHtml(row.email || '')}</td>
+                    </tr>
+                    <tr>
+                        <th>주의사항</th>
+                        <td class="notice">${escapeHtml(row.note || '납기엄수 부탁드립니다.')}</td>
+                    </tr>
+                </table>
+            `;
+        }
+
+        async function loadPurchaseOrder() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            const status = document.getElementById('status');
+
+            if (!token) {
+                status.className = 'error';
+                status.textContent = '발주서 토큰이 없습니다.';
+                return;
+            }
+
+            const result = await supabaseClient
+                .from('purchase_orders')
+                .select('*')
+                .eq('public_token', token)
+                .single();
+
+            if (result.error || !result.data) {
+                status.className = 'error';
+                status.innerHTML = '발주서를 불러오지 못했습니다.<br>링크가 올바른지, Supabase 공개 조회 권한이 있는지 확인해 주세요.';
+                return;
+            }
+
+            renderDocument(result.data);
+            status.hidden = true;
+            document.getElementById('documentPage').hidden = false;
+        }
+
+        async function copyCurrentUrl() {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                alert('링크가 복사되었습니다.');
+            } catch (e) {
+                prompt('아래 링크를 복사하세요.', window.location.href);
+            }
+        }
+
+        loadPurchaseOrder();
+    </script>
+</body>
+</html>
