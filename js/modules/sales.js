@@ -60,6 +60,9 @@ const SalesModule = {
             <button onclick="SalesModule.copyPublicLink('${dataId}')" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="거래명세서 링크 복사">
                 <i class="fa-solid fa-link fa-lg"></i>
             </button>
+            <button onclick="SalesModule.copyEmailButton('${dataId}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition" title="이메일용 버튼 복사">
+                <i class="fa-solid fa-envelope fa-lg"></i>
+            </button>
             <button onclick="SalesModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
                 <i class="fa-regular fa-copy fa-lg"></i>
             </button>
@@ -137,6 +140,34 @@ const SalesModule = {
             alert('거래명세서 보기/인쇄 링크가 복사되었습니다.\n이메일 버튼 링크로 사용하시면 됩니다.');
         } catch (e) {
             prompt('아래 거래명세서 링크를 복사하세요.', url);
+        }
+    },
+
+    buildEmailButtonHtml(url, label) {
+        return `<a href="${escapeAttr(url)}" style="display:inline-block;background:#1237c8;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:18px;font-family:Arial,'Malgun Gothic',sans-serif;">${escapeHtml(label)}</a>`;
+    },
+
+    async copyEmailButton(dataId) {
+        const token = await this.ensurePublicToken(dataId);
+        if (!token) return;
+
+        const url = this.getPublicDocumentUrl(token);
+        const html = this.buildEmailButtonHtml(url, '거래명세서 보기 / 인쇄');
+
+        try {
+            if (navigator.clipboard && window.ClipboardItem && window.isSecureContext) {
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'text/html': new Blob([html], { type: 'text/html' }),
+                        'text/plain': new Blob([url], { type: 'text/plain' })
+                    })
+                ]);
+            } else {
+                await navigator.clipboard.writeText(html);
+            }
+            alert('이메일용 버튼이 복사되었습니다.\n메일 본문에 붙여넣으면 버튼 모양으로 표시됩니다.');
+        } catch (e) {
+            prompt('아래 HTML을 이메일 본문에 넣어 사용하세요.', html);
         }
     },
     
