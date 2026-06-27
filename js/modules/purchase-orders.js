@@ -117,9 +117,6 @@ const PurchaseOrdersModule = {
                     <button onclick="PurchaseOrdersModule.openPublicDocument('${dataId}')" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="발주서 외부 보기">
                         <i class="fa-solid fa-eye fa-lg"></i>
                     </button>
-                    <button onclick="PurchaseOrdersModule.copyPublicLink('${dataId}')" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="발주서 링크 복사">
-                        <i class="fa-solid fa-link fa-lg"></i>
-                    </button>
                     <button onclick="PurchaseOrdersModule.copyEmailButton('${dataId}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition" title="이메일용 버튼 복사">
                         <i class="fa-solid fa-envelope fa-lg"></i>
                     </button>
@@ -286,8 +283,12 @@ const PurchaseOrdersModule = {
         body.innerHTML = this.getFormHtml(autoPO, today);
         
         this.fillFormData(row);
-        document.getElementById('poDate').value = today;
-        document.getElementById('poNum').value = autoPO;
+        setTimeout(() => {
+            const dateInput = document.getElementById('poDate');
+            const numInput = document.getElementById('poNum');
+            if (dateInput) dateInput.value = today;
+            if (numInput) numInput.value = autoPO;
+        }, 80);
     },
     
     /**
