@@ -67,6 +67,43 @@ body {
     text-align: center;
 }
 
+.data-table td:has(.doc-action-buttons) {
+    overflow: visible;
+    white-space: normal;
+}
+
+.data-table td.action-cell {
+    overflow: visible;
+    white-space: normal;
+}
+
+.doc-action-buttons {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    min-width: 132px;
+}
+
+.doc-action-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.doc-action-buttons button {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    padding: 4px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ========== 입력 요소 ========== */
 .input-box {
     width: 100%;
