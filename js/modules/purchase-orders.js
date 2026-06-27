@@ -102,6 +102,15 @@ const PurchaseOrdersModule = {
                 <button onclick="printDocument('purchase_orders', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄">
                     <i class="fa-solid fa-print fa-lg"></i>
                 </button>
+                <button onclick="PurchaseOrdersModule.openPublicDocument('${dataId}')" class="text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition" title="발주서 외부 보기">
+                    <i class="fa-solid fa-eye fa-lg"></i>
+                </button>
+                <button onclick="PurchaseOrdersModule.copyPublicLink('${dataId}')" class="text-cyan-600 hover:text-cyan-800 p-2 rounded hover:bg-cyan-50 transition" title="발주서 링크 복사">
+                    <i class="fa-solid fa-link fa-lg"></i>
+                </button>
+                <button onclick="PurchaseOrdersModule.copyEmailButton('${dataId}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition" title="이메일용 버튼 복사">
+                    <i class="fa-solid fa-envelope fa-lg"></i>
+                </button>
                 <button onclick="PurchaseOrdersModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사">
                     <i class="fa-regular fa-copy fa-lg"></i>
                 </button>
@@ -112,6 +121,98 @@ const PurchaseOrdersModule = {
                     <i class="fa-solid fa-trash-can fa-lg"></i>
                 </button>
             </div>`;
+    },
+
+    generatePublicToken() {
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    },
+
+    getPublicDocumentUrl(token) {
+        const url = new URL('po-view.html', window.location.href);
+        url.searchParams.set('token', token);
+        return url.toString();
+    },
+
+    async ensurePublicToken(dataId) {
+        const row = getRowData(dataId);
+        if (!row) {
+            alert('데이터 오류');
+            return null;
+        }
+
+        if (row.public_token) return row.public_token;
+
+        const token = this.generatePublicToken();
+        const result = await supabaseClient
+            .from(this.tableName)
+            .update({ public_token: token })
+            .eq('id', row.id);
+
+        if (result.error) {
+            alert('공개 링크 토큰 생성에 실패했습니다.\nSupabase purchase_orders 테이블에 public_token 컬럼이 있는지 확인해 주세요.\n\n' + result.error.message);
+            return null;
+        }
+
+        row.public_token = token;
+        return token;
+    },
+
+    async openPublicDocument(dataId) {
+        const token = await this.ensurePublicToken(dataId);
+        if (!token) return;
+        window.open(this.getPublicDocumentUrl(token), '_blank', 'noopener');
+    },
+
+    async copyPublicLink(dataId) {
+        const token = await this.ensurePublicToken(dataId);
+        if (!token) return;
+        const url = this.getPublicDocumentUrl(token);
+
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(url);
+            } else {
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                input.remove();
+            }
+            alert('발주서 보기/인쇄 링크가 복사되었습니다.');
+        } catch (e) {
+            prompt('아래 발주서 링크를 복사하세요.', url);
+        }
+    },
+
+    buildEmailButtonHtml(url, label) {
+        return `<a href="${escapeAttr(url)}" style="display:inline-block;background:#1237c8;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:18px;font-family:Arial,'Malgun Gothic',sans-serif;">${escapeHtml(label)}</a>`;
+    },
+
+    async copyEmailButton(dataId) {
+        const token = await this.ensurePublicToken(dataId);
+        if (!token) return;
+
+        const url = this.getPublicDocumentUrl(token);
+        const html = this.buildEmailButtonHtml(url, '발주서 보기 / 인쇄');
+
+        try {
+            if (navigator.clipboard && window.ClipboardItem && window.isSecureContext) {
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'text/html': new Blob([html], { type: 'text/html' }),
+                        'text/plain': new Blob([url], { type: 'text/plain' })
+                    })
+                ]);
+            } else {
+                await navigator.clipboard.writeText(html);
+            }
+            alert('이메일용 버튼이 복사되었습니다.\n메일 본문에 붙여넣으면 버튼 모양으로 표시됩니다.');
+        } catch (e) {
+            prompt('아래 HTML을 이메일 본문에 넣어 사용하세요.', html);
+        }
     },
     
     /**
@@ -396,6 +497,7 @@ const PurchaseOrdersModule = {
             const seq = (count || 0) + 1;
             const yymmdd = dateVal.slice(2).replace(/-/g, '');
             data.po_number = `ASPEC-${yymmdd}-P${String(seq).padStart(2, '0')}`;
+            data.public_token = this.generatePublicToken();
         }
         
         let result;
