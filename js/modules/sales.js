@@ -240,8 +240,7 @@ const SalesModule = {
         const { data } = await supabaseClient.from('orders').select('*').eq('id', orderId).single();
         if (data) {
             this.currentLoadedOrderId = orderId;
-            DocumentBaseModule.fillFormData(data);
-            document.getElementById('sDate').value = getToday();
+            DocumentBaseModule.fillFormData(data, { date: getToday() });
         }
         document.getElementById('loadDataModal').classList.remove('active');
     },
@@ -283,11 +282,7 @@ const SalesModule = {
         // ★ 체크박스 UI 추가 (복사 시에는 기본적으로 체크 해제 상태로 두는 것이 일반적이나, 필요시 row.is_tax_invoice 전달)
         this._injectTaxCheckbox(false);
         
-        DocumentBaseModule.fillFormData(row);
-        setTimeout(() => {
-            const dateInput = document.getElementById('sDate');
-            if (dateInput) dateInput.value = getToday();
-        }, 80);
+        DocumentBaseModule.fillFormData(row, { date: getToday() });
     },
     
     /**
