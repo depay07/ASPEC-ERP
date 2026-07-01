@@ -86,8 +86,7 @@ const OrdersModule = {
             .single();
         
         if (data) {
-            DocumentBaseModule.fillFormData(data);
-            document.getElementById('sDate').value = getToday();
+            DocumentBaseModule.fillFormData(data, { date: getToday() });
         }
         
         document.getElementById('loadDataModal').classList.remove('active');
@@ -122,8 +121,7 @@ const OrdersModule = {
         const body = document.getElementById('modalBody');
         body.innerHTML = DocumentBaseModule.getDocumentFormHtml('orders');
         
-        DocumentBaseModule.fillFormData(row);
-        document.getElementById('sDate').value = getToday();
+        DocumentBaseModule.fillFormData(row, { date: getToday() });
     },
     
     /**
