@@ -282,13 +282,7 @@ const PurchaseOrdersModule = {
         const body = document.getElementById('modalBody');
         body.innerHTML = this.getFormHtml(autoPO, today);
         
-        this.fillFormData(row);
-        setTimeout(() => {
-            const dateInput = document.getElementById('poDate');
-            const numInput = document.getElementById('poNum');
-            if (dateInput) dateInput.value = today;
-            if (numInput) numInput.value = autoPO;
-        }, 80);
+        this.fillFormData(row, { date: today, poNumber: autoPO });
     },
     
     /**
@@ -420,10 +414,10 @@ const PurchaseOrdersModule = {
     /**
      * 모달창에 기존 데이터 세팅
      */
-    fillFormData(row) {
+    fillFormData(row, options = {}) {
         setTimeout(() => {
-            document.getElementById('poNum').value = row.po_number || '';
-            document.getElementById('poDate').value = row.date || '';
+            document.getElementById('poNum').value = options.poNumber || row.po_number || '';
+            document.getElementById('poDate').value = options.date || row.date || '';
             document.getElementById('poPartner').value = row.partner_name || '';
             document.getElementById('poEndUser').value = row.end_user || '';
             document.getElementById('poManager').value = row.manager || '';
