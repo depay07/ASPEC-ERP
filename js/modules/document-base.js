@@ -495,9 +495,9 @@ const DocumentBaseModule = {
     /**
      * 폼에 데이터 채우기 (수정/복사용)
      */
-    fillFormData(row) {
+    fillFormData(row, options = {}) {
         setTimeout(() => {
-            document.getElementById('sDate').value = row.date || '';
+            document.getElementById('sDate').value = options.date || row.date || '';
             document.getElementById('sPartner').value = row.partner_name || '';
             document.getElementById('sManager').value = row.manager || '';
             
