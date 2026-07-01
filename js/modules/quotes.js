@@ -72,8 +72,7 @@ const QuotesModule = {
         const body = document.getElementById('modalBody');
         body.innerHTML = DocumentBaseModule.getDocumentFormHtml('quotes');
         
-        DocumentBaseModule.fillFormData(row);
-        document.getElementById('sDate').value = getToday();
+        DocumentBaseModule.fillFormData(row, { date: getToday() });
     },
     
     /**
