@@ -5,6 +5,26 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+function getInitialCalendarDate() {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit'
+    }).formatToParts(new Date());
+    
+    const values = {};
+    parts.forEach(part => {
+        if (part.type !== 'literal') values[part.type] = part.value;
+    });
+    
+    return {
+        year: Number(values.year),
+        month: Number(values.month) - 1
+    };
+}
+
+var initialCalendarDate = getInitialCalendarDate();
+
 // 전역 상태 저장소
 var AppState = {
     currentTab: 'dashboard',
@@ -22,8 +42,8 @@ var AppState = {
     
     // 캘린더 관련
     calendar: {
-        currentYear: new Date().getFullYear(),
-        currentMonth: new Date().getMonth(),
+        currentYear: initialCalendarDate.year,
+        currentMonth: initialCalendarDate.month,
         events: [],
         selectedColor: 'green',
         editingEventId: null

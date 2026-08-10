@@ -64,20 +64,51 @@ function formatNumber(num) {
  * 오늘 날짜 (YYYY-MM-DD)
  */
 function getToday() {
-    return new Date().toISOString().split('T')[0];
+    return formatDateInTimeZone(new Date());
+}
+
+/**
+ * 지정 시간대 기준 날짜 문자열 (YYYY-MM-DD)
+ */
+function formatDateInTimeZone(date, timeZone = 'Asia/Seoul') {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(date);
+    
+    const values = {};
+    parts.forEach(part => {
+        if (part.type !== 'literal') values[part.type] = part.value;
+    });
+    
+    return `${values.year}-${values.month}-${values.day}`;
+}
+
+/**
+ * YYYY-MM-DD 문자열을 시간대 변환 없이 날짜 구성요소로 분해
+ */
+function parseDateString(dateStr) {
+    const [year, month, day] = String(dateStr || '').split('-').map(Number);
+    return {
+        year: year || 0,
+        month: month || 0,
+        day: day || 0
+    };
 }
 
 /**
  * 날짜 범위 계산 (기본 1년 전 ~ 오늘)
  */
 function getDefaultDateRange(yearsBack = 1) {
-    const today = new Date();
-    const startDate = new Date();
-    startDate.setFullYear(today.getFullYear() - yearsBack);
+    const todayStr = getToday();
+    const todayParts = parseDateString(todayStr);
+    const startYear = todayParts.year - yearsBack;
     
     return {
-        start: startDate.toISOString().split('T')[0],
-        end: today.toISOString().split('T')[0]
+        start: `${startYear}-${String(todayParts.month).padStart(2, '0')}-${String(todayParts.day).padStart(2, '0')}`,
+        end: todayStr
     };
 }
 

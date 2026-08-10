@@ -89,7 +89,7 @@ const CalendarModule = {
         const firstDayOfWeek = firstDay.getDay();
         const lastDate = lastDay.getDate();
         const prevLastDate = prevLastDay.getDate();
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = getToday();
         
         let html = '';
         
@@ -158,7 +158,7 @@ const CalendarModule = {
             (e.title && e.title.toLowerCase().includes(lowerKey)) || 
             (e.description && e.description.toLowerCase().includes(lowerKey))
         );
-        filtered.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+        filtered.sort((a, b) => a.start_date.localeCompare(b.start_date));
         
         if (filtered.length === 0) {
             return `
@@ -174,10 +174,11 @@ const CalendarModule = {
             <div class="overflow-y-auto flex-1 p-4">
                 <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-slate-200 divide-y divide-slate-100">
                     ${filtered.map(evt => {
-                        const dateObj = new Date(evt.start_date);
-                        const dayNum = dateObj.getDate();
+                        const dateParts = parseDateString(evt.start_date);
+                        const dateObj = new Date(dateParts.year, dateParts.month - 1, dateParts.day);
+                        const dayNum = dateParts.day;
                         const dayStr = days[dateObj.getDay()];
-                        const yearMonth = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월`;
+                        const yearMonth = `${dateParts.year}년 ${dateParts.month}월`;
                         const timeHtml = evt.all_day 
                             ? `<span class="inline-block w-2 h-2 rounded-full bg-${evt.color}-500 mr-2"></span>종일`
                             : `<span class="inline-block w-2 h-2 rounded-full bg-${evt.color}-500 mr-2"></span>${evt.start_time.substring(0,5)} ~ ${evt.end_time.substring(0,5)}`;
@@ -241,9 +242,9 @@ const CalendarModule = {
      * 오늘로 이동
      */
     goToToday() {
-        const today = new Date();
-        AppState.calendar.currentYear = today.getFullYear();
-        AppState.calendar.currentMonth = today.getMonth();
+        const today = parseDateString(getToday());
+        AppState.calendar.currentYear = today.year;
+        AppState.calendar.currentMonth = today.month - 1;
         this.render();
     },
     
