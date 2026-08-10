@@ -21,12 +21,74 @@ function closeModal() {
 /**
  * 모바일 사이드바 열기/닫기
  */
+function setMobileSidebarOpen(isOpen) {
+    var menuButton = document.getElementById('mobileMenuButton');
+    var sidebar = document.getElementById('appSidebar');
+    var overlay = document.getElementById('mobileSidebarOverlay');
+
+    if (!menuButton || !sidebar || !overlay) return;
+
+    document.body.classList.toggle('mobile-sidebar-open', isOpen);
+    menuButton.setAttribute('aria-expanded', String(isOpen));
+    menuButton.setAttribute('aria-label', isOpen ? '메뉴 닫기' : '메뉴 열기');
+    overlay.setAttribute('aria-hidden', String(!isOpen));
+
+    if (window.matchMedia('(max-width: 768px)').matches) {
+        sidebar.setAttribute('aria-hidden', String(!isOpen));
+    } else {
+        sidebar.removeAttribute('aria-hidden');
+    }
+}
+
 function toggleMobileSidebar() {
-    document.body.classList.toggle('mobile-sidebar-open');
+    if (!window.matchMedia('(max-width: 768px)').matches) return;
+    setMobileSidebarOpen(!document.body.classList.contains('mobile-sidebar-open'));
 }
 
 function closeMobileSidebar() {
-    document.body.classList.remove('mobile-sidebar-open');
+    setMobileSidebarOpen(false);
+}
+
+function initializeMobileSidebar() {
+    var menuButton = document.getElementById('mobileMenuButton');
+    var sidebar = document.getElementById('appSidebar');
+    var overlay = document.getElementById('mobileSidebarOverlay');
+
+    if (!menuButton || !sidebar || !overlay) return;
+
+    menuButton.addEventListener('click', toggleMobileSidebar);
+    overlay.addEventListener('click', closeMobileSidebar);
+
+    sidebar.addEventListener('click', function(event) {
+        if (!window.matchMedia('(max-width: 768px)').matches) return;
+
+        var menuItem = event.target.closest('.nav-btn, a[href]');
+        if (menuItem) closeMobileSidebar();
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') closeMobileSidebar();
+    });
+
+    var mobileMediaQuery = window.matchMedia('(max-width: 768px)');
+    var handleViewportChange = function(event) {
+        if (!event.matches) closeMobileSidebar();
+        else setMobileSidebarOpen(false);
+    };
+
+    if (typeof mobileMediaQuery.addEventListener === 'function') {
+        mobileMediaQuery.addEventListener('change', handleViewportChange);
+    } else {
+        mobileMediaQuery.addListener(handleViewportChange);
+    }
+
+    setMobileSidebarOpen(false);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeMobileSidebar);
+} else {
+    initializeMobileSidebar();
 }
 
 /**

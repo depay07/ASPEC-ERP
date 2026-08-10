@@ -11,20 +11,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- 커스텀 스타일 -->
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=20260811">
 </head>
 <body class="bg-slate-100 text-slate-800">
 
     <!-- 모바일 상단바 -->
     <header id="mobileHeader" class="mobile-header no-print">
-        <button type="button" onclick="toggleMobileSidebar()" class="mobile-menu-btn" aria-label="메뉴 열기">
+        <button type="button" id="mobileMenuButton" class="mobile-menu-btn" aria-label="메뉴 열기" aria-controls="appSidebar" aria-expanded="false">
             <i class="fa-solid fa-bars"></i>
         </button>
         <div class="font-bold text-white">ASPEC <span class="text-cyan-300 text-xs">ERP</span></div>
         <div class="w-10"></div>
     </header>
 
-    <div id="mobileSidebarOverlay" class="mobile-sidebar-overlay no-print" onclick="closeMobileSidebar()"></div>
+    <div id="mobileSidebarOverlay" class="mobile-sidebar-overlay no-print" aria-hidden="true"></div>
 
     <!-- 메인 레이아웃 -->
     <div id="appLayout" class="flex h-screen overflow-hidden no-print">
@@ -300,7 +300,7 @@
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/ui.js"></script>    
+    <script src="js/ui.js?v=20260811"></script>
     
     <!-- 모듈 -->
     <script src="js/modules/dashboard.js"></script>
