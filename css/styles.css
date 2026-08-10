@@ -537,7 +537,7 @@ body {
         bottom: 0;
         width: 260px !important;
         max-width: 82vw;
-        z-index: 60;
+        z-index: 60 !important;
         transform: translateX(-100%);
         transition: transform 0.22s ease;
         visibility: visible;
