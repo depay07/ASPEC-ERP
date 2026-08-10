@@ -108,7 +108,7 @@ const CalendarModule = {
             const hiddenCount = dayEvents.length - 2;
             
             html += `
-                <div class="calendar-day ${isToday ? 'today' : ''}" onclick="CalendarModule.openEventModal('${dateStr}')">
+                <div class="calendar-day ${isToday ? 'today' : ''} ${dayEvents.length > 0 ? 'has-events' : ''}" data-event-count="${dayEvents.length}" onclick="CalendarModule.handleDateClick('${dateStr}', ${dayEvents.length})">
                     <div class="calendar-day-number">${date}</div>
                     ${visibleEvents.map(evt => `
                         <div class="calendar-event event-${evt.color} ${evt.all_day ? 'allday' : ''}" 
@@ -147,6 +147,17 @@ const CalendarModule = {
                 if (a.start_time && b.start_time) return a.start_time.localeCompare(b.start_time);
                 return 0;
             });
+    },
+
+    /**
+     * 날짜 클릭 처리
+     */
+    handleDateClick(dateStr, eventCount) {
+        if (window.matchMedia('(max-width: 768px)').matches && eventCount > 0) {
+            this.showAllEvents(dateStr);
+            return;
+        }
+        this.openEventModal(dateStr);
     },
     
     /**

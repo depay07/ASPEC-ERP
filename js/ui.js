@@ -19,6 +19,17 @@ function closeModal() {
 }
 
 /**
+ * 모바일 사이드바 열기/닫기
+ */
+function toggleMobileSidebar() {
+    document.body.classList.toggle('mobile-sidebar-open');
+}
+
+function closeMobileSidebar() {
+    document.body.classList.remove('mobile-sidebar-open');
+}
+
+/**
  * 검색 패널 렌더링
  */
 function renderSearchPanel(tab) {

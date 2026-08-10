@@ -6,6 +6,7 @@
 async function switchTab(tab) {
     AppState.currentTab = tab;
     updateNavigation(tab);
+    closeMobileSidebar();
     
     var container = document.getElementById('contentArea');
     
