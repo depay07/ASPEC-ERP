@@ -140,7 +140,18 @@ function renderTabContent(tab, container) {
     html += '</div>';
 
     if (tab === 'memos') {
-        html += '<div id="listBody" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4"></div>';
+        html += '<div class="flex flex-col md:flex-row min-h-[560px] border-t border-slate-200 bg-white">';
+        html += '<aside class="w-full md:w-56 flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-200 p-3">';
+        html += '<div class="flex items-center justify-between mb-3">';
+        html += '<h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-folder text-amber-500"></i> 폴더</h3>';
+        html += '<button onclick="runSaveOnce(\'memo-folder-create\', this, () => MemosModule.createFolder())" class="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-cyan-700 hover:bg-cyan-50 rounded" title="새 폴더"><i class="fa-solid fa-plus"></i></button>';
+        html += '</div>';
+        html += '<div id="memoFolderList" class="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0"></div>';
+        html += '</aside>';
+        html += '<section class="flex-1 min-w-0 bg-slate-50">';
+        html += '<div id="memoFolderNotice"></div>';
+        html += '<div id="listBody" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 p-4"></div>';
+        html += '</section></div>';
     } else {
         html += '<div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">';
         html += '<table class="data-table">';
