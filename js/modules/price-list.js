@@ -118,7 +118,7 @@ const PriceListModule = {
             <div class="grid grid-cols-2 gap-3">
                 <div class="col-span-2">
                     <label class="text-xs">품목명 (필수)</label>
-                    <input id="priceName" class="input-box" list="dl_price_products" onchange="PriceListModule.fillFromProduct(this.value)">
+                    <input id="priceName" class="input-box" list="dl_price_products" oninput="PriceListModule.fillFromProduct(this.value)">
                     <datalist id="dl_price_products"></datalist>
                 </div>
                 <div>
@@ -135,7 +135,7 @@ const PriceListModule = {
                 </div>
                 <div>
                     <label class="text-xs">단위</label>
-                    <input id="priceUnit" class="input-box" placeholder="EA">
+                    <input id="priceUnit" class="input-box" value="EA">
                 </div>
                 <div>
                     <label class="text-xs">통화</label>
