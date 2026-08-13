@@ -199,6 +199,7 @@ function getTabSpecificFilters(tab) {
                         <option value="개발중">개발중</option>
                         <option value="현장셋업">현장셋업</option>
                         <option value="완료">완료</option>
+                        <option value="드랍">드랍</option>
                         <option value="보류">보류</option>
                     </select>
                 </div>

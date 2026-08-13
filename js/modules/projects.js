@@ -20,7 +20,7 @@ const ProjectsModule = {
                     <div class="flex-1 min-w-[300px]">
                         <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">프로젝트 상태 필터 (다중 선택)</label>
                         <div class="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            ${['대기', '광학테스트', '개발중', '현장셋업', '완료', '보류'].map(status => `
+                            ${['대기', '광학테스트', '개발중', '현장셋업', '완료', '드랍', '보류'].map(status => `
                                 <label class="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-md border hover:border-cyan-500 transition shadow-sm text-sm">
                                     <input type="checkbox" name="search_pStatus" value="${status}" class="w-4 h-4 accent-cyan-600"> ${status}
                                 </label>
@@ -116,6 +116,7 @@ const ProjectsModule = {
             '개발중': 'bg-blue-100 text-blue-700 border-blue-200',
             '현장셋업': 'bg-orange-100 text-orange-700 border-orange-200',
             '완료': 'bg-green-100 text-green-700 border-green-200',
+            '드랍': 'bg-slate-200 text-slate-700 border-slate-300',
             '보류': 'bg-red-100 text-red-700 border-red-200'
         };
         const style = styles[status] || styles['대기'];
@@ -213,7 +214,7 @@ const ProjectsModule = {
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="block text-xs font-bold text-slate-500">상태</label>
                         <select id="projStatus" class="input-box w-full">
-                            <option value="대기">대기</option><option value="광학테스트">광학테스트</option><option value="개발중">개발중</option><option value="현장셋업">현장셋업</option><option value="완료">완료</option><option value="보류">보류</option>
+                            <option value="대기">대기</option><option value="광학테스트">광학테스트</option><option value="개발중">개발중</option><option value="현장셋업">현장셋업</option><option value="완료">완료</option><option value="드랍">드랍</option><option value="보류">보류</option>
                         </select>
                     </div>
                     <div><label class="block text-xs font-bold text-slate-500">진척도</label><input type="number" id="projProgress" class="input-box w-full" min="0" max="100"></div>
