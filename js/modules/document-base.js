@@ -382,18 +382,18 @@ const DocumentBaseModule = {
                     </td>
                     <td class="p-2 border">
                         <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
-                               value="${item.name || ''}" 
+                               value="${escapeAttr(item.name || '')}"
                                list="dl_prod_doc"
                                onchange="DocumentBaseModule.updateItemValue(${idx}, 'name', this.value)">
                     </td>
                     <td class="p-2 border">
                         <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1 text-xs" 
-                               value="${item.spec || ''}" 
+                               value="${escapeAttr(item.spec || '')}"
                                onchange="DocumentBaseModule.updateItemValue(${idx}, 'spec', this.value)">
                     </td>
                     <td class="p-2 border">
                         <input type="text" class="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1 text-center text-xs" 
-                               value="${item.unit || 'EA'}" 
+                               value="${escapeAttr(item.unit || 'EA')}"
                                onchange="DocumentBaseModule.updateItemValue(${idx}, 'unit', this.value)">
                     </td>
                     <td class="p-2 border">

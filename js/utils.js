@@ -49,7 +49,7 @@ function escapeAttr(value) {
 function fillDatalist(id, list) {
     const dl = document.getElementById(id);
     if (dl) {
-        dl.innerHTML = list.map(i => `<option value="${i.name}">`).join('');
+        dl.innerHTML = list.map(i => `<option value="${escapeAttr(i.name)}">`).join('');
     }
 }
 
