@@ -319,7 +319,7 @@ const InventoryModule = {
                 <input id="adjustReason" class="input-box" placeholder="예: 재고 실사, 파손 등">
             </div>
             
-            <button onclick="InventoryModule.saveAdjustment(${productId})" class="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 transition">
+            <button onclick="runSaveOnce('inventory-adjust-${productId}', this, () => InventoryModule.saveAdjustment(${productId}))" class="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 transition">
                 재고 조정
             </button>`;
     },

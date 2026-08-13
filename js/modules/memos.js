@@ -145,7 +145,7 @@ const MemosModule = {
                     <label class="text-xs font-bold text-slate-700 block mb-1">라벨 색상</label>
                     <input type="color" id="memoColor" value="#06b6d4" class="w-full h-10 rounded cursor-pointer border-none bg-transparent">
                 </div>
-                <button onclick="MemosModule.save()" id="btnSaveMemo" class="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 transition">
+                <button onclick="runSaveOnce('memo', this, () => MemosModule.save())" id="btnSaveMemo" class="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 transition">
                     메모 저장
                 </button>
             </div>`;

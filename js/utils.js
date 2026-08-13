@@ -43,6 +43,41 @@ function escapeAttr(value) {
     return escapeHtml(value);
 }
 
+// 네트워크 응답 전 같은 저장 작업이 다시 실행되는 것을 방지합니다.
+var activeSaveActions = new Set();
+
+async function runSaveOnce(key, button, action) {
+    const lockKey = String(key);
+    if (activeSaveActions.has(lockKey)) return false;
+
+    activeSaveActions.add(lockKey);
+
+    const originalHtml = button ? button.innerHTML : '';
+    if (button) {
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.classList.add('opacity-60', 'cursor-wait');
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>저장 중...';
+    }
+
+    try {
+        return await action();
+    } catch (error) {
+        console.error('저장 처리 오류:', error);
+        alert('저장 처리 중 오류가 발생했습니다: ' + (error?.message || error));
+        return false;
+    } finally {
+        activeSaveActions.delete(lockKey);
+
+        if (button && button.isConnected) {
+            button.disabled = false;
+            button.removeAttribute('aria-busy');
+            button.classList.remove('opacity-60', 'cursor-wait');
+            button.innerHTML = originalHtml;
+        }
+    }
+}
+
 /**
  * Datalist 채우기
  */

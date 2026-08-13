@@ -221,7 +221,7 @@ const ProjectsModule = {
                 </div>
                 <label class="block text-xs font-bold text-slate-500">메모</label>
                 <textarea id="projNote" class="input-box w-full h-20"></textarea>
-                <button onclick="ProjectsModule.save()" class="w-full bg-cyan-600 text-white py-3 rounded font-bold">저장하기</button>
+                <button onclick="runSaveOnce('project', this, () => ProjectsModule.save())" class="w-full bg-cyan-600 text-white py-3 rounded font-bold">저장하기</button>
             </div>`;
     },
 

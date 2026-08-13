@@ -205,7 +205,7 @@ const BookkeepingModule = {
                     <input id="bkNote" class="input-box" placeholder="메모 사항">
                 </div>
             </div>
-            <button onclick="BookkeepingModule.save()" class="w-full mt-6 bg-slate-800 text-white py-3 rounded font-bold hover:bg-slate-900 transition">
+            <button onclick="runSaveOnce('bookkeeping', this, () => BookkeepingModule.save())" class="w-full mt-6 bg-slate-800 text-white py-3 rounded font-bold hover:bg-slate-900 transition">
                 저장하기
             </button>`;
     },

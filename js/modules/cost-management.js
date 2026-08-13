@@ -230,7 +230,7 @@ const CostManagementModule = {
                 </table>
             </div>
             
-            <button onclick="CostManagementModule.saveCost(${order.id})" 
+            <button onclick="runSaveOnce('cost-${order.id}', this, () => CostManagementModule.saveCost(${order.id}))"
                     class="w-full bg-slate-800 text-white py-3 rounded font-bold hover:bg-slate-900 transition">
                 원가 저장 및 마진 확정
             </button>`;

@@ -390,7 +390,7 @@ const PurchaseOrdersModule = {
                 </table>
             </div>
             
-            <button onclick="PurchaseOrdersModule.save()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
+            <button onclick="runSaveOnce('purchase-order', this, () => PurchaseOrdersModule.save())" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
                 발주 데이터 저장하기
             </button>
             

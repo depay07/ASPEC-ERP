@@ -132,7 +132,7 @@ const ProductsModule = {
                     <input id="prodMaker" class="input-box">
                 </div>
             </div>
-            <button onclick="ProductsModule.save()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold hover:bg-cyan-700 transition">
+            <button onclick="runSaveOnce('product', this, () => ProductsModule.save())" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold hover:bg-cyan-700 transition">
                 저장
             </button>`;
     },

@@ -203,7 +203,7 @@
                     <button id="deleteEventBtn" onclick="deleteEvent()" class="px-6 py-3 bg-red-500 text-white rounded font-bold hover:bg-red-600" style="display: none;">삭제</button>
                     <div class="flex-1"></div>
                     <button onclick="closeEventModal()" class="px-6 py-3 bg-slate-200 rounded font-bold hover:bg-slate-300 mr-2">취소</button>
-                    <button onclick="saveEvent()" class="px-6 py-3 bg-blue-500 text-white rounded font-bold hover:bg-blue-600">저장</button>
+                    <button onclick="runSaveOnce('calendar-event', this, () => saveEvent())" class="px-6 py-3 bg-blue-500 text-white rounded font-bold hover:bg-blue-600">저장</button>
                 </div>
             </div>
         </div>
@@ -298,30 +298,30 @@
     <!-- ========== JavaScript 파일 로드 ========== -->
     <!-- 핵심 설정 -->
     <script src="js/config.js"></script>
-    <script src="js/utils.js?v=20260814"></script>
+    <script src="js/utils.js?v=20260814-4"></script>
     <script src="js/auth.js"></script>
     <script src="js/ui.js?v=20260814-3"></script>
     
     <!-- 모듈 -->
     <script src="js/modules/dashboard.js"></script>
-    <script src="js/modules/calendar.js"></script>
-    <script src="js/modules/partners.js"></script>
-    <script src="js/modules/products.js"></script>
-    <script src="js/modules/bookkeeping.js"></script>
-    <script src="js/modules/meeting-logs.js"></script>
-    <script src="js/modules/memos.js"></script>
-    <script src="js/modules/purchases.js?v=20260814-2"></script>
-    <script src="js/modules/purchase-orders.js"></script>
-    <script src="js/modules/document-base.js?v=20260814"></script>
+    <script src="js/modules/calendar.js?v=20260814-4"></script>
+    <script src="js/modules/partners.js?v=20260814-4"></script>
+    <script src="js/modules/products.js?v=20260814-4"></script>
+    <script src="js/modules/bookkeeping.js?v=20260814-4"></script>
+    <script src="js/modules/meeting-logs.js?v=20260814-4"></script>
+    <script src="js/modules/memos.js?v=20260814-4"></script>
+    <script src="js/modules/purchases.js?v=20260814-4"></script>
+    <script src="js/modules/purchase-orders.js?v=20260814-4"></script>
+    <script src="js/modules/document-base.js?v=20260814-4"></script>
     <script src="js/modules/quotes.js"></script>
     <script src="js/modules/orders.js"></script>
     <script src="js/modules/sales.js?v=20260814-2"></script>
-    <script src="js/modules/collections.js"></script>
-    <script src="js/modules/inventory.js?v=20260814-2"></script>
-    <script src="js/modules/cost-management.js"></script>
-    <script src="js/modules/projects.js?v=20260814-3"></script>
+    <script src="js/modules/collections.js?v=20260814-4"></script>
+    <script src="js/modules/inventory.js?v=20260814-4"></script>
+    <script src="js/modules/cost-management.js?v=20260814-4"></script>
+    <script src="js/modules/projects.js?v=20260814-4"></script>
     <script src="js/modules/print.js"></script>
-    <script src="js/modules/bom.js"></script>
+    <script src="js/modules/bom.js?v=20260814-4"></script>
     <script src="js/router.js?v=20251231"></script>
     
 

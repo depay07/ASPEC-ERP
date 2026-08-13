@@ -455,7 +455,7 @@ const CalendarModule = {
 // 전역 함수 연결 (HTML에서 호출용)
 function toggleAllDay() { CalendarModule.toggleAllDay(); }
 function selectColor(color) { CalendarModule.selectColor(color); }
-function saveEvent() { CalendarModule.saveEvent(); }
+function saveEvent() { return CalendarModule.saveEvent(); }
 function deleteEvent() { CalendarModule.deleteEvent(); }
 function closeEventModal() { CalendarModule.closeEventModal(); }
 function closeAllEventsModal() { CalendarModule.closeAllEventsModal(); }

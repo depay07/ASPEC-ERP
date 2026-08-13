@@ -129,7 +129,7 @@ var PartnersModule = {
 
         html += '<div class="col-span-2 mt-2"><label class="text-xs font-bold">비고</label><input id="pNote" class="input-box"></div>';
         html += '</div>';
-        html += '<button onclick="PartnersModule.save()" class="w-full mt-6 bg-slate-800 text-white py-3 rounded font-bold hover:bg-black transition">저장하기</button>';
+        html += '<button onclick="runSaveOnce(\'partner\', this, () => PartnersModule.save())" class="w-full mt-6 bg-slate-800 text-white py-3 rounded font-bold hover:bg-black transition">저장하기</button>';
         return html;
     },
     

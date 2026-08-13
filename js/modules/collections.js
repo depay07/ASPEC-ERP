@@ -79,7 +79,7 @@ const CollectionsModule = {
                                class="border rounded px-2 py-1 w-full text-xs" placeholder="메모">
                     </td>
                     <td class="text-center">
-                        <button onclick="CollectionsModule.save(${row.id})" 
+                        <button onclick="runSaveOnce('collection-${row.id}', this, () => CollectionsModule.save(${row.id}))"
                                 class="bg-slate-700 hover:bg-slate-900 text-white px-3 py-1 rounded text-xs font-bold transition">
                             저장
                         </button>

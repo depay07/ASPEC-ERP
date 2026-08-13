@@ -62,7 +62,7 @@ const BOMModule = {
                         <label class="text-xs text-slate-500">수량 (EA/Set)</label>
                         <input type="number" id="bomQty" class="input-box" value="1" min="1">
                     </div>
-                    <button onclick="BOMModule.addBOM()" class="bg-purple-600 text-white px-4 py-2 rounded font-bold hover:bg-purple-700 transition h-[38px]">
+                    <button onclick="runSaveOnce('bom-add', this, () => BOMModule.addBOM())" class="bg-purple-600 text-white px-4 py-2 rounded font-bold hover:bg-purple-700 transition h-[38px]">
                         추가
                     </button>
                 </div>

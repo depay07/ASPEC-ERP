@@ -207,7 +207,7 @@ const MeetingLogsModule = {
                     <input id="mlNextStep" class="input-box" placeholder="다음 미팅 일정 혹은 확인해야 할 사항">
                 </div>
             </div>
-            <button onclick="MeetingLogsModule.save()" class="w-full mt-6 bg-slate-800 text-white py-3 rounded font-bold hover:bg-slate-900 transition">
+            <button onclick="runSaveOnce('meeting-log', this, () => MeetingLogsModule.save())" class="w-full mt-6 bg-slate-800 text-white py-3 rounded font-bold hover:bg-slate-900 transition">
                 일지 저장
             </button>
             <datalist id="dl_part_ml"></datalist>`;

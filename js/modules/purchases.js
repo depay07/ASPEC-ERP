@@ -305,7 +305,7 @@ const PurchasesModule = {
                 총 합계: <span id="purGrandTotal">0</span>원
             </div>
             
-            <button onclick="PurchasesModule.save()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
+            <button onclick="runSaveOnce('purchase-new', this, () => PurchasesModule.save())" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
                 입고 처리 (저장)
             </button>
             
@@ -352,7 +352,7 @@ const PurchasesModule = {
                     <input id="purNote" class="input-box">
                 </div>
             </div>
-            <button onclick="PurchasesModule.saveEdit()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold hover:bg-cyan-700 transition">
+            <button onclick="runSaveOnce('purchase-edit', this, () => PurchasesModule.saveEdit())" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold hover:bg-cyan-700 transition">
                 저장
             </button>
             <datalist id="dl_part_pur"></datalist>

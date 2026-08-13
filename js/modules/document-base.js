@@ -240,7 +240,7 @@ const DocumentBaseModule = {
                 </table>
             </div>
             
-            <button onclick="${this.getModuleName(tab)}.save()" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
+            <button onclick="runSaveOnce('document-${tab}', this, () => ${this.getModuleName(tab)}.save())" class="w-full mt-4 bg-cyan-600 text-white py-3 rounded font-bold shadow-lg hover:bg-cyan-700 transition">
                 저장하기
             </button>
             
