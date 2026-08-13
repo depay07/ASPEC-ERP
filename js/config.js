@@ -161,6 +161,7 @@ var QUOTES = [
 var TAB_TITLES = {
     partners: '거래처 관리',
     products: '품목 관리',
+    price_list: '가격표',
     purchase_orders: '발주 관리 (PO)',
     purchases: '구매 관리 (입고)',
     inventory: '재고 관리 현황',

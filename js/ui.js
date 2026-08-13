@@ -106,7 +106,7 @@ function renderSearchPanel(tab) {
     let html = `<div class="search-panel no-print"><div class="flex flex-wrap gap-6 items-end">`;
     
     // 기간 조회 (일부 탭 제외)
-    if (!['partners', 'products', 'inventory'].includes(tab)) {
+    if (!['partners', 'products', 'price_list', 'inventory'].includes(tab)) {
         html += `
             <div>
                 <span class="search-label">기간 조회</span>
@@ -172,6 +172,22 @@ function getTabSpecificFilters(tab) {
             return `
                 <div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
                 <div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+
+        case 'price_list':
+            return `
+                <div><span class="search-label">품목명</span><input type="text" id="search_sName" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">코드</span><input type="text" id="search_sCode" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">통화</span>
+                    <select id="search_sCurrency" class="input-box h-[38px]" onchange="runSearch('${tab}')">
+                        <option value="">전체 통화</option>
+                        <option value="KRW">원화 (KRW)</option>
+                        <option value="USD">달러 (USD)</option>
+                        <option value="CNY">위안화 (CNY)</option>
+                        <option value="JPY">엔화 (JPY)</option>
+                        <option value="EUR">유로 (EUR)</option>
+                        <option value="GBP">파운드 (GBP)</option>
+                    </select>
+                </div>`;
         
         case 'collections':
             return `<div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;

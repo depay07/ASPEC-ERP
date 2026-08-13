@@ -51,6 +51,9 @@ async function runSearch(tab, forceRefresh) {
         case 'products':
             await ProductsModule.search(forceRefresh);
             break;
+        case 'price_list':
+            await PriceListModule.search(forceRefresh);
+            break;
         case 'bookkeeping':
             await BookkeepingModule.search(forceRefresh);
             break;
@@ -99,6 +102,7 @@ function openNewModal(tab) {
     switch (tab) {
         case 'partners': PartnersModule.openNewModal(); break;
         case 'products': ProductsModule.openNewModal(); break;
+        case 'price_list': PriceListModule.openNewModal(); break;
         case 'bookkeeping': BookkeepingModule.openNewModal(); break;
         case 'meeting_logs': MeetingLogsModule.openNewModal(); break;
         case 'purchases': PurchasesModule.openNewModal(); break;
@@ -153,8 +157,10 @@ function renderTabContent(tab, container) {
         html += '<div id="listBody" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 p-4"></div>';
         html += '</section></div>';
     } else {
-        html += '<div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">';
-        html += '<table class="data-table">';
+        const tableWrapClass = tab === 'price_list' ? 'overflow-x-auto' : 'overflow-hidden';
+        const tableClass = tab === 'price_list' ? 'data-table min-w-[900px]' : 'data-table';
+        html += '<div class="bg-white rounded-lg shadow border border-slate-200 ' + tableWrapClass + '">';
+        html += '<table class="' + tableClass + '">';
         html += getTableStructure(tab);
         html += '<tbody id="listBody"></tbody>';
         html += '</table>';
@@ -176,6 +182,11 @@ function getTabButtons(tab) {
             '<i class="fa-solid fa-layer-group"></i> 세트(BOM) 관리</button>' +
             '<button onclick="openNewModal(\'' + tab + '\')" class="' + commonBtnClass + '">' +
             '<i class="fa-solid fa-plus"></i> 신규 등록</button></div>';
+    }
+
+    if (tab === 'price_list') {
+        return '<button onclick="openNewModal(\'price_list\')" class="' + commonBtnClass + '">' +
+            '<i class="fa-solid fa-plus"></i> 가격표 품목 추가</button>';
     }
     
     if (tab === 'inventory') {
@@ -203,6 +214,7 @@ function getTableStructure(tab) {
     var structures = {
         partners: '<thead><tr><th style="width:20%">상호</th><th style="width:15%">담당자</th><th style="width:20%">전화번호</th><th>비고</th><th style="width:15%">관리</th></tr></thead>',
         products: '<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:15%">관리</th></tr></thead>',
+        price_list: '<thead><tr><th style="width:12%">품목코드</th><th style="width:18%">품목명</th><th>규격</th><th style="width:12%">제조사</th><th style="width:7%">단위</th><th style="width:14%">단가</th><th style="width:13%">통화</th><th style="width:10%">관리</th></tr></thead>',
         purchase_orders: '<thead><tr><th style="width:12%">PO#</th><th style="width:15%">납품업체</th><th style="width:15%">EndUser</th><th>품목요약</th><th style="width:10%">총액</th><th style="width:10%">일자</th><th style="width:5%">송금완료</th><th style="width:10%">송금액</th><th style="width:10%">관리</th></tr></thead>',
         purchases: '<thead><tr><th style="width:10%">일자</th><th style="width:10%">제조사</th><th style="width:15%">매입처</th><th>품목명</th><th style="width:6%">수량</th><th style="width:10%">단가</th><th style="width:10%">합계</th><th style="width:10%">시리얼</th><th style="width:10%">관리</th></tr></thead>',
         inventory: '<thead><tr><th>품목명</th><th style="width:10%">제조사</th><th style="width:12%">입고처</th><th style="width:10%">입고단가</th><th style="width:8%">총재고</th><th style="width:8%">가용재고</th><th>비고</th><th style="width:10%">예약</th><th style="width:10%">관리</th></tr></thead>',
