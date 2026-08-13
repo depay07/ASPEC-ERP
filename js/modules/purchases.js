@@ -430,6 +430,51 @@ const PurchasesModule = {
         AppState.tempItems.splice(idx, 1);
         this.renderItemGrid();
     },
+
+    async applyStockDelta(itemName, stockDelta, metadata = {}) {
+        if (!itemName || stockDelta === 0) return { error: null };
+
+        const productResult = await supabaseClient
+            .from('products')
+            .select('*')
+            .eq('name', itemName)
+            .limit(1);
+
+        if (productResult.error) return { error: productResult.error };
+
+        const product = productResult.data?.[0];
+        if (product) {
+            const updateData = {
+                stock: (Number(product.stock) || 0) + stockDelta
+            };
+
+            if (stockDelta > 0) {
+                updateData.last_vendor = metadata.partner_name || product.last_vendor;
+                updateData.last_price = metadata.unit_price ?? product.last_price;
+                updateData.last_serial_no = metadata.serial_no || product.last_serial_no;
+                updateData.manufacturer = metadata.manufacturer || product.manufacturer;
+            }
+
+            return supabaseClient
+                .from('products')
+                .update(updateData)
+                .eq('id', product.id);
+        }
+
+        if (stockDelta < 0) return { error: null };
+
+        return supabaseClient.from('products').insert({
+            name: itemName,
+            manufacturer: metadata.manufacturer || '',
+            stock: stockDelta,
+            category: '기타',
+            location: '입고대기',
+            purchase_price: metadata.unit_price || 0,
+            last_price: metadata.unit_price || 0,
+            last_vendor: metadata.partner_name || '',
+            last_serial_no: metadata.serial_no || ''
+        });
+    },
     
     /**
      * 저장 (다중 입고)
@@ -448,6 +493,7 @@ const PurchasesModule = {
         }
         
         let successCount = 0;
+        let stockError = null;
         
         for (const item of AppState.tempItems) {
             // 1. 구매 이력 저장 (기존 로직 유지)
@@ -469,38 +515,18 @@ const PurchasesModule = {
             
             if (!error) {
                 successCount++;
-                
-                // 2. 재고(Products) 테이블 업데이트 로직 개선
-                // 기존에 등록된 품목인지 확인
-                const prod = AppState.productList.find(p => p.name === item.name);
-                
-                if (prod) {
-                    // CASE A: 이미 존재하는 품목이면 -> 수량(Stock) 추가
-                    await supabaseClient.from('products').update({
-                        stock: (prod.stock || 0) + item.qty,
-                        last_vendor: partnerVal,
-                        last_price: item.unit_price,
-                        last_serial_no: item.serial_no,
-                        manufacturer: item.manufacturer || prod.manufacturer
-                    }).eq('id', prod.id);
-                } else {
-                    // CASE B: 없는 품목이면 -> 신규 품목으로 등록
-                    await supabaseClient.from('products').insert({
-                        name: item.name,
-                        manufacturer: item.manufacturer,
-                        stock: item.qty, // 초기 재고
-                        category: '기타', // 카테고리 컬럼이 필수라면 기본값 설정 필요
-                        purchase_price: item.unit_price, // 매입가 참조용
-                        location: '입고대기', // 기본 위치
-                        last_vendor: partnerVal,
-                        last_serial_no: item.serial_no
-                    });
-                }
+
+                const stockResult = await this.applyStockDelta(item.name, item.qty, data);
+                if (stockResult.error && !stockError) stockError = stockResult.error;
             }
         }
         
         if (successCount > 0) {
-            alert(`${successCount}건의 품목이 입고 처리되었습니다.`);
+            if (stockError) {
+                alert(`${successCount}건의 입고 내역은 저장되었지만 재고 반영에 실패했습니다: ${stockError.message}`);
+            } else {
+                alert(`${successCount}건의 품목이 입고 처리되었습니다.`);
+            }
             closeModal();
             await fetchMasterData(); // 마스터 데이터(재고 목록) 갱신
             this.search();
@@ -515,6 +541,17 @@ const PurchasesModule = {
     async saveEdit() {
         const qty = parseInt(el('purQty')) || 0;
         const price = parseInt(el('purPrice')) || 0;
+
+        const previousResult = await supabaseClient
+            .from(this.tableName)
+            .select('*')
+            .eq('id', AppState.currentEditId)
+            .single();
+
+        if (previousResult.error) {
+            alert('기존 입고 내역을 불러오지 못했습니다: ' + previousResult.error.message);
+            return;
+        }
         
         const data = {
             date: el('purDate'),
@@ -539,9 +576,25 @@ const PurchasesModule = {
             alert("저장 실패: " + error.message);
             return;
         }
+
+        const previous = previousResult.data;
+        let stockResult = { error: null };
+        if (previous.item_name === data.item_name) {
+            stockResult = await this.applyStockDelta(data.item_name, qty - (Number(previous.qty) || 0), data);
+        } else {
+            stockResult = await this.applyStockDelta(previous.item_name, -(Number(previous.qty) || 0));
+            if (!stockResult.error) {
+                stockResult = await this.applyStockDelta(data.item_name, qty, data);
+            }
+        }
         
-        alert("저장되었습니다.");
+        if (stockResult.error) {
+            alert('입고 내역은 저장되었지만 재고 반영에 실패했습니다: ' + stockResult.error.message);
+        } else {
+            alert("저장되었습니다.");
+        }
         closeModal();
+        await fetchMasterData();
         this.search();
     },
     
@@ -550,6 +603,17 @@ const PurchasesModule = {
      */
     async delete(id) {
         if (!confirm("정말 삭제하시겠습니까?")) return;
+
+        const previousResult = await supabaseClient
+            .from(this.tableName)
+            .select('item_name,qty')
+            .eq('id', id)
+            .single();
+
+        if (previousResult.error) {
+            alert('기존 입고 내역을 불러오지 못했습니다: ' + previousResult.error.message);
+            return;
+        }
         
         const { error } = await supabaseClient
             .from(this.tableName)
@@ -560,7 +624,17 @@ const PurchasesModule = {
             alert("삭제 실패: " + error.message);
             return;
         }
+
+        const stockResult = await this.applyStockDelta(
+            previousResult.data.item_name,
+            -(Number(previousResult.data.qty) || 0)
+        );
+
+        if (stockResult.error) {
+            alert('입고 내역은 삭제되었지만 재고 반영에 실패했습니다: ' + stockResult.error.message);
+        }
         
+        await fetchMasterData();
         this.search();
     }
 };

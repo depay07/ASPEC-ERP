@@ -300,7 +300,21 @@ const SalesModule = {
         }
         
         let result;
+        let previousItems = [];
+        let stockResult = { error: null };
         if (AppState.currentEditId) {
+            const previousResult = await supabaseClient
+                .from(this.tableName)
+                .select('items')
+                .eq('id', AppState.currentEditId)
+                .single();
+
+            if (previousResult.error) {
+                alert('기존 판매 내역을 불러오지 못했습니다: ' + previousResult.error.message);
+                return;
+            }
+            previousItems = previousResult.data?.items || [];
+
             result = await supabaseClient
                 .from(this.tableName)
                 .update(data)
@@ -310,61 +324,102 @@ const SalesModule = {
                 .from(this.tableName)
                 .insert(data);
             
-            // 신규 판매 시 재고 차감 (기존 로직 유지)
-            if (!result.error) {
-                await this.deductStock(data.items);
-                if (this.currentLoadedOrderId) {
-                    await supabaseClient.from('orders').update({ status: 'completed' }).eq('id', this.currentLoadedOrderId);
-                    this.currentLoadedOrderId = null;
-                }
-            }
         }
         
         if (result.error) {
             alert("저장 실패: " + result.error.message);
             return;
         }
+
+        stockResult = await this.applyStockDifference(previousItems, data.items);
+
+        if (!AppState.currentEditId && this.currentLoadedOrderId) {
+            await supabaseClient.from('orders').update({ status: 'completed' }).eq('id', this.currentLoadedOrderId);
+            this.currentLoadedOrderId = null;
+        }
         
-        alert("저장되었습니다.");
+        if (stockResult.error) {
+            alert('판매 내역은 저장되었지만 재고 반영에 실패했습니다: ' + stockResult.error.message);
+        } else {
+            alert("저장되었습니다.");
+        }
         closeModal();
         await fetchMasterData(); // 재고 등 갱신
         this.search();
     },
     
-    // ... deductStock, delete 함수는 기존 코드 유지 ...
-    async deductStock(items) {
-        const { data: bomList } = await supabaseClient.from('bom').select('*');
-        for (const item of items) {
-            const relatedParts = bomList ? bomList.filter(b => b.parent_name === item.name) : [];
-            if (relatedParts.length > 0) {
-                for (const part of relatedParts) {
-                    const childProd = AppState.productList.find(p => p.name === part.child_name);
-                    if (childProd) {
-                        await supabaseClient.from('products').update({ stock: (childProd.stock || 0) - (item.qty * part.qty) }).eq('id', childProd.id);
-                    }
-                }
-            } else {
-                const prod = AppState.productList.find(p => p.name === item.name);
-                if (prod) {
-                    await supabaseClient.from('products').update({ stock: (prod.stock || 0) - item.qty }).eq('id', prod.id);
-                }
-            }
+    buildStockUsage(items, bomList) {
+        const usage = {};
+        let normalizedItems = items;
+        if (typeof normalizedItems === 'string') {
+            try { normalizedItems = JSON.parse(normalizedItems); } catch (e) { normalizedItems = []; }
         }
+        if (!Array.isArray(normalizedItems)) return usage;
+
+        normalizedItems.forEach(item => {
+            const itemQty = Number(item.qty) || 0;
+            const relatedParts = (bomList || []).filter(row => row.parent_name === item.name);
+
+            if (relatedParts.length > 0) {
+                relatedParts.forEach(part => {
+                    usage[part.child_name] = (usage[part.child_name] || 0) + itemQty * (Number(part.qty) || 0);
+                });
+            } else {
+                usage[item.name] = (usage[item.name] || 0) + itemQty;
+            }
+        });
+
+        return usage;
+    },
+
+    async applyStockDifference(previousItems, nextItems) {
+        const [bomResult, productsResult] = await Promise.all([
+            supabaseClient.from('bom').select('parent_name,child_name,qty'),
+            supabaseClient.from('products').select('id,name,stock')
+        ]);
+
+        if (bomResult.error) return { error: bomResult.error };
+        if (productsResult.error) return { error: productsResult.error };
+
+        const previousUsage = this.buildStockUsage(previousItems, bomResult.data || []);
+        const nextUsage = this.buildStockUsage(nextItems, bomResult.data || []);
+        const names = new Set([...Object.keys(previousUsage), ...Object.keys(nextUsage)]);
+        const productsByName = new Map((productsResult.data || []).map(product => [product.name, product]));
+
+        for (const name of names) {
+            const stockDelta = (previousUsage[name] || 0) - (nextUsage[name] || 0);
+            if (stockDelta === 0) continue;
+
+            const product = productsByName.get(name);
+            if (!product) continue;
+
+            const newStock = (Number(product.stock) || 0) + stockDelta;
+            const updateResult = await supabaseClient
+                .from('products')
+                .update({ stock: newStock })
+                .eq('id', product.id);
+
+            if (updateResult.error) return { error: updateResult.error };
+            product.stock = newStock;
+        }
+
+        return { error: null };
     },
     
     async delete(id) {
         if (!confirm("정말 삭제하시겠습니까?\n(재고가 복구됩니다)")) return;
-        const { data: saleData } = await supabaseClient.from(this.tableName).select('items').eq('id', id).single();
-        if (saleData && saleData.items) {
-            for (const item of saleData.items) {
-                const prod = AppState.productList.find(p => p.name === item.name);
-                if (prod) {
-                    await supabaseClient.from('products').update({ stock: (prod.stock || 0) + item.qty }).eq('id', prod.id);
-                }
-            }
+        const { data: saleData, error: loadError } = await supabaseClient.from(this.tableName).select('items').eq('id', id).single();
+        if (loadError) {
+            alert('기존 판매 내역을 불러오지 못했습니다: ' + loadError.message);
+            return;
         }
         const { error } = await supabaseClient.from(this.tableName).delete().eq('id', id);
         if (error) { alert("삭제 실패: " + error.message); return; }
+
+        const stockResult = await this.applyStockDifference(saleData?.items || [], []);
+        if (stockResult.error) {
+            alert('판매 내역은 삭제되었지만 재고 복구에 실패했습니다: ' + stockResult.error.message);
+        }
         await fetchMasterData();
         this.search();
     }
