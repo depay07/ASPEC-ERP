@@ -3,7 +3,13 @@
 const SUPABASE_URL = 'https://gqttpmdpqotrkbdbstuu.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxdHRwbWRwcW90cmtiZGJzdHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjU4MjIsImV4cCI6MjA3ODk0MTgyMn0.pR6dL8yU2lpugzYWpdDkQh_l5WcVO4YMlOPhMlCJmP8';
 
-var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+    }
+});
 
 function getInitialCalendarDate() {
     const parts = new Intl.DateTimeFormat('en-CA', {
@@ -35,6 +41,14 @@ var AppState = {
     productList: [],
     globalDataStore: {},
     sessionTimer: null,
+    lastActivityAt: 0,
+    lastActivitySavedAt: 0,
+    sessionWarningVisible: false,
+    sessionActivityListenersReady: false,
+    authCheckPromise: null,
+    authRedirecting: false,
+    lastConnectionWarningAt: 0,
+    intentionalLogout: false,
     
     // 캐시 저장소
     cache: {},
@@ -232,6 +246,12 @@ function clearAllCache() {
 async function cachedSearch(tabName, queryPromise, renderFn, colspan, forceRefresh) {
     colspan = colspan || 10;
     forceRefresh = forceRefresh || false;
+
+    var sessionReady = await ensureActiveSession({
+        context: getTabTitle(tabName) + ' 캐시 조회',
+        notifyNetworkError: true
+    });
+    if (!sessionReady) return;
     
     // 캐시 체크 (강제 새로고침이 아닐 때만)
     if (!forceRefresh && isCacheValid(tabName)) {
@@ -247,7 +267,11 @@ async function cachedSearch(tabName, queryPromise, renderFn, colspan, forceRefre
         var result = await queryPromise;
         
         if (result.error) {
-            alert("검색 실패: " + result.error.message);
+            if (isTransientAuthError(result.error)) {
+                showConnectionWarning('네트워크 연결이 불안정하여 데이터를 불러오지 못했습니다.\n로그인은 유지되며 잠시 후 다시 조회할 수 있습니다.');
+            } else {
+                alert("검색 실패: " + result.error.message);
+            }
             return;
         }
         
@@ -259,7 +283,11 @@ async function cachedSearch(tabName, queryPromise, renderFn, colspan, forceRefre
         
     } catch (e) {
         console.error(tabName + ' search error:', e);
-        alert("검색 중 오류 발생");
+        if (isTransientAuthError(e)) {
+            showConnectionWarning('네트워크 연결이 불안정하여 데이터를 불러오지 못했습니다.\n로그인은 유지되며 잠시 후 다시 조회할 수 있습니다.');
+        } else {
+            alert("검색 중 오류 발생");
+        }
     }
 }
 

@@ -48,7 +48,13 @@
         // ==========================================
 
         // 'supabase' 대신 'supabaseClient'라는 이름을 사용합니다.
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+    }
+});
 
 window.onload = async () => {
     const { data: { session } } = await supabaseClient.auth.getSession(); // 변수명 변경 적용

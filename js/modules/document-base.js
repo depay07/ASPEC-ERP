@@ -10,6 +10,12 @@ const DocumentBaseModule = {
      */
     async baseSearch(tableName, colspan = 8) {
         showTableLoading(colspan);
+
+        const sessionReady = await ensureActiveSession({
+            context: '문서 조회',
+            notifyNetworkError: true
+        });
+        if (!sessionReady) return null;
         
         let query = supabaseClient
             .from(tableName)
@@ -35,7 +41,11 @@ const DocumentBaseModule = {
         const { data, error } = await query;
         
         if (error) {
-            alert("검색 실패: " + error.message);
+            if (isTransientAuthError(error)) {
+                showConnectionWarning('네트워크 연결이 불안정하여 문서를 불러오지 못했습니다.\n로그인은 유지되며 잠시 후 다시 조회할 수 있습니다.');
+            } else {
+                alert("검색 실패: " + error.message);
+            }
             return null;
         }
         

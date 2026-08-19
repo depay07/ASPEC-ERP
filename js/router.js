@@ -4,6 +4,12 @@
  * 탭 전환 메인 함수
  */
 async function switchTab(tab) {
+    var sessionReady = await ensureActiveSession({
+        context: getTabTitle(tab) + ' 열기',
+        notifyNetworkError: true
+    });
+    if (!sessionReady) return;
+
     AppState.currentTab = tab;
     updateNavigation(tab);
     closeMobileSidebar();
@@ -43,6 +49,12 @@ async function switchTab(tab) {
  */
 async function runSearch(tab, forceRefresh) {
     forceRefresh = forceRefresh || false;
+
+    var sessionReady = await ensureActiveSession({
+        context: getTabTitle(tab) + ' 조회',
+        notifyNetworkError: true
+    });
+    if (!sessionReady) return;
     
     switch (tab) {
         case 'partners':
