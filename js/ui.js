@@ -125,7 +125,7 @@ function renderSearchPanel(tab) {
     html += `
         <div class="ml-auto flex items-center">
             ${getExtraControls(tab)}
-            <button onclick="runSearch('${tab}')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded font-bold shadow transition flex items-center gap-2 text-sm">
+            <button onclick="runSearch('${tab}', false, true)" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded font-bold shadow transition flex items-center gap-2 text-sm">
                 <i class="fa-solid fa-magnifying-glass"></i> 조회
             </button>
         </div>

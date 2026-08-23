@@ -34,12 +34,67 @@ const CostManagementModule = {
 
         return Math.round(totalAmount / 1.1);
     },
+
+    calculateSummary(data) {
+        const totals = (data || []).reduce((result, row) => {
+            result.sales += this.getNetSalesAmount(row);
+            result.cost += Number(row.total_cost) || 0;
+            return result;
+        }, { sales: 0, cost: 0 });
+
+        totals.margin = totals.sales - totals.cost;
+        totals.marginRate = totals.sales > 0 ? (totals.margin / totals.sales) * 100 : 0;
+        return totals;
+    },
+
+    hideSummary() {
+        const summary = document.getElementById('costSummary');
+        if (!summary) return;
+        summary.classList.add('hidden');
+        summary.innerHTML = '';
+    },
+
+    renderSummary(data) {
+        const summary = document.getElementById('costSummary');
+        if (!summary) return;
+
+        const totals = this.calculateSummary(data);
+        const marginClass = totals.margin < 0 ? 'text-red-600' : 'text-blue-600';
+        const startDate = el('searchStartDate');
+        const endDate = el('searchEndDate');
+
+        summary.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+                <h3 class="font-bold text-slate-800">기간 조회 합계</h3>
+                <span class="text-xs text-slate-500">${startDate} ~ ${endDate} · ${data.length}건</span>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-4">
+                <div class="border-b border-r border-slate-200 p-4 lg:border-b-0">
+                    <span class="block text-xs font-bold text-slate-500">총 매출액 (VAT제외)</span>
+                    <strong class="mt-1 block text-lg text-slate-800">${formatNumber(totals.sales)}원</strong>
+                </div>
+                <div class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
+                    <span class="block text-xs font-bold text-slate-500">총 원가</span>
+                    <strong class="mt-1 block text-lg text-red-600">${formatNumber(totals.cost)}원</strong>
+                </div>
+                <div class="border-r border-slate-200 p-4">
+                    <span class="block text-xs font-bold text-slate-500">마진금액</span>
+                    <strong class="mt-1 block text-lg ${marginClass}">${formatNumber(totals.margin)}원</strong>
+                </div>
+                <div class="p-4">
+                    <span class="block text-xs font-bold text-slate-500">마진율</span>
+                    <strong class="mt-1 block text-lg ${marginClass}">${totals.marginRate.toFixed(1)}%</strong>
+                </div>
+            </div>`;
+        summary.classList.remove('hidden');
+    },
     
     /**
      * 검색
      */
-    async search() {
+    async search(forceRefresh, showSummary) {
         showTableLoading(8);
+        this.hideSummary();
         
         let query = supabaseClient
             .from(this.tableName)
@@ -65,6 +120,7 @@ const CostManagementModule = {
         }
         
         this.renderTable(data);
+        if (showSummary) this.renderSummary(data || []);
     },
     
     /**

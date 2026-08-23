@@ -47,8 +47,9 @@ async function switchTab(tab) {
 /**
  * 검색 실행 - 탭별 모듈로 분기
  */
-async function runSearch(tab, forceRefresh) {
+async function runSearch(tab, forceRefresh, userInitiated) {
     forceRefresh = forceRefresh || false;
+    userInitiated = userInitiated || false;
 
     var sessionReady = await ensureActiveSession({
         context: getTabTitle(tab) + ' 조회',
@@ -94,7 +95,7 @@ async function runSearch(tab, forceRefresh) {
             await InventoryModule.search(forceRefresh);
             break;
         case 'cost_management':
-            await CostManagementModule.search(forceRefresh);
+            await CostManagementModule.search(forceRefresh, userInitiated);
             break;
         case 'projects':                                      
             await ProjectsModule.search(); // 프로젝트는 전용 검색 로직 사용
@@ -154,6 +155,10 @@ function renderTabContent(tab, container) {
     html += '<h2 class="text-3xl font-bold text-slate-800 border-l-8 border-cyan-500 pl-4">' + title + '</h2>';
     html += buttonsHtml;
     html += '</div>';
+
+    if (tab === 'cost_management') {
+        html += '<section id="costSummary" class="hidden mb-5 bg-white border-y border-slate-200" aria-live="polite"></section>';
+    }
 
     if (tab === 'memos') {
         html += '<div class="flex flex-col md:flex-row min-h-[560px] border-t border-slate-200 bg-white">';
