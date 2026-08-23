@@ -4,6 +4,36 @@ const CostManagementModule = {
     tableName: 'orders',
     currentOrder: null,
     bomList: [],
+
+    /**
+     * 원가/마진 분석에는 납부할 부가세를 제외한 공급가액을 사용한다.
+     */
+    getNetSalesAmount(row) {
+        if (row.total_supply !== null && row.total_supply !== undefined) {
+            return Number(row.total_supply) || 0;
+        }
+
+        let items = row.items;
+        if (typeof items === 'string') {
+            try { items = JSON.parse(items); } catch (e) { items = []; }
+        }
+
+        if (Array.isArray(items) && items.length > 0) {
+            return items.reduce((sum, item) => {
+                const supply = item.supply !== null && item.supply !== undefined
+                    ? Number(item.supply) || 0
+                    : (Number(item.price || item.unit_price) || 0) * (Number(item.qty) || 0);
+                return sum + supply;
+            }, 0);
+        }
+
+        const totalAmount = Number(row.total_amount) || 0;
+        if (row.total_vat !== null && row.total_vat !== undefined) {
+            return Math.max(0, totalAmount - (Number(row.total_vat) || 0));
+        }
+
+        return Math.round(totalAmount / 1.1);
+    },
     
     /**
      * 검색
@@ -49,7 +79,7 @@ const CostManagementModule = {
         }
         
         tbody.innerHTML = data.map(row => {
-            const totalSales = row.total_amount || 0;
+            const totalSales = this.getNetSalesAmount(row);
             const totalCost = row.total_cost || 0;
             const margin = totalSales - totalCost;
             const marginRate = totalSales > 0 ? ((margin / totalSales) * 100).toFixed(1) : 0;
