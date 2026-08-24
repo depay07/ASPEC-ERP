@@ -178,8 +178,11 @@ function renderTabContent(tab, container) {
         html += '<div id="listBody" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 p-4"></div>';
         html += '</section></div>';
     } else {
-        const tableWrapClass = tab === 'price_list' ? 'overflow-x-auto' : 'overflow-hidden';
-        const tableClass = tab === 'price_list' ? 'data-table min-w-[900px]' : 'data-table';
+        const isWideTable = tab === 'price_list' || tab === 'purchase_orders';
+        const tableWrapClass = isWideTable ? 'overflow-x-auto' : 'overflow-hidden';
+        const tableClass = tab === 'price_list'
+            ? 'data-table min-w-[900px]'
+            : (tab === 'purchase_orders' ? 'data-table min-w-[1450px]' : 'data-table');
         html += '<div class="bg-white rounded-lg shadow border border-slate-200 ' + tableWrapClass + '">';
         html += '<table class="' + tableClass + '">';
         html += getTableStructure(tab);
@@ -236,7 +239,7 @@ function getTableStructure(tab) {
         partners: '<thead><tr><th style="width:20%">상호</th><th style="width:15%">담당자</th><th style="width:20%">전화번호</th><th>비고</th><th style="width:15%">관리</th></tr></thead>',
         products: '<thead><tr><th style="width:15%">품목코드</th><th style="width:25%">품목명</th><th>규격</th><th style="width:8%">단위</th><th style="width:15%">관리</th></tr></thead>',
         price_list: '<thead><tr><th style="width:12%">품목코드</th><th style="width:18%">품목명</th><th>규격</th><th style="width:12%">제조사</th><th style="width:7%">단위</th><th style="width:14%">단가</th><th style="width:13%">통화</th><th style="width:10%">관리</th></tr></thead>',
-        purchase_orders: '<thead><tr><th style="width:12%">PO#</th><th style="width:15%">납품업체</th><th style="width:15%">EndUser</th><th>품목요약</th><th style="width:10%">총액</th><th style="width:10%">일자</th><th style="width:5%">송금완료</th><th style="width:10%">송금액</th><th style="width:10%">관리</th></tr></thead>',
+        purchase_orders: '<thead><tr><th style="width:10%">PO#</th><th style="width:10%">납품업체</th><th style="width:8%">EndUser</th><th style="width:12%">품목요약</th><th style="width:8%">총액</th><th style="width:7%">발주일</th><th style="width:7%">입고일</th><th style="width:7%">결제조건</th><th style="width:8%">송금예정일</th><th style="width:5%">송금완료</th><th style="width:7%">송금액</th><th style="width:11%">관리</th></tr></thead>',
         purchases: '<thead><tr><th style="width:10%">일자</th><th style="width:10%">제조사</th><th style="width:15%">매입처</th><th>품목명</th><th style="width:6%">수량</th><th style="width:10%">단가</th><th style="width:10%">합계</th><th style="width:10%">시리얼</th><th style="width:10%">관리</th></tr></thead>',
         inventory: '<thead><tr><th>품목명</th><th style="width:10%">제조사</th><th style="width:12%">입고처</th><th style="width:10%">입고단가</th><th style="width:8%">총재고</th><th style="width:8%">가용재고</th><th>비고</th><th style="width:10%">예약</th><th style="width:10%">관리</th></tr></thead>',
         collections: '<thead><tr><th style="width:10%">판매일자</th><th style="width:15%">거래처</th><th style="width:15%">매출총액(VAT포함)</th><th style="width:15%">기수금액</th><th style="width:15%">미수금(잔액)</th><th>비고</th><th style="width:10%">관리</th></tr></thead>',

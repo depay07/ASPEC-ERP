@@ -2,13 +2,71 @@
 
 const PurchaseOrdersModule = {
     tableName: 'purchase_orders',
+
+    normalizePaymentTerms(value) {
+        return value === 'current_month_end' ? 'current_month_end' : 'next_month_end';
+    },
+
+    getPaymentTermsLabel(value) {
+        return this.normalizePaymentTerms(value) === 'current_month_end' ? '당월말' : '익월말';
+    },
+
+    calculatePaymentDueDate(deliveryDate, paymentTerms) {
+        if (!deliveryDate) return '';
+
+        const parts = parseDateString(deliveryDate);
+        if (!parts.year || !parts.month || !parts.day) return '';
+
+        const monthOffset = this.normalizePaymentTerms(paymentTerms) === 'current_month_end' ? 0 : 1;
+        const targetMonthValue = parts.month + monthOffset;
+        const targetYear = parts.year + Math.floor((targetMonthValue - 1) / 12);
+        const targetMonth = ((targetMonthValue - 1) % 12) + 1;
+        const lastDay = new Date(Date.UTC(targetYear, targetMonth, 0)).getUTCDate();
+
+        return `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    },
+
+    getPaymentDueState(dueDate, isPaid, today = getToday()) {
+        if (!dueDate || isPaid) return { className: '', icon: '', title: '' };
+
+        const due = parseDateString(dueDate);
+        const current = parseDateString(today);
+        const dueTime = Date.UTC(due.year, due.month - 1, due.day);
+        const currentTime = Date.UTC(current.year, current.month - 1, current.day);
+        const daysUntilDue = Math.round((dueTime - currentTime) / 86400000);
+
+        if (daysUntilDue < 0) {
+            return {
+                className: 'bg-red-50 text-red-700 px-2 py-1 rounded font-bold',
+                icon: '<i class="fa-solid fa-triangle-exclamation"></i>',
+                title: '송금예정일이 지났습니다.'
+            };
+        }
+
+        if (daysUntilDue <= 7) {
+            return {
+                className: 'bg-yellow-50 text-yellow-700 px-2 py-1 rounded font-bold',
+                icon: '<i class="fa-solid fa-clock"></i>',
+                title: '송금예정일이 7일 이내입니다.'
+            };
+        }
+
+        return { className: '', icon: '', title: '' };
+    },
+
+    updatePaymentDueDatePreview() {
+        const preview = document.getElementById('poPaymentDueDate');
+        if (!preview) return;
+
+        const dueDate = this.calculatePaymentDueDate(el('poDeliveryDate'), el('poPaymentTerms'));
+        preview.value = dueDate || '-';
+    },
     
     /**
      * 검색 실행
      */
     async search() {
-        // 컬럼이 9개(기존 7 + 송금여부, 송금액)로 늘어났으므로 로딩바 칸수를 9로 설정
-        showTableLoading(9);
+        showTableLoading(12);
         
         let query = supabaseClient
             .from(this.tableName)
@@ -56,7 +114,7 @@ const PurchaseOrdersModule = {
         const tbody = document.getElementById('listBody');
         
         if (!data || data.length === 0) {
-            showEmptyTable(9); // 9칸 전체에 '데이터 없음' 표시
+            showEmptyTable(12);
             return;
         }
         
@@ -70,6 +128,13 @@ const PurchaseOrdersModule = {
             const totalAmount = row.total_amount || 0;
             const remittedAmount = row.remitted_amount || 0;
             const isPaid = totalAmount > 0 && remittedAmount >= totalAmount;
+            const deliveryDate = row.delivery_date || '';
+            const paymentTerms = this.normalizePaymentTerms(row.payment_terms);
+            const paymentDueDate = this.calculatePaymentDueDate(deliveryDate, paymentTerms);
+            const dueState = this.getPaymentDueState(paymentDueDate, isPaid);
+            const paymentDueHtml = paymentDueDate
+                ? `<span class="inline-flex items-center gap-1 ${dueState.className}" title="${dueState.title}">${dueState.icon}${paymentDueDate}</span>`
+                : '-';
             
             // 아이콘 설정: 일치하면 초록색 동그라미, 아니면 주황색 X
             const statusIcon = isPaid 
@@ -84,6 +149,9 @@ const PurchaseOrdersModule = {
                     <td class="pl-2 text-xs">${itemsSummary}</td>
                     <td class="font-bold text-right pr-2">${formatNumber(totalAmount)}</td>
                     <td class="text-center">${row.date}</td>
+                    <td class="text-center">${deliveryDate || '-'}</td>
+                    <td class="text-center text-xs">${this.getPaymentTermsLabel(paymentTerms)}</td>
+                    <td class="text-center text-xs">${paymentDueHtml}</td>
                     <!-- 송금 완료 여부 아이콘 칸 -->
                     <td class="text-center text-lg">${statusIcon}</td>
                     <!-- 송금액 표시 칸 -->
@@ -282,7 +350,7 @@ const PurchaseOrdersModule = {
         const body = document.getElementById('modalBody');
         body.innerHTML = this.getFormHtml(autoPO, today);
         
-        this.fillFormData(row, { date: today, poNumber: autoPO });
+        this.fillFormData(row, { date: today, poNumber: autoPO, deliveryDate: '' });
     },
     
     /**
@@ -349,6 +417,23 @@ const PurchaseOrdersModule = {
                     <div>
                         <label class="text-xs font-bold text-blue-600">실제 송금액 (결제금액)</label>
                         <input type="number" id="poRemittedAmount" class="input-box border-blue-300 bg-blue-50" placeholder="금액 입력">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+                    <div>
+                        <label class="text-xs text-slate-500 font-bold">입고일 (선택)</label>
+                        <input type="date" id="poDeliveryDate" class="input-box" onchange="PurchaseOrdersModule.updatePaymentDueDatePreview()">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500 font-bold">결제조건</label>
+                        <select id="poPaymentTerms" class="input-box" onchange="PurchaseOrdersModule.updatePaymentDueDatePreview()">
+                            <option value="current_month_end">당월말</option>
+                            <option value="next_month_end" selected>익월말</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500 font-bold">송금예정일 (자동계산)</label>
+                        <input id="poPaymentDueDate" class="input-box bg-slate-100" value="-" readonly>
                     </div>
                 </div>
             </div>
@@ -427,6 +512,12 @@ const PurchaseOrdersModule = {
             document.getElementById('poPhone').value = row.phone || '';
             document.getElementById('poEmail').value = row.email || '';
             document.getElementById('poAddr').value = row.partner_address || '';
+            const deliveryDate = Object.prototype.hasOwnProperty.call(options, 'deliveryDate')
+                ? options.deliveryDate
+                : (row.delivery_date || '');
+            document.getElementById('poDeliveryDate').value = deliveryDate;
+            document.getElementById('poPaymentTerms').value = this.normalizePaymentTerms(row.payment_terms);
+            this.updatePaymentDueDatePreview();
             
             // 송금액 필드 데이터 로드
             const remitInput = document.getElementById('poRemittedAmount');
@@ -479,7 +570,8 @@ const PurchaseOrdersModule = {
             email: el('poEmail'),
             partner_address: el('poAddr'),
             items: AppState.tempItems,
-            // 새 컬럼: 송금액 저장
+            delivery_date: el('poDeliveryDate') || null,
+            payment_terms: this.normalizePaymentTerms(el('poPaymentTerms')),
             remitted_amount: Number(document.getElementById('poRemittedAmount').value) || 0,
             total_supply: tSupply,
             total_vat: tVat,
