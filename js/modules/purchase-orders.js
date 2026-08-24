@@ -3,6 +3,39 @@
 const PurchaseOrdersModule = {
     tableName: 'purchase_orders',
 
+    calculateSummary(data) {
+        return (data || []).reduce((total, row) => {
+            return total + (Number(row.total_amount) || 0);
+        }, 0);
+    },
+
+    hideSummary() {
+        const summary = document.getElementById('purchaseOrdersSummary');
+        if (!summary) return;
+        summary.classList.add('hidden');
+        summary.innerHTML = '';
+    },
+
+    renderSummary(data) {
+        const summary = document.getElementById('purchaseOrdersSummary');
+        if (!summary) return;
+
+        const totalAmount = this.calculateSummary(data);
+        const startDate = el('searchStartDate');
+        const endDate = el('searchEndDate');
+
+        summary.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+                <h3 class="font-bold text-slate-800">기간 조회 합계</h3>
+                <span class="text-xs text-slate-500">${startDate} ~ ${endDate} · ${data.length}건</span>
+            </div>
+            <div class="p-4">
+                <span class="block text-xs font-bold text-slate-500">총액</span>
+                <strong class="mt-1 block text-lg text-blue-600">${formatNumber(totalAmount)}원</strong>
+            </div>`;
+        summary.classList.remove('hidden');
+    },
+
     normalizePaymentTerms(value) {
         return value === 'current_month_end' ? 'current_month_end' : 'next_month_end';
     },
@@ -65,8 +98,9 @@ const PurchaseOrdersModule = {
     /**
      * 검색 실행
      */
-    async search() {
+    async search(forceRefresh, showSummary) {
         showTableLoading(12);
+        this.hideSummary();
         
         let query = supabaseClient
             .from(this.tableName)
@@ -105,6 +139,7 @@ const PurchaseOrdersModule = {
         }
         
         this.renderTable(resultData);
+        if (showSummary) this.renderSummary(resultData);
     },
     
     /**

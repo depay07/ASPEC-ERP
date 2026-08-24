@@ -77,7 +77,7 @@ async function runSearch(tab, forceRefresh, userInitiated) {
             await PurchasesModule.search(forceRefresh);
             break;
         case 'purchase_orders':
-            await PurchaseOrdersModule.search(forceRefresh);
+            await PurchaseOrdersModule.search(forceRefresh, userInitiated);
             break;
         case 'quotes':
             await QuotesModule.search(forceRefresh);
@@ -162,6 +162,8 @@ function renderTabContent(tab, container) {
         html += '<section id="salesSummary" class="hidden mb-5 bg-white border-y border-slate-200" aria-live="polite"></section>';
     } else if (tab === 'orders') {
         html += '<section id="ordersSummary" class="hidden mb-5 bg-white border-y border-slate-200" aria-live="polite"></section>';
+    } else if (tab === 'purchase_orders') {
+        html += '<section id="purchaseOrdersSummary" class="hidden mb-5 bg-white border-y border-slate-200" aria-live="polite"></section>';
     }
 
     if (tab === 'memos') {
