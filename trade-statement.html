@@ -540,6 +540,29 @@
             return `${parts[0]}년 ${parts[1]}월 ${parts[2]}일`;
         }
 
+        function sanitizeFileNamePart(value) {
+            const sanitized = String(value || '')
+                .replace(/[<>:"/\\|?*\u0000-\u001f]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .replace(/[. ]+$/g, '')
+                .trim();
+            return sanitized || '거래처';
+        }
+
+        function buildPdfDocumentTitle(row) {
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).formatToParts(new Date());
+            const values = {};
+            parts.forEach(part => {
+                if (part.type !== 'literal') values[part.type] = part.value;
+            });
+            return `[${values.year.slice(-2)}.${values.month}.${values.day}] ${sanitizeFileNamePart(row.partner_name)}_거래명세서`;
+        }
+
         async function buildDocumentNo(row) {
             const d = new Date(row.date);
             const yymmdd = d.getFullYear().toString().slice(2) +
@@ -641,6 +664,7 @@
             const supply = toNumber(row.total_supply);
             const vat = toNumber(row.total_vat);
             const total = toNumber(row.total_amount || supply + vat);
+            document.title = buildPdfDocumentTitle(row);
 
             document.getElementById('documentPage').innerHTML = `
                 <div class="print-wrap">

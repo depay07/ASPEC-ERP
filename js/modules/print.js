@@ -1,6 +1,46 @@
 // js/modules/print.js - 인쇄 기능 모듈
 
 const PrintModule = {
+
+    sanitizeFileNamePart(value) {
+        const sanitized = String(value || '')
+            .replace(/[<>:"/\\|?*\u0000-\u001f]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .replace(/[. ]+$/g, '')
+            .trim();
+        return sanitized || '거래처';
+    },
+
+    getPdfDocumentTitle(tab, row, today = getToday()) {
+        const labels = {
+            quotes: '견적서',
+            sales: '거래명세서'
+        };
+        if (!labels[tab]) return '';
+
+        const date = parseDateString(today);
+        const shortDate = `${String(date.year).slice(-2)}.${String(date.month).padStart(2, '0')}.${String(date.day).padStart(2, '0')}`;
+        const partnerName = this.sanitizeFileNamePart(row.partner_name);
+        return `[${shortDate}] ${partnerName}_${labels[tab]}`;
+    },
+
+    printPreparedDocument(tab, row) {
+        const printContainer = document.getElementById('printContainer');
+        const originalTitle = document.title;
+        const pdfTitle = this.getPdfDocumentTitle(tab, row);
+
+        if (pdfTitle) document.title = pdfTitle;
+        printContainer.classList.remove('hidden');
+
+        setTimeout(() => {
+            try {
+                window.print();
+            } finally {
+                printContainer.classList.add('hidden');
+                document.title = originalTitle;
+            }
+        }, 100);
+    },
     
     /**
      * 문서 인쇄
@@ -79,11 +119,7 @@ const PrintModule = {
         this.buildItemsTable(row);
         
         // 인쇄 실행
-        document.getElementById('printContainer').classList.remove('hidden');
-        setTimeout(() => {
-            window.print();
-            document.getElementById('printContainer').classList.add('hidden');
-        }, 100);
+        this.printPreparedDocument(tab, row);
     },
     
     /**
