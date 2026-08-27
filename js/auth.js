@@ -106,7 +106,9 @@ function isTransientAuthError(error) {
     if (!error) return false;
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
 
-    var status = Number(error.status || error.statusCode || 0);
+    var hasStatus = error.status !== undefined && error.status !== null ||
+        error.statusCode !== undefined && error.statusCode !== null;
+    var status = hasStatus ? Number(error.status || error.statusCode) : null;
     var name = String(error.name || '').toLowerCase();
     var message = String(error.message || error).toLowerCase();
 
@@ -115,6 +117,18 @@ function isTransientAuthError(error) {
         message.includes('fetch') || message.includes('network') ||
         message.includes('timeout') || message.includes('timed out') ||
         message.includes('load failed');
+}
+
+function isAuthTokenError(error) {
+    if (!error) return false;
+
+    var status = Number(error.status || error.statusCode || 0);
+    var code = String(error.code || '').toLowerCase();
+    var message = String(error.message || error).toLowerCase();
+
+    return status === 401 || code === 'pgrst301' ||
+        message.includes('jwt expired') || message.includes('invalid jwt') ||
+        message.includes('jwt is expired') || message.includes('token has expired');
 }
 
 function showConnectionWarning(message) {
@@ -151,31 +165,74 @@ async function fetchMasterData(forceRefresh) {
         var sessionReady = await ensureActiveSession({ context: '기초 데이터 조회', notifyNetworkError: true });
         if (!sessionReady) return false;
 
-        var results = await Promise.all([
-            supabaseClient.from('partners').select('*'),
-            supabaseClient.from('products').select('*').order('name')
-        ]);
+        var loadPartners = function() {
+            return supabaseClient.from('partners').select('*');
+        };
+        var loadProducts = function() {
+            return supabaseClient.from('products').select('*').order('name');
+        };
+
+        var results = await Promise.all([loadPartners(), loadProducts()]);
 
         var partnersRes = results[0];
         var productsRes = results[1];
+        var authError = [partnersRes.error, productsRes.error].find(isAuthTokenError);
+
+        // 로그인 직후 일부 병렬 요청만 이전 토큰으로 전송될 수 있어 실패한 요청만 한 번 재시도합니다.
+        if (authError) {
+            console.warn('기초 데이터 인증 응답 지연으로 세션 갱신 후 재시도합니다.', authError);
+            var refreshed = await ensureActiveSession({
+                context: '기초 데이터 인증 재시도',
+                forceRefresh: true,
+                notifyNetworkError: false
+            });
+
+            if (refreshed) {
+                results = await Promise.all([
+                    partnersRes.error ? loadPartners() : Promise.resolve(partnersRes),
+                    productsRes.error ? loadProducts() : Promise.resolve(productsRes)
+                ]);
+                partnersRes = results[0];
+                productsRes = results[1];
+            }
+        }
+
+        if (!partnersRes.error) AppState.partnerList = partnersRes.data || [];
+        if (!productsRes.error) AppState.productList = productsRes.data || [];
+
         var error = partnersRes.error || productsRes.error;
 
         if (error) {
+            var hasCachedMasterData = AppState.partnerList.length > 0 && AppState.productList.length > 0;
+            if (hasCachedMasterData) {
+                console.warn('일부 기초 데이터 조회에 실패하여 기존 데이터를 사용합니다.', error);
+                return true;
+            }
+
             if (isTransientAuthError(error)) {
-                showConnectionWarning('네트워크 연결이 불안정하여 거래처·품목 정보를 불러오지 못했습니다.\n로그인은 유지되며 잠시 후 다시 조회할 수 있습니다.');
+                showConnectionWarning('서버 응답이 일시적으로 지연되어 거래처·품목 정보를 불러오지 못했습니다.\n로그인은 유지되며 잠시 후 다시 조회할 수 있습니다.');
+            } else if (isAuthTokenError(error)) {
+                showConnectionWarning('로그인 정보 갱신 중 거래처·품목 정보를 불러오지 못했습니다.\n잠시 후 다시 조회해 주세요.');
             } else {
                 alert('기초 데이터 조회 실패: ' + error.message);
             }
             return false;
         }
 
-        AppState.partnerList = partnersRes.data || [];
-        AppState.productList = productsRes.data || [];
         console.log('마스터 데이터 로드 완료');
         return true;
     } catch (error) {
         console.error('fetchMasterData 오류:', error);
-        showConnectionWarning('네트워크 연결이 불안정하여 거래처·품목 정보를 불러오지 못했습니다.\n로그인은 유지되며 잠시 후 다시 조회할 수 있습니다.');
+        if (AppState.partnerList.length > 0 && AppState.productList.length > 0) {
+            console.warn('기초 데이터 조회 중 오류가 발생하여 기존 데이터를 사용합니다.', error);
+            return true;
+        }
+
+        if (isTransientAuthError(error)) {
+            showConnectionWarning('서버 응답이 일시적으로 지연되어 거래처·품목 정보를 불러오지 못했습니다.\n로그인은 유지되며 잠시 후 다시 조회할 수 있습니다.');
+        } else {
+            alert('기초 데이터 조회 실패: ' + (error.message || error));
+        }
         return false;
     }
 }
