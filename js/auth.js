@@ -132,7 +132,19 @@ function isAuthTokenError(error) {
 
     return status === 401 || code === 'pgrst301' ||
         message.includes('jwt expired') || message.includes('invalid jwt') ||
-        message.includes('jwt is expired') || message.includes('token has expired');
+        message.includes('jwt is expired') || message.includes('token has expired') ||
+        message.includes('jwt issued at future');
+}
+
+function isJwtIssuedAtFutureError(error) {
+    if (!error) return false;
+    return String(error.message || error).toLowerCase().includes('jwt issued at future');
+}
+
+function waitForMasterDataRetry(delayMs) {
+    return new Promise(function(resolve) {
+        setTimeout(resolve, delayMs);
+    });
 }
 
 function showConnectionWarning(message) {
@@ -181,10 +193,34 @@ async function fetchMasterData(forceRefresh) {
 
         var partnersRes = results[0];
         var productsRes = results[1];
+        var retryFailedLoads = async function() {
+            results = await Promise.all([
+                partnersRes.error ? loadPartners() : Promise.resolve(partnersRes),
+                productsRes.error ? loadProducts() : Promise.resolve(productsRes)
+            ]);
+            partnersRes = results[0];
+            productsRes = results[1];
+        };
+
+        var futureIssuedError = [partnersRes.error, productsRes.error].find(isJwtIssuedAtFutureError);
+
+        // 일부 API 노드의 시각이 잠시 뒤처진 경우 새 토큰을 만들지 않고 기존 토큰으로 재시도합니다.
+        if (futureIssuedError) {
+            console.warn('JWT 발급 시각 검증 지연으로 기초 데이터 조회를 재시도합니다.', futureIssuedError);
+            await waitForMasterDataRetry(750);
+            await retryFailedLoads();
+
+            futureIssuedError = [partnersRes.error, productsRes.error].find(isJwtIssuedAtFutureError);
+            if (futureIssuedError) {
+                await waitForMasterDataRetry(1500);
+                await retryFailedLoads();
+            }
+        }
+
         var authError = [partnersRes.error, productsRes.error].find(isAuthTokenError);
 
         // 로그인 직후 일부 병렬 요청만 이전 토큰으로 전송될 수 있어 실패한 요청만 한 번 재시도합니다.
-        if (authError) {
+        if (authError && !isJwtIssuedAtFutureError(authError)) {
             console.warn('기초 데이터 인증 응답 지연으로 세션 갱신 후 재시도합니다.', authError);
             var refreshed = await ensureActiveSession({
                 context: '기초 데이터 인증 재시도',
@@ -193,12 +229,7 @@ async function fetchMasterData(forceRefresh) {
             });
 
             if (refreshed) {
-                results = await Promise.all([
-                    partnersRes.error ? loadPartners() : Promise.resolve(partnersRes),
-                    productsRes.error ? loadProducts() : Promise.resolve(productsRes)
-                ]);
-                partnersRes = results[0];
-                productsRes = results[1];
+                await retryFailedLoads();
             }
         }
 
@@ -216,6 +247,8 @@ async function fetchMasterData(forceRefresh) {
 
             if (isTransientAuthError(error)) {
                 showConnectionWarning('서버 응답이 일시적으로 지연되어 거래처·품목 정보를 불러오지 못했습니다.\n로그인은 유지되며 잠시 후 다시 조회할 수 있습니다.');
+            } else if (isJwtIssuedAtFutureError(error)) {
+                showConnectionWarning('인증 서버의 응답 시각이 일시적으로 맞지 않아 거래처·품목 정보를 불러오지 못했습니다.\n잠시 후 다시 조회해 주세요.');
             } else if (isAuthTokenError(error)) {
                 showConnectionWarning('로그인 정보 갱신 중 거래처·품목 정보를 불러오지 못했습니다.\n잠시 후 다시 조회해 주세요.');
             } else {
