@@ -1,9 +1,13 @@
 // js/auth.js - 인증 관련
 
 var SESSION_IDLE_LIMIT_MS = 30 * 60 * 1000;
+var SESSION_WARNING_TIMEOUT_MS = 10 * 1000;
 var SESSION_ACTIVITY_SAVE_INTERVAL_MS = 15 * 1000;
 var SESSION_ACTIVITY_KEY = 'aspec_erp_last_activity_at';
 var SESSION_REFRESH_MARGIN_MS = 2 * 60 * 1000;
+var sessionWarningDeadline = 0;
+var sessionWarningLogoutTimer = null;
+var sessionWarningCountdownTimer = null;
 
 /**
  * 초기 인증 체크 및 앱 시작
@@ -144,6 +148,7 @@ function redirectToLogin(message) {
 
     AppState.authRedirecting = true;
     clearTimeout(AppState.sessionTimer);
+    hideSessionWarning();
     alert(message || '로그인이 필요합니다.');
     window.location.replace('index.html');
 }
@@ -242,6 +247,7 @@ async function fetchMasterData(forceRefresh) {
  */
 function startSessionTimer() {
     setupSessionActivityListeners();
+    setupSessionWarningModal();
     recordSessionActivity(true);
 }
 
@@ -261,6 +267,7 @@ function setupSessionActivityListeners() {
         var sharedActivityAt = Number(event.newValue) || 0;
         if (sharedActivityAt > AppState.lastActivityAt) {
             AppState.lastActivityAt = sharedActivityAt;
+            if (AppState.sessionWarningVisible) hideSessionWarning();
             scheduleSessionWarning();
         }
     });
@@ -307,7 +314,7 @@ function scheduleSessionWarning() {
     AppState.sessionTimer = setTimeout(handleSessionIdleTimeout, Math.max(1000, remaining));
 }
 
-async function handleSessionIdleTimeout() {
+function handleSessionIdleTimeout() {
     var idleTime = Date.now() - getLastSessionActivityAt();
     if (idleTime < SESSION_IDLE_LIMIT_MS) {
         scheduleSessionWarning();
@@ -315,29 +322,108 @@ async function handleSessionIdleTimeout() {
     }
 
     if (AppState.sessionWarningVisible || AppState.authRedirecting) return;
+    showSessionWarning();
+}
+
+function setupSessionWarningModal() {
+    var extendButton = document.getElementById('sessionExtendButton');
+    var logoutButton = document.getElementById('sessionLogoutButton');
+    if (!extendButton || !logoutButton || extendButton.dataset.listenerReady === 'true') return;
+
+    extendButton.dataset.listenerReady = 'true';
+    extendButton.addEventListener('click', extendSessionFromWarning);
+    logoutButton.addEventListener('click', function() {
+        hideSessionWarning();
+        logout();
+    });
+}
+
+function showSessionWarning() {
+    var modal = document.getElementById('sessionTimeoutModal');
+    var extendButton = document.getElementById('sessionExtendButton');
+    if (!modal || !extendButton) {
+        console.error('세션 연장 안내창을 찾을 수 없어 로그아웃합니다.');
+        logout();
+        return;
+    }
+
+    setupSessionWarningModal();
     AppState.sessionWarningVisible = true;
+    sessionWarningDeadline = Date.now() + SESSION_WARNING_TIMEOUT_MS;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+    extendButton.disabled = false;
+    extendButton.textContent = '확인';
+    updateSessionWarningCountdown();
+    extendButton.focus();
 
-    try {
-        if (confirm('30분 동안 사용 기록이 없습니다.\n로그인을 연장하시겠습니까?')) {
-            var renewed = await ensureActiveSession({
-                context: '로그인 연장',
-                forceRefresh: true,
-                notifyNetworkError: true
-            });
+    sessionWarningCountdownTimer = setInterval(updateSessionWarningCountdown, 250);
+    sessionWarningLogoutTimer = setTimeout(expireSessionWarning, SESSION_WARNING_TIMEOUT_MS);
+}
 
-            if (renewed) {
-                AppState.sessionWarningVisible = false;
-                recordSessionActivity(true);
-            } else if (!AppState.authRedirecting) {
-                // 네트워크가 복구되면 다시 확인할 수 있도록 로그인 상태는 지우지 않습니다.
-                AppState.sessionWarningVisible = false;
-                recordSessionActivity(true);
-            }
-        } else {
-            await logout();
-        }
-    } finally {
-        AppState.sessionWarningVisible = false;
+function updateSessionWarningCountdown() {
+    var countdown = document.getElementById('sessionTimeoutCountdown');
+    if (!countdown) return;
+
+    var remainingSeconds = Math.max(0, Math.ceil((sessionWarningDeadline - Date.now()) / 1000));
+    countdown.textContent = String(remainingSeconds);
+}
+
+function clearSessionWarningTimers() {
+    clearTimeout(sessionWarningLogoutTimer);
+    clearInterval(sessionWarningCountdownTimer);
+    sessionWarningLogoutTimer = null;
+    sessionWarningCountdownTimer = null;
+    sessionWarningDeadline = 0;
+}
+
+function hideSessionWarning() {
+    clearSessionWarningTimers();
+    AppState.sessionWarningVisible = false;
+
+    var modal = document.getElementById('sessionTimeoutModal');
+    var extendButton = document.getElementById('sessionExtendButton');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+    if (extendButton) {
+        extendButton.disabled = false;
+        extendButton.textContent = '확인';
+    }
+}
+
+async function expireSessionWarning() {
+    if (!AppState.sessionWarningVisible || AppState.authRedirecting) return;
+
+    updateSessionWarningCountdown();
+    hideSessionWarning();
+    await logout();
+}
+
+async function extendSessionFromWarning() {
+    if (!AppState.sessionWarningVisible || AppState.authRedirecting) return;
+
+    clearSessionWarningTimers();
+    var extendButton = document.getElementById('sessionExtendButton');
+    if (extendButton) {
+        extendButton.disabled = true;
+        extendButton.textContent = '연장 중...';
+    }
+
+    var renewed = await ensureActiveSession({
+        context: '로그인 연장',
+        forceRefresh: true,
+        notifyNetworkError: true
+    });
+
+    if (renewed) {
+        hideSessionWarning();
+        recordSessionActivity(true);
+    } else if (!AppState.authRedirecting) {
+        // 네트워크가 복구되면 다시 확인할 수 있도록 로그인 상태는 지우지 않습니다.
+        hideSessionWarning();
+        recordSessionActivity(true);
     }
 }
 
@@ -349,6 +435,7 @@ async function logout() {
 
     AppState.intentionalLogout = true;
     clearTimeout(AppState.sessionTimer);
+    hideSessionWarning();
     try {
         localStorage.removeItem(SESSION_ACTIVITY_KEY);
     } catch (error) {
