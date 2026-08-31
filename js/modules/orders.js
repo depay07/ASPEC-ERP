@@ -94,6 +94,7 @@ const OrdersModule = {
         const { data } = await supabaseClient
             .from('quotes')
             .select('*')
+            .order('date', { ascending: false, nullsFirst: false })
             .order('created_at', { ascending: false })
             .limit(50);
         

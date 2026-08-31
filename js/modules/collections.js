@@ -12,6 +12,7 @@ const CollectionsModule = {
         let query = supabaseClient
             .from(this.tableName)
             .select('*')
+            .order('date', { ascending: false, nullsFirst: false })
             .order('created_at', { ascending: false });
         
         // 날짜 필터

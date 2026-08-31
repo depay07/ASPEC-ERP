@@ -20,6 +20,7 @@ const DocumentBaseModule = {
         let query = supabaseClient
             .from(tableName)
             .select('*')
+            .order('date', { ascending: false, nullsFirst: false })
             .order('created_at', { ascending: false });
         
         // 날짜 필터

@@ -262,7 +262,12 @@ const SalesModule = {
     async openLoadModal() {
         const modal = document.getElementById('loadDataModal');
         document.getElementById('loadModalTitle').innerText = '주문서 불러오기';
-        const { data } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false }).limit(50);
+        const { data } = await supabaseClient
+            .from('orders')
+            .select('*')
+            .order('date', { ascending: false, nullsFirst: false })
+            .order('created_at', { ascending: false })
+            .limit(50);
         const tbody = document.getElementById('loadDataBody');
         tbody.innerHTML = (data || []).map(row => `
             <tr class="hover:bg-slate-50 cursor-pointer" onclick="SalesModule.loadFromOrder(${row.id})">
