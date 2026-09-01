@@ -28,7 +28,7 @@ const RentalsModule = {
     },
 
     async search() {
-        showTableLoading(12);
+        showTableLoading(11);
 
         let query = supabaseClient
             .from(this.tableName)
@@ -75,7 +75,7 @@ const RentalsModule = {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            showEmptyTable(12);
+            showEmptyTable(11);
             return;
         }
 
@@ -103,7 +103,6 @@ const RentalsModule = {
                     <td class="${dueState.cellClass}" title="${escapeAttr(dueState.title)}">${dueState.icon}${escapeHtml(row.expected_return_date || '-')}</td>
                     <td>${this.getStatusBadge(row.status, dueState.type)}</td>
                     <td>${escapeHtml(row.actual_return_date || '-')}</td>
-                    <td class="text-left" title="${escapeAttr(row.memo || '')}">${escapeHtml(row.memo || '-')}</td>
                     <td class="action-cell">${this.getActionButtons(dataId, row.id)}</td>
                 </tr>`;
         }).join('');
