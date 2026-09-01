@@ -13,7 +13,9 @@ function openModal(title = '입력') {
  * 모달 닫기
  */
 function closeModal() {
-    document.getElementById('genericModal').classList.remove('active');
+    const modal = document.getElementById('genericModal');
+    modal.classList.remove('active');
+    modal.classList.remove('rental-modal');
     AppState.currentEditId = null;
     AppState.tempItems = [];
 }
@@ -151,6 +153,22 @@ function getDateRangeForTab(tab) {
  */
 function getTabSpecificFilters(tab) {
     switch (tab) {
+        case 'rentals':
+            return `
+                <div><span class="search-label">대여번호</span><input type="text" id="search_rRentalNo" class="input-box" placeholder="대여번호" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">거래처</span><input type="text" id="search_rPartner" class="input-box" placeholder="거래처명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">담당자</span><input type="text" id="search_rContact" class="input-box" placeholder="담당자명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">품목명</span><input type="text" id="search_rItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">상태</span>
+                    <select id="search_rStatus" class="input-box h-[38px]" onchange="runSearch('${tab}')">
+                        <option value="">전체</option>
+                        <option value="on_loan">대여중</option>
+                        <option value="return_due">회수예정</option>
+                        <option value="returned">회수완료</option>
+                        <option value="long_term">장기대여</option>
+                    </select>
+                </div>`;
+
         case 'purchase_orders':
             return `
                 <div><span class="search-label">납품업체</span><input type="text" id="search_sPartner" class="input-box" placeholder="업체명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>

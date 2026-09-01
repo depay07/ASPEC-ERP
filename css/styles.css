@@ -9,6 +9,58 @@ body {
     background-color: #f1f5f9;
 }
 
+/* ========== 대여 관리 ========== */
+#genericModal.rental-modal .modal-content {
+    max-width: 1500px;
+}
+
+.rental-form-section {
+    width: 100%;
+}
+
+.rental-items-table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    background: white;
+}
+
+.rental-items-table th {
+    padding: 9px 6px;
+    background: #e2e8f0;
+    color: #475569;
+    border-bottom: 1px solid #cbd5e1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.rental-items-table td {
+    padding: 6px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    #genericModal.rental-modal .modal-content {
+        width: calc(100% - 16px);
+        max-height: calc(100dvh - 16px);
+        margin: 8px;
+    }
+
+    .rental-form-section .grid.grid-cols-3 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .rental-form-section .col-span-2,
+    .rental-form-section .col-span-3 {
+        grid-column: span 1 / span 1 !important;
+    }
+
+    .rental-items-wrap {
+        max-width: calc(100vw - 48px);
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 .mobile-header,
 .mobile-sidebar-overlay {
     display: none;
