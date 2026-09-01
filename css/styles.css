@@ -522,6 +522,34 @@ body {
         vertical-align: middle;
     }
 
+    .print-items-table .rental-print-row td {
+        height: 32px;
+        padding: 4px;
+        font-size: 9px;
+        word-break: break-all;
+    }
+
+    .rental-print-footer th,
+    .rental-print-footer td {
+        border: 1px solid black;
+        padding: 5px;
+        height: 30px;
+        font-size: 10px;
+    }
+
+    .rental-print-footer th {
+        background-color: #f3f3f3 !important;
+        text-align: center;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .rental-print-footer .rental-confirmation-row td {
+        height: 75px;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.8;
+    }
+
     .addr-cell {
         height: 55px !important;
         vertical-align: top !important;

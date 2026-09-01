@@ -34,7 +34,7 @@ const RentalsModule = {
             .from(this.tableName)
             .select(`
                 *,
-                partner:partners!rentals_partner_id_fkey(id, name, manager_name, phone),
+                partner:partners!rentals_partner_id_fkey(id, name, manager_name, phone, email, address),
                 rental_items(*)
             `)
             .order('rental_date', { ascending: false, nullsFirst: false })
@@ -170,6 +170,9 @@ const RentalsModule = {
             <div class="flex justify-center items-center gap-1">
                 <button onclick="RentalsModule.openViewModal('${dataId}')" class="text-slate-500 hover:text-cyan-700 p-2 rounded hover:bg-cyan-50" title="상세보기">
                     <i class="fa-solid fa-eye"></i>
+                </button>
+                <button onclick="printDocument('rentals', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200" title="대여확인증 인쇄">
+                    <i class="fa-solid fa-print"></i>
                 </button>
                 <button onclick="RentalsModule.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50" title="수정">
                     <i class="fa-solid fa-pen-to-square"></i>
@@ -556,6 +559,7 @@ const RentalsModule = {
             </div>
             <div class="flex justify-end gap-2 mt-5">
                 <button onclick="closeModal()" class="px-6 py-3 bg-slate-200 rounded font-bold">닫기</button>
+                <button onclick="printDocument('rentals', '${dataId}')" class="px-6 py-3 bg-slate-700 text-white rounded font-bold"><i class="fa-solid fa-print mr-2"></i>인쇄</button>
                 <button onclick="closeModal(); RentalsModule.openEditModal('${dataId}')" class="px-6 py-3 bg-blue-600 text-white rounded font-bold"><i class="fa-solid fa-pen-to-square mr-2"></i>수정</button>
             </div>`;
     },

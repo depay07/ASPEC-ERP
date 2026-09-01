@@ -143,3 +143,64 @@ test('저장은 부모와 품목을 save_rental RPC 한 번으로 전달하고 �
     assert.equal(closed, true);
     assert.equal(searched, true);
 });
+
+function createPrintModule() {
+    const context = vm.createContext({
+        getToday: () => '2026-09-02',
+        parseDateString: value => {
+            const [year, month, day] = String(value).split('-').map(Number);
+            return { year, month, day };
+        },
+        escapeHtml: value => String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;'),
+        formatNumber: value => Number(value || 0).toLocaleString('en-US'),
+        document: {},
+        window: {},
+        AppState: { currentUserEmail: 'test@aspec-tech.co.kr', productList: [] },
+        getRowData: () => null,
+        alert() {}
+    });
+    const source = readFileSync(path.join(root, 'js/modules/print.js'), 'utf8');
+    vm.runInContext(`${source}\nthis.PrintModule = PrintModule;`, context);
+    return context.PrintModule;
+}
+
+test('대여확인증 PDF 기본 파일명은 날짜와 직접 입력 거래처명을 사용한다', () => {
+    const printModule = createPrintModule();
+    assert.equal(
+        printModule.getPdfDocumentTitle('rentals', { partner_name: 'ABC/테크' }),
+        '[26.09.02] ABC 테크_대여확인증'
+    );
+});
+
+test('대여확인증에는 품목별 대여·회수·미회수 정보가 출력된다', () => {
+    const printModule = createPrintModule();
+    const html = printModule.getRentalItemsTableHtml({
+        rental_purpose: 'test',
+        expected_return_date: '2026-09-10',
+        project_name: '검사 현장',
+        memo: '확인용',
+        rental_items: [{
+            item_name: '카메라 <IS2800>', model_name: 'IS2802M', manufacturer: 'Cognex',
+            serial_number: 'SN123', asset_number: 'AS-01', quantity: 2,
+            returned_quantity: 1, unit: 'EA', item_status: 'normal', memo: '테스트용'
+        }]
+    });
+    assert.match(html, /대여/);
+    assert.match(html, /회수/);
+    assert.match(html, /미회수/);
+    assert.match(html, /카메라 &lt;IS2800&gt;/);
+    assert.match(html, /상기 물품을 대여하였음을 확인합니다/);
+    assert.doesNotMatch(html, /부가세|공급가액/);
+});
+
+test('대여 목록 관리 버튼에 대여확인증 인쇄 버튼이 포함된다', () => {
+    const { module } = createModule();
+    const html = module.getActionButtons('row_1', 1);
+    assert.match(html, /printDocument\('rentals', 'row_1'\)/);
+    assert.match(html, /대여확인증 인쇄/);
+});

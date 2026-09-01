@@ -14,7 +14,8 @@ const PrintModule = {
     getPdfDocumentTitle(tab, row, today = getToday()) {
         const labels = {
             quotes: '견적서',
-            sales: '거래명세서'
+            sales: '거래명세서',
+            rentals: '대여확인증'
         };
         if (!labels[tab]) return '';
 
@@ -48,6 +49,12 @@ const PrintModule = {
     async print(tab, dataId) {
         const row = getRowData(dataId);
         if (!row) return alert('데이터 오류');
+
+        if (tab === 'rentals') {
+            this.prepareRentalDocument(row);
+            this.printPreparedDocument(tab, row);
+            return;
+        }
         
         const isPO = (tab === 'purchase_orders');
         
@@ -120,6 +127,104 @@ const PrintModule = {
         
         // 인쇄 실행
         this.printPreparedDocument(tab, row);
+    },
+
+    prepareRentalDocument(row) {
+        const partner = row.partner || {};
+        const addrRow1 = document.getElementById('print_row_addr_1');
+        const addrRow2 = document.getElementById('print_row_addr_2');
+
+        if (addrRow1) addrRow1.style.display = partner.address ? 'table-row' : 'none';
+        if (addrRow2) addrRow2.style.display = 'table-row';
+
+        document.getElementById('p_title_ko').innerText = '대여확인증';
+        document.getElementById('p_title_en').innerText = 'RENTAL CONFIRMATION';
+        document.getElementById('p_date').innerText = row.rental_date || '';
+        document.getElementById('p_no').innerText = row.rental_no || '';
+
+        document.getElementById('p_left_role').innerText = '대 여 받 는 자';
+        document.getElementById('p_right_role').innerText = '대 여 자';
+        document.getElementById('p_left_name').innerText = row.partner_name || partner.name || '';
+        document.getElementById('p_left_manager').innerText = row.contact_name || partner.manager_name || '';
+        document.getElementById('p_left_email').innerText = partner.email || '';
+        document.getElementById('p_left_phone').innerText = row.contact_phone || partner.phone || '';
+        document.getElementById('p_left_addr').innerText = partner.address || '';
+
+        document.getElementById('p_right_name').innerText = '아스펙 (ASPEC)';
+        document.getElementById('p_right_manager').innerText = '이창현 프로';
+        document.getElementById('p_right_email').innerText = AppState.currentUserEmail || '';
+        document.getElementById('p_right_mp').innerText = '010-5919-1810';
+
+        this.buildRentalItemsTable(row);
+    },
+
+    buildRentalItemsTable(row) {
+        document.querySelector('.print-items-table').innerHTML = this.getRentalItemsTableHtml(row);
+    },
+
+    getRentalItemsTableHtml(row) {
+        const items = row.rental_items || [];
+        const statusLabels = {
+            normal: '정상',
+            damaged: '파손',
+            lost: '분실',
+            repair_needed: '수리필요',
+            other: '기타'
+        };
+        const purposeLabels = {
+            test: '테스트',
+            demo: '데모',
+            temporary_replacement: '임시대체',
+            project: '프로젝트',
+            other: '기타'
+        };
+        const purpose = row.rental_purpose === 'other' && row.rental_purpose_detail
+            ? `기타: ${row.rental_purpose_detail}`
+            : (purposeLabels[row.rental_purpose] || row.rental_purpose || '-');
+        const totalQuantity = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+        const returnedQuantity = items.reduce((sum, item) => sum + Number(item.returned_quantity || 0), 0);
+        const itemRows = items.map((item, index) => {
+            const quantity = Number(item.quantity || 0);
+            const returned = Number(item.returned_quantity || 0);
+            const modelMaker = [item.model_name, item.manufacturer].filter(Boolean).join(' / ') || '-';
+            const serialAsset = [item.serial_number, item.asset_number].filter(Boolean).join(' / ') || '-';
+            const condition = statusLabels[item.item_status] || item.item_status || '정상';
+            const note = item.memo ? `${condition} / ${item.memo}` : condition;
+
+            return `
+                <tr class="items-row rental-print-row">
+                    <td style="text-align:center">${index + 1}</td>
+                    <td>${escapeHtml(item.item_name || '-')}</td>
+                    <td>${escapeHtml(modelMaker)}</td>
+                    <td>${escapeHtml(serialAsset)}</td>
+                    <td style="text-align:center">${formatNumber(quantity)}</td>
+                    <td style="text-align:center">${formatNumber(returned)}</td>
+                    <td style="text-align:center; font-weight:bold">${formatNumber(Math.max(0, quantity - returned))}</td>
+                    <td style="text-align:center">${escapeHtml(item.unit || 'EA')}</td>
+                    <td>${escapeHtml(note)}</td>
+                </tr>`;
+        }).join('');
+        const emptyRows = Array.from({ length: Math.max(0, 6 - items.length) }, () =>
+            '<tr class="items-row rental-print-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'
+        ).join('');
+
+        return `
+            <colgroup>
+                <col style="width:4%"><col style="width:18%"><col style="width:18%"><col style="width:17%">
+                <col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:6%"><col style="width:13%">
+            </colgroup>
+            <thead><tr>
+                <th>No</th><th>품목명</th><th>모델 / 제조사</th><th>S/N / 관리번호</th>
+                <th>대여</th><th>회수</th><th>미회수</th><th>단위</th><th>상태 / 비고</th>
+            </tr></thead>
+            <tbody>${itemRows}${emptyRows}</tbody>
+            <tfoot class="rental-print-footer">
+                <tr><th colspan="4">수량 합계</th><td style="text-align:center; font-weight:bold">${formatNumber(totalQuantity)}</td><td style="text-align:center; font-weight:bold">${formatNumber(returnedQuantity)}</td><td style="text-align:center; font-weight:bold">${formatNumber(totalQuantity - returnedQuantity)}</td><td colspan="2"></td></tr>
+                <tr><th colspan="2">대여 목적</th><td colspan="3">${escapeHtml(purpose)}</td><th colspan="2">회수예정일</th><td colspan="2">${escapeHtml(row.expected_return_date || '-')}</td></tr>
+                <tr><th colspan="2">프로젝트 / 현장</th><td colspan="7">${escapeHtml(row.project_name || '-')}</td></tr>
+                <tr><th colspan="2">비고</th><td colspan="7">${escapeHtml(row.memo || '-')}</td></tr>
+                <tr class="rental-confirmation-row"><td colspan="9">상기 물품을 대여하였음을 확인합니다.<br><br>확인자: ______________________________</td></tr>
+            </tfoot>`;
     },
     
     /**
