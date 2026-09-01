@@ -252,6 +252,10 @@ const RentalsModule = {
                         <label class="text-xs">연락처</label>
                         <input id="rentalPhone" class="input-box" value="${escapeAttr(row.contact_phone || '')}">
                     </div>
+                    <div class="col-span-3">
+                        <label class="text-xs">거래처 주소</label>
+                        <input id="rentalPartnerAddress" class="input-box" value="${escapeAttr(row.partner_address || row.partner?.address || '')}" placeholder="대여확인증에 표시할 주소">
+                    </div>
                     <div>
                         <label class="text-xs">대여 목적</label>
                         <select id="rentalPurpose" class="input-box">${purposeOptions}</select>
@@ -397,6 +401,7 @@ const RentalsModule = {
         if (!partner) return;
         document.getElementById('rentalContact').value = partner.manager_name || '';
         document.getElementById('rentalPhone').value = partner.phone || '';
+        document.getElementById('rentalPartnerAddress').value = partner.address || '';
     },
 
     selectProduct(index, name) {
@@ -422,6 +427,7 @@ const RentalsModule = {
             rental_date: el('rentalDate'),
             partner_id: partner ? partner.id : null,
             partner_name: partnerName,
+            partner_address: el('rentalPartnerAddress').trim(),
             contact_name: el('rentalContact').trim(),
             contact_phone: el('rentalPhone').trim(),
             expected_return_date: el('rentalExpectedDate'),
@@ -527,6 +533,7 @@ const RentalsModule = {
                 ${this.getDetailField('거래처', row.partner_name || row.partner?.name)}
                 ${this.getDetailField('담당자', row.contact_name)}
                 ${this.getDetailField('연락처', row.contact_phone)}
+                ${this.getDetailField('거래처 주소', row.partner_address || row.partner?.address || '-', 'col-span-3')}
                 ${this.getDetailField('회수예정일', row.expected_return_date)}
                 ${this.getDetailField('실제 회수일', row.actual_return_date || '-')}
                 ${this.getDetailField('대여 목적', this.getPurposeLabel(row))}

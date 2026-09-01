@@ -41,6 +41,7 @@ function validRental() {
         rental_date: '2026-09-02',
         partner_id: 1,
         partner_name: 'ABC테크',
+        partner_address: '경기도 화성시 테스트로 1',
         expected_return_date: '2026-09-10',
         actual_return_date: null,
         rental_purpose: 'test',
@@ -144,7 +145,7 @@ test('저장은 부모와 품목을 save_rental RPC 한 번으로 전달하고 �
     assert.equal(searched, true);
 });
 
-function createPrintModule() {
+function createPrintModule(documentOverride = {}) {
     const context = vm.createContext({
         getToday: () => '2026-09-02',
         parseDateString: value => {
@@ -158,7 +159,7 @@ function createPrintModule() {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;'),
         formatNumber: value => Number(value || 0).toLocaleString('en-US'),
-        document: {},
+        document: documentOverride,
         window: {},
         AppState: { currentUserEmail: 'test@aspec-tech.co.kr', productList: [] },
         getRowData: () => null,
@@ -203,4 +204,28 @@ test('대여 목록 관리 버튼에 대여확인증 인쇄 버튼이 포함된�
     const html = module.getActionButtons('row_1', 1);
     assert.match(html, /printDocument\('rentals', 'row_1'\)/);
     assert.match(html, /대여확인증 인쇄/);
+});
+
+test('대여확인증 양쪽 업체 표는 주소 행을 유지하고 자연스러운 제목을 사용한다', () => {
+    const ids = [
+        'print_row_addr_1', 'print_row_addr_2', 'p_title_ko', 'p_title_en', 'p_date', 'p_no',
+        'p_left_role', 'p_right_role', 'p_left_name', 'p_left_manager', 'p_left_email',
+        'p_left_phone', 'p_left_addr', 'p_right_name', 'p_right_manager', 'p_right_email', 'p_right_mp'
+    ];
+    const elements = new Map(ids.map(id => [id, { innerText: '', style: {} }]));
+    const table = { innerHTML: '' };
+    const printModule = createPrintModule({
+        getElementById: id => elements.get(id),
+        querySelector: () => table
+    });
+    printModule.prepareRentalDocument({
+        rental_no: 'ASPEC-260902-R01', rental_date: '2026-09-02',
+        partner_name: '디노메카', partner_address: '경기도 화성시 테스트로 1',
+        contact_name: '이대희 대표', rental_items: []
+    });
+
+    assert.equal(elements.get('print_row_addr_1').style.display, 'table-row');
+    assert.equal(elements.get('p_left_role').innerText, '대 여 받 는 업 체');
+    assert.equal(elements.get('p_right_role').innerText, '대 여 하 는 업 체');
+    assert.equal(elements.get('p_left_addr').innerText, '경기도 화성시 테스트로 1');
 });

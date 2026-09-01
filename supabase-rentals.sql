@@ -4,6 +4,7 @@ create table public.rentals (
     rental_date date not null default current_date,
     partner_id bigint,
     partner_name text not null,
+    partner_address text,
     contact_name text,
     contact_phone text,
     expected_return_date date not null,
@@ -183,7 +184,7 @@ begin
         v_rental_no := 'ASPEC-' || to_char(v_rental_date, 'YYMMDD') || '-R' || lpad(v_sequence::text, 2, '0');
 
         insert into public.rentals (
-            rental_no, rental_date, partner_id, partner_name, contact_name, contact_phone,
+            rental_no, rental_date, partner_id, partner_name, partner_address, contact_name, contact_phone,
             expected_return_date, actual_return_date, rental_purpose,
             rental_purpose_detail, project_name, status, memo
         ) values (
@@ -191,6 +192,7 @@ begin
             v_rental_date,
             v_partner_id,
             v_partner_name,
+            nullif(trim(p_rental ->> 'partner_address'), ''),
             nullif(trim(p_rental ->> 'contact_name'), ''),
             nullif(trim(p_rental ->> 'contact_phone'), ''),
             v_expected_return_date,
@@ -206,6 +208,7 @@ begin
         set rental_date = v_rental_date,
             partner_id = v_partner_id,
             partner_name = v_partner_name,
+            partner_address = nullif(trim(p_rental ->> 'partner_address'), ''),
             contact_name = nullif(trim(p_rental ->> 'contact_name'), ''),
             contact_phone = nullif(trim(p_rental ->> 'contact_phone'), ''),
             expected_return_date = v_expected_return_date,

@@ -134,7 +134,7 @@ const PrintModule = {
         const addrRow1 = document.getElementById('print_row_addr_1');
         const addrRow2 = document.getElementById('print_row_addr_2');
 
-        if (addrRow1) addrRow1.style.display = partner.address ? 'table-row' : 'none';
+        if (addrRow1) addrRow1.style.display = 'table-row';
         if (addrRow2) addrRow2.style.display = 'table-row';
 
         document.getElementById('p_title_ko').innerText = '대여확인증';
@@ -142,13 +142,13 @@ const PrintModule = {
         document.getElementById('p_date').innerText = row.rental_date || '';
         document.getElementById('p_no').innerText = row.rental_no || '';
 
-        document.getElementById('p_left_role').innerText = '대 여 받 는 자';
-        document.getElementById('p_right_role').innerText = '대 여 자';
+        document.getElementById('p_left_role').innerText = '대 여 받 는 업 체';
+        document.getElementById('p_right_role').innerText = '대 여 하 는 업 체';
         document.getElementById('p_left_name').innerText = row.partner_name || partner.name || '';
         document.getElementById('p_left_manager').innerText = row.contact_name || partner.manager_name || '';
         document.getElementById('p_left_email').innerText = partner.email || '';
         document.getElementById('p_left_phone').innerText = row.contact_phone || partner.phone || '';
-        document.getElementById('p_left_addr').innerText = partner.address || '';
+        document.getElementById('p_left_addr').innerText = row.partner_address || partner.address || '';
 
         document.getElementById('p_right_name').innerText = '아스펙 (ASPEC)';
         document.getElementById('p_right_manager').innerText = '이창현 프로';
