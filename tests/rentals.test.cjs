@@ -40,6 +40,7 @@ function validRental() {
     return {
         rental_date: '2026-09-02',
         partner_id: 1,
+        partner_name: 'ABC테크',
         expected_return_date: '2026-09-10',
         actual_return_date: null,
         rental_purpose: 'test',
@@ -71,6 +72,15 @@ test('부분 회수는 미회수 상태를 유지한다', () => {
     assert.equal(message, '');
     assert.equal(rental.status, 'on_loan');
     assert.equal(rental.actual_return_date, null);
+});
+
+test('거래처 관리에 없는 거래처도 이름을 직접 입력해 저장할 수 있다', () => {
+    const { module } = createModule();
+    const rental = validRental();
+    rental.partner_id = null;
+    rental.partner_name = '직접 입력 거래처';
+    const message = module.validateData(rental, [validItem()], rental.partner_name);
+    assert.equal(message, '');
 });
 
 test('모든 품목 회수 시 마지막 품목 회수일로 자동 완료된다', () => {

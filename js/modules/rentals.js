@@ -62,7 +62,7 @@ const RentalsModule = {
         const filtered = (data || []).filter(row => {
             const items = row.rental_items || [];
             return (!rentalNo || String(row.rental_no || '').toLowerCase().includes(rentalNo))
-                && (!partner || String(row.partner?.name || '').toLowerCase().includes(partner))
+                && (!partner || String(row.partner_name || row.partner?.name || '').toLowerCase().includes(partner))
                 && (!contact || String(row.contact_name || '').toLowerCase().includes(contact))
                 && (!itemName || items.some(item => String(item.item_name || '').toLowerCase().includes(itemName)));
         });
@@ -95,7 +95,7 @@ const RentalsModule = {
                 <tr class="hover:bg-slate-50 border-b transition cursor-pointer" ondblclick="RentalsModule.openViewModal('${dataId}')">
                     <td class="font-mono text-cyan-700 font-semibold" title="${escapeAttr(row.rental_no)}">${escapeHtml(row.rental_no)}</td>
                     <td>${escapeHtml(row.rental_date)}</td>
-                    <td class="text-left font-semibold" title="${escapeAttr(row.partner?.name || '')}">${escapeHtml(row.partner?.name || '-')}</td>
+                    <td class="text-left font-semibold" title="${escapeAttr(row.partner_name || row.partner?.name || '')}">${escapeHtml(row.partner_name || row.partner?.name || '-')}</td>
                     <td title="${escapeAttr(row.contact_name || '')}">${escapeHtml(row.contact_name || '-')}</td>
                     <td title="${escapeAttr(purpose)}">${escapeHtml(purpose)}</td>
                     <td class="text-left" title="${escapeAttr(itemSummary)}">${escapeHtml(itemSummary)}</td>
@@ -237,7 +237,7 @@ const RentalsModule = {
                     </div>
                     <div>
                         <label class="text-xs">거래처 <span class="text-red-500">*</span></label>
-                        <input id="rentalPartner" class="input-box" list="dl_rental_partners" value="${escapeAttr(row.partner?.name || '')}" onchange="RentalsModule.selectPartner(this.value)">
+                        <input id="rentalPartner" class="input-box" list="dl_rental_partners" value="${escapeAttr(row.partner_name || row.partner?.name || '')}" onchange="RentalsModule.selectPartner(this.value)">
                         <input id="rentalPartnerId" type="hidden" value="${escapeAttr(row.partner_id || '')}">
                         <datalist id="dl_rental_partners"></datalist>
                     </div>
@@ -418,6 +418,7 @@ const RentalsModule = {
         const rental = {
             rental_date: el('rentalDate'),
             partner_id: partner ? partner.id : null,
+            partner_name: partnerName,
             contact_name: el('rentalContact').trim(),
             contact_phone: el('rentalPhone').trim(),
             expected_return_date: el('rentalExpectedDate'),
@@ -449,7 +450,7 @@ const RentalsModule = {
 
     validateData(rental, items, partnerName = '') {
         if (!rental.rental_date) return '대여일자를 입력해 주세요.';
-        if (!rental.partner_id) return partnerName ? '거래처 관리에 등록된 거래처를 정확히 선택해 주세요.' : '거래처를 선택해 주세요.';
+        if (!rental.partner_name) return '거래처를 입력해 주세요.';
         if (!rental.expected_return_date) return '회수예정일을 입력해 주세요.';
         if (rental.expected_return_date < rental.rental_date) return '회수예정일은 대여일자보다 빠를 수 없습니다.';
         if (rental.actual_return_date && rental.actual_return_date < rental.rental_date) return '실제 회수일은 대여일자보다 빠를 수 없습니다.';
@@ -520,7 +521,7 @@ const RentalsModule = {
                 ${this.getDetailField('대여번호', row.rental_no)}
                 ${this.getDetailField('대여일자', row.rental_date)}
                 ${this.getDetailField('상태', this.statuses[row.status] || row.status)}
-                ${this.getDetailField('거래처', row.partner?.name)}
+                ${this.getDetailField('거래처', row.partner_name || row.partner?.name)}
                 ${this.getDetailField('담당자', row.contact_name)}
                 ${this.getDetailField('연락처', row.contact_phone)}
                 ${this.getDetailField('회수예정일', row.expected_return_date)}
