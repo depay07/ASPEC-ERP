@@ -41,11 +41,29 @@ const OrdersModule = {
      */
     async search(forceRefresh, showSummary) {
         this.hideSummary();
-        const data = await DocumentBaseModule.baseSearch(this.tableName);
+        const data = await DocumentBaseModule.baseSearch(this.tableName, 9);
         if (data) {
-            this.renderTable(data);
-            if (showSummary) this.renderSummary(data);
+            const filteredData = this.filterByDeliveryStatus(data);
+            this.renderTable(filteredData);
+            if (showSummary) this.renderSummary(filteredData);
         }
+    },
+
+    getDeliveryStatus(row) {
+        return row?.status === 'completed' ? 'completed' : 'pending';
+    },
+
+    filterByDeliveryStatus(data) {
+        const status = el('search_oDeliveryStatus');
+        if (!status) return data || [];
+        return (data || []).filter(row => this.getDeliveryStatus(row) === status);
+    },
+
+    renderDeliveryIcon(row) {
+        const completed = this.getDeliveryStatus(row) === 'completed';
+        const label = completed ? '납품완료 (판매등록됨)' : '미납품 (판매 미등록)';
+        const color = completed ? 'text-green-500' : 'text-orange-500';
+        return `<span class="inline-flex h-8 w-8 items-center justify-center" role="img" aria-label="${label}" title="${label}"><i class="fa-solid fa-circle ${color}"></i></span>`;
     },
     
     /**
@@ -55,13 +73,33 @@ const OrdersModule = {
         const tbody = document.getElementById('listBody');
         
         if (!data || data.length === 0) {
-            showEmptyTable(8);
+            showEmptyTable(9);
             return;
         }
         
-        tbody.innerHTML = data.map(row => 
-            DocumentBaseModule.renderDocumentRow(row, 'orders')
-        ).join('');
+        tbody.innerHTML = data.map(row => {
+            const dataId = storeRowData(row);
+            const deliveryIcon = this.renderDeliveryIcon(row);
+            return `
+                <tr class="hover:bg-slate-50 border-b transition">
+                    <td class="text-center">${row.date}</td>
+                    <td class="font-bold">${row.partner_name || '-'}</td>
+                    <td class="text-center">${row.manager || '-'}</td>
+                    <td class="text-right text-slate-600">${formatNumber(row.total_supply)}</td>
+                    <td class="text-right text-slate-400 text-xs">${formatNumber(row.total_vat)}</td>
+                    <td class="text-right font-bold text-cyan-700">${formatNumber(row.total_amount)}</td>
+                    <td>${row.note || ''}</td>
+                    <td class="text-center text-lg">${deliveryIcon}</td>
+                    <td>
+                        <div class="flex justify-center items-center gap-3">
+                            <button onclick="printDocument('orders', '${dataId}')" class="text-slate-600 hover:text-black p-2 rounded hover:bg-slate-200 transition" title="인쇄"><i class="fa-solid fa-print fa-lg"></i></button>
+                            <button onclick="OrdersModule.duplicate('${dataId}')" class="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50 transition" title="복사"><i class="fa-regular fa-copy fa-lg"></i></button>
+                            <button onclick="OrdersModule.openEditModal('${dataId}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition" title="수정"><i class="fa-solid fa-pen-to-square fa-lg"></i></button>
+                            <button onclick="OrdersModule.delete(${row.id})" class="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition" title="삭제"><i class="fa-solid fa-trash-can fa-lg"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+        }).join('');
     },
     
     /**

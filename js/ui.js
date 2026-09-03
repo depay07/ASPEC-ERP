@@ -174,6 +174,19 @@ function getTabSpecificFilters(tab) {
                 <div><span class="search-label">납품업체</span><input type="text" id="search_sPartner" class="input-box" placeholder="업체명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
                 <div><span class="search-label">EndUser</span><input type="text" id="search_sEndUser" class="input-box" placeholder="EndUser" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
                 <div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+
+        case 'orders':
+            return `
+                <div><span class="search-label">거래처</span><input type="text" id="search_sPartner" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">담당자</span><input type="text" id="search_sManager" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">비고</span><input type="text" id="search_sNote" class="input-box" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">납품</span>
+                    <select id="search_oDeliveryStatus" class="input-box h-[38px]" onchange="runSearch('${tab}')">
+                        <option value="">전체</option>
+                        <option value="pending">미납품</option>
+                        <option value="completed">납품완료</option>
+                    </select>
+                </div>`;
         
         case 'purchases':
             return `
