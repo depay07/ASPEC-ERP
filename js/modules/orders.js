@@ -61,9 +61,23 @@ const OrdersModule = {
 
     renderDeliveryIcon(row) {
         const completed = this.getDeliveryStatus(row) === 'completed';
-        const label = completed ? '납품완료 (판매등록됨)' : '미납품 (판매 미등록)';
+        const label = completed ? '납품완료' : '미납품';
         const color = completed ? 'text-green-500' : 'text-orange-500';
         return `<span class="inline-flex h-8 w-8 items-center justify-center" role="img" aria-label="${label}" title="${label}"><i class="fa-solid fa-circle ${color}"></i></span>`;
+    },
+
+    _injectDeliveryCheckbox(isChecked = false) {
+        const modalBody = document.getElementById('modalBody');
+        if (!modalBody) return;
+
+        modalBody.insertAdjacentHTML('afterbegin', `
+            <div class="bg-green-50 p-3 rounded border border-green-200 mb-3 flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-700">납품 상태</span>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="chkDeliveryCompleted" class="w-5 h-5 text-green-600 rounded focus:ring-green-500" ${isChecked ? 'checked' : ''}>
+                    <span class="text-xs text-slate-600">납품완료 시 체크</span>
+                </label>
+            </div>`);
     },
     
     /**
@@ -180,6 +194,7 @@ const OrdersModule = {
         
         const body = document.getElementById('modalBody');
         body.innerHTML = DocumentBaseModule.getDocumentFormHtml('orders');
+        this._injectDeliveryCheckbox(this.getDeliveryStatus(row) === 'completed');
         
         DocumentBaseModule.fillFormData(row);
     },
@@ -206,6 +221,8 @@ const OrdersModule = {
     async save() {
         const data = DocumentBaseModule.buildSaveData('orders');
         if (!data) return;
+        const deliveryCheckbox = document.getElementById('chkDeliveryCompleted');
+        data.status = deliveryCheckbox?.checked ? 'completed' : 'pending';
         
         let result;
         if (AppState.currentEditId) {

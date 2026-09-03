@@ -2,7 +2,6 @@
 
 const SalesModule = {
     tableName: 'sales',
-    currentLoadedOrderId: null,
 
     calculateSummary(data) {
         return (data || []).reduce((total, row) => {
@@ -239,7 +238,6 @@ const SalesModule = {
     openNewModal() {
         AppState.currentEditId = null;
         AppState.tempItems = [];
-        this.currentLoadedOrderId = null;
         openModal('판매 등록');
         
         const loadBtn = `<button onclick="SalesModule.openLoadModal()" class="bg-orange-500 text-white px-3 py-1 rounded text-xs font-bold ml-2 hover:bg-orange-600">
@@ -268,21 +266,19 @@ const SalesModule = {
             .order('date', { ascending: false, nullsFirst: false })
             .order('created_at', { ascending: false })
             .limit(50);
-        const availableOrders = (data || []).filter(row => row.status !== 'completed');
         const tbody = document.getElementById('loadDataBody');
-        tbody.innerHTML = availableOrders.map(row => `
+        tbody.innerHTML = (data || []).map(row => `
             <tr class="hover:bg-slate-50 cursor-pointer" onclick="SalesModule.loadFromOrder(${row.id})">
                 <td class="p-3">${row.date}</td><td class="p-3 font-bold">${row.partner_name}</td>
                 <td class="p-3 text-right">${formatNumber(row.total_amount)}</td>
                 <td class="p-3"><button class="bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold">선택</button></td>
-            </tr>`).join('') || '<tr><td colspan="4" class="p-6 text-center text-slate-400">불러올 미납품 주문이 없습니다.</td></tr>';
+            </tr>`).join('');
         modal.classList.add('active');
     },
     
     async loadFromOrder(orderId) {
         const { data } = await supabaseClient.from('orders').select('*').eq('id', orderId).single();
         if (data) {
-            this.currentLoadedOrderId = orderId;
             DocumentBaseModule.fillFormData(data, { date: getToday() });
         }
         document.getElementById('loadDataModal').classList.remove('active');
@@ -296,7 +292,6 @@ const SalesModule = {
         if (!row) return alert('데이터 오류');
         
         AppState.currentEditId = row.id;
-        this.currentLoadedOrderId = row.source_order_id || null;
         openModal('판매 수정');
         
         const body = document.getElementById('modalBody');
@@ -317,7 +312,6 @@ const SalesModule = {
         if (!row) return alert('데이터 오류');
         
         AppState.currentEditId = null;
-        this.currentLoadedOrderId = null;
         openModal('판매 복사 등록');
         
         const body = document.getElementById('modalBody');
@@ -339,7 +333,6 @@ const SalesModule = {
         // ★ 체크박스 값 읽어서 데이터 객체에 추가
         const chk = document.getElementById('chkTaxInvoice');
         data.is_tax_invoice = chk ? chk.checked : false;
-        data.source_order_id = this.currentLoadedOrderId || null;
         if (!AppState.currentEditId) {
             data.public_token = this.generatePublicToken();
         }
@@ -378,8 +371,6 @@ const SalesModule = {
 
         stockResult = await this.applyStockDifference(previousItems, data.items);
 
-        this.currentLoadedOrderId = null;
-        
         if (stockResult.error) {
             alert('판매 내역은 저장되었지만 재고 반영에 실패했습니다: ' + stockResult.error.message);
         } else {

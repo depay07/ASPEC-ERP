@@ -3,7 +3,6 @@ const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
 const vm = require('node:vm');
-const { webcrypto } = require('node:crypto');
 
 const root = path.resolve(__dirname, '..');
 
@@ -30,8 +29,8 @@ test('orders render green for delivered and orange for undelivered', () => {
         { id: 1, date: '2026-09-01', partner_name: 'A', status: 'completed' },
         { id: 2, date: '2026-09-02', partner_name: 'B', status: 'pending' }
     ]);
-    assert.match(h.listBody.innerHTML, /납품완료 \(판매등록됨\).*text-green-500/);
-    assert.match(h.listBody.innerHTML, /미납품 \(판매 미등록\).*text-orange-500/);
+    assert.match(h.listBody.innerHTML, /납품완료.*text-green-500/);
+    assert.match(h.listBody.innerHTML, /미납품.*text-orange-500/);
     assert.equal((h.listBody.innerHTML.match(/<tr /g) || []).length, 2);
 });
 
@@ -47,43 +46,43 @@ test('orders delivery filter keeps only the selected state', () => {
     assert.equal(h.getEmptyColspan(), 9);
 });
 
-test('sales save persists the order that was loaded', async () => {
-    let inserted = null;
+test('order edit saves only the manually checked delivery state', async () => {
+    let updated = null;
+    let checked = true;
     const context = vm.createContext({
-        AppState: { currentEditId: null },
+        AppState: { currentEditId: 7 },
         DocumentBaseModule: { buildSaveData: () => ({ items: [] }) },
         supabaseClient: {
             from(table) {
-                assert.equal(table, 'sales');
+                assert.equal(table, 'orders');
                 return {
-                    insert(data) {
-                        inserted = data;
-                        return Promise.resolve({ error: null });
-                    }
+                    update(data) { updated = data; return this; },
+                    eq() { return Promise.resolve({ error: null }); }
                 };
             }
         },
-        document: { getElementById: () => ({ checked: false }) },
-        crypto: webcrypto,
+        document: { getElementById: id => id === 'chkDeliveryCompleted' ? { checked } : null },
         alert() {},
         closeModal() {},
-        fetchMasterData: async () => {},
-        escapeAttr: String,
-        escapeHtml: String,
-        formatNumber: String,
-        getToday: () => '2026-09-03',
-        window: { location: { href: 'https://erp.aspec-tech.co.kr/erp.html' } }
+        el: () => '',
+        getToday: () => '2026-09-03'
     });
-    const source = readFileSync(path.join(root, 'js/modules/sales.js'), 'utf8');
-    vm.runInContext(`${source}\nthis.SalesModule = SalesModule;`, context);
-    context.SalesModule.currentLoadedOrderId = 77;
-    context.SalesModule.applyStockDifference = async () => ({ error: null });
-    context.SalesModule.search = async () => {};
+    const source = readFileSync(path.join(root, 'js/modules/orders.js'), 'utf8');
+    vm.runInContext(`${source}\nthis.OrdersModule = OrdersModule;`, context);
+    context.OrdersModule.search = async () => {};
 
-    await context.SalesModule.save();
+    await context.OrdersModule.save();
+    assert.equal(updated.status, 'completed');
 
-    assert.equal(inserted.source_order_id, 77);
-    assert.equal(context.SalesModule.currentLoadedOrderId, null);
+    checked = false;
+    await context.OrdersModule.save();
+    assert.equal(updated.status, 'pending');
+});
+
+test('sales no longer changes or links order delivery state', () => {
+    const sales = readFileSync(path.join(root, 'js/modules/sales.js'), 'utf8');
+    assert.doesNotMatch(sales, /source_order_id/);
+    assert.doesNotMatch(sales, /currentLoadedOrderId/);
 });
 
 test('router and search panel expose the delivery column and filter', () => {
