@@ -2,12 +2,49 @@
 
 const CollectionsModule = {
     tableName: 'sales', // 판매 테이블 참조
+
+    calculateOutstandingBalance(data) {
+        return (data || []).reduce((total, row) => {
+            const salesAmount = Number(row.total_amount) || 0;
+            const collectedAmount = Number(row.collected_amount) || 0;
+            return total + (salesAmount - collectedAmount);
+        }, 0);
+    },
+
+    hideSummary() {
+        const summary = document.getElementById('collectionsSummary');
+        if (!summary) return;
+        summary.classList.add('hidden');
+        summary.innerHTML = '';
+    },
+
+    renderSummary(data) {
+        const summary = document.getElementById('collectionsSummary');
+        if (!summary) return;
+
+        const outstandingBalance = this.calculateOutstandingBalance(data);
+        const startDate = el('searchStartDate');
+        const endDate = el('searchEndDate');
+        const amountClass = outstandingBalance > 0 ? 'text-red-600' : 'text-slate-700';
+
+        summary.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+                <h3 class="font-bold text-slate-800">기간 조회 합계</h3>
+                <span class="text-xs text-slate-500">${startDate} ~ ${endDate} · ${data.length}건</span>
+            </div>
+            <div class="p-4">
+                <span class="block text-xs font-bold text-slate-500">미수금(잔액) 합계</span>
+                <strong class="mt-1 block text-lg ${amountClass}">${formatNumber(outstandingBalance)}원</strong>
+            </div>`;
+        summary.classList.remove('hidden');
+    },
     
     /**
      * 검색
      */
-    async search() {
+    async search(forceRefresh, showSummary) {
         showTableLoading(7);
+        this.hideSummary();
         
         let query = supabaseClient
             .from(this.tableName)
@@ -45,6 +82,7 @@ const CollectionsModule = {
         }
         
         this.renderTable(resultData);
+        if (showSummary) this.renderSummary(resultData);
     },
     
     /**

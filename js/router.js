@@ -89,7 +89,7 @@ async function runSearch(tab, forceRefresh, userInitiated) {
             await SalesModule.search(forceRefresh, userInitiated);
             break;                                            
         case 'collections':
-            await CollectionsModule.search(forceRefresh);
+            await CollectionsModule.search(forceRefresh, userInitiated);
             break;
         case 'inventory':
             await InventoryModule.search(forceRefresh);
@@ -168,6 +168,8 @@ function renderTabContent(tab, container) {
         html += '<section id="ordersSummary" class="hidden mb-5 bg-white border-y border-slate-200" aria-live="polite"></section>';
     } else if (tab === 'purchase_orders') {
         html += '<section id="purchaseOrdersSummary" class="hidden mb-5 bg-white border-y border-slate-200" aria-live="polite"></section>';
+    } else if (tab === 'collections') {
+        html += '<section id="collectionsSummary" class="hidden mb-5 bg-white border-y border-slate-200" aria-live="polite"></section>';
     }
 
     if (tab === 'memos') {
