@@ -13,6 +13,7 @@ var PartnersModule = {
         
         var nameFilter = el('search_sName');
         var managerFilter = el('search_sManager');
+        var hasFilter = Boolean(nameFilter || managerFilter);
         if (nameFilter) query = query.ilike('name', '%' + nameFilter + '%');
         if (managerFilter) query = query.ilike('manager_name', '%' + managerFilter + '%');
         
@@ -21,8 +22,11 @@ var PartnersModule = {
             query,
             function(data) { self.renderTable(data); },
             5,
-            forceRefresh
+            forceRefresh || hasFilter
         );
+
+        // 필터 결과가 거래처 전체 목록 캐시를 덮어쓰지 않도록 제거한다.
+        if (hasFilter) clearCache(this.tableName);
     },
     
     // 테이블 렌더링

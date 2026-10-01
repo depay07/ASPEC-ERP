@@ -171,7 +171,7 @@ function getTabSpecificFilters(tab) {
 
         case 'purchase_orders':
             return `
-                <div><span class="search-label">납품업체</span><input type="text" id="search_sPartner" class="input-box" placeholder="업체명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
+                <div><span class="search-label">발주업체</span><input type="text" id="search_sPartner" class="input-box" placeholder="발주업체명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
                 <div><span class="search-label">EndUser</span><input type="text" id="search_sEndUser" class="input-box" placeholder="EndUser" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
                 <div><span class="search-label">품목명</span><input type="text" id="search_sItem" class="input-box" placeholder="품목명" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
 
