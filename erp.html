@@ -160,6 +160,13 @@
     <div id="loadDataModal" class="modal no-print" style="z-index: 60;">
         <div class="modal-content" style="max-width: 800px;">
             <h3 class="text-xl font-bold mb-4" id="loadModalTitle">데이터 불러오기</h3>
+            <div class="flex gap-2 mb-3">
+                <label for="loadDataPartnerSearch" class="sr-only">거래처 검색</label>
+                <input type="search" id="loadDataPartnerSearch" class="input-box flex-1 min-w-0" placeholder="거래처명을 입력하세요" autocomplete="off">
+                <button type="button" id="loadDataSearchButton" class="w-10 h-10 shrink-0 inline-flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700" title="거래처 검색" aria-label="거래처 검색">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
             <div class="overflow-y-auto max-h-96 border rounded">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50">
@@ -346,8 +353,8 @@
     <script src="js/modules/purchase-orders.js?v=20260831-1"></script>
     <script src="js/modules/document-base.js?v=20260831-1"></script>
     <script src="js/modules/quotes.js"></script>
-    <script src="js/modules/orders.js?v=20260903-2"></script>
-    <script src="js/modules/sales.js?v=20260903-2"></script>
+    <script src="js/modules/orders.js?v=20261003-1"></script>
+    <script src="js/modules/sales.js?v=20261003-1"></script>
     <script src="js/modules/collections.js?v=20260922-1"></script>
     <script src="js/modules/inventory.js?v=20260814-4"></script>
     <script src="js/modules/cost-management.js?v=20260831-1"></script>

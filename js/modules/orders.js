@@ -142,16 +142,44 @@ const OrdersModule = {
     async openLoadModal() {
         const modal = document.getElementById('loadDataModal');
         document.getElementById('loadModalTitle').innerText = '견적서 불러오기';
-        
-        const { data } = await supabaseClient
+        const searchInput = document.getElementById('loadDataPartnerSearch');
+        const searchButton = document.getElementById('loadDataSearchButton');
+        const runSearch = () => this.searchLoadDocuments(searchInput.value);
+
+        searchInput.value = '';
+        searchInput.onkeydown = event => {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            runSearch();
+        };
+        searchButton.onclick = runSearch;
+        modal.classList.add('active');
+        await this.searchLoadDocuments();
+    },
+
+    async searchLoadDocuments(partnerName = '') {
+        const tbody = document.getElementById('loadDataBody');
+        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-500">불러오는 중...</td></tr>';
+
+        let query = supabaseClient
             .from('quotes')
             .select('*')
             .order('date', { ascending: false, nullsFirst: false })
-            .order('created_at', { ascending: false })
-            .limit(50);
-        
-        const tbody = document.getElementById('loadDataBody');
-        tbody.innerHTML = (data || []).map(row => `
+            .order('created_at', { ascending: false });
+        const keyword = String(partnerName || '').trim();
+        if (keyword) query = query.ilike('partner_name', `%${keyword}%`);
+
+        const { data, error } = await query.limit(50);
+        if (error) {
+            tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-600">견적서를 불러오지 못했습니다.</td></tr>';
+            return;
+        }
+        if (!data?.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-500">검색 결과가 없습니다.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.map(row => `
             <tr class="hover:bg-slate-50 cursor-pointer" onclick="OrdersModule.loadFromQuote(${row.id})">
                 <td class="p-3">${row.date}</td>
                 <td class="p-3 font-bold">${row.partner_name}</td>
@@ -161,8 +189,6 @@ const OrdersModule = {
                 </td>
             </tr>
         `).join('');
-        
-        modal.classList.add('active');
     },
     
     /**

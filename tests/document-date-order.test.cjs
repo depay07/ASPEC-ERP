@@ -182,6 +182,24 @@ for (const [file, name] of [['orders', 'OrdersModule'], ['sales', 'SalesModule']
         assert.equal(h.queries[0].orders[0].column, 'date');
         assert.equal(h.queries[0].maximum, 50);
     });
+
+    test(`${name}: import picker searches partner before applying its 50-row limit`, async () => {
+        const h = createHarness(file, name);
+        h.rows.splice(0, h.rows.length, ...Array.from({ length: 60 }, (_, index) => ({
+            id: index + 1,
+            date: `2026-08-${String(30 - (index % 28)).padStart(2, '0')}`,
+            created_at: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
+            partner_name: index === 59 ? '찾는 거래처' : '다른 거래처',
+            total_amount: 110
+        })));
+
+        await h.module.searchLoadDocuments('찾는');
+
+        const html = h.elements.get('loadDataBody').innerHTML;
+        assert.match(html, /찾는 거래처/);
+        assert.doesNotMatch(html, /다른 거래처/);
+        assert.equal(h.queries[0].maximum, 50);
+    });
 }
 
 for (const [file, name] of [['bookkeeping', 'BookkeepingModule'], ['meeting-logs', 'MeetingLogsModule']]) {
