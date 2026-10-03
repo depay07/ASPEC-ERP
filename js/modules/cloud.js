@@ -5,6 +5,10 @@ const CloudModule = (() => {
     let parent = '';
     let searchQuery = '';
     let busy = false;
+    let deleting = false;
+    let listVersion = 0;
+    let visibleFiles = [];
+    const selected = new Set();
 
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const fmtBytes = n => {
@@ -68,9 +72,14 @@ const CloudModule = (() => {
           <div id="cloudDrop" class="bg-white rounded-lg border-2 border-dashed border-slate-300 min-h-[360px] overflow-hidden">
             <div id="cloudNotice" class="hidden m-4 rounded p-3 text-sm"></div>
             <div id="cloudUploads" class="hidden border-b border-slate-200 p-4 space-y-3"></div>
+            <div class="flex flex-wrap items-center gap-3 p-3 border-b border-slate-200">
+              <button id="cloudDeleteSelected" onclick="CloudModule.removeSelected()" disabled class="bg-red-600 text-white px-4 py-2 rounded font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed">선택 삭제</button>
+              <span id="cloudSelectionCount" class="text-sm text-slate-500" role="status" aria-live="polite">0개 선택</span>
+              <span class="text-xs text-slate-400">전체 선택은 현재 목록에 표시된 파일에만 적용됩니다.</span>
+            </div>
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
-                <thead class="bg-slate-50 text-slate-600"><tr><th class="text-left p-3">이름</th><th class="text-left p-3 w-28">크기</th><th class="text-left p-3 w-44">수정일</th><th class="text-right p-3 w-52">작업</th></tr></thead>
+                <thead class="bg-slate-50 text-slate-600"><tr><th class="p-3 w-12"><input id="cloudSelectAll" type="checkbox" aria-label="현재 목록 파일 전체 선택" onchange="CloudModule.selectAll(this.checked)"></th><th class="text-left p-3">이름</th><th class="text-left p-3 w-28">크기</th><th class="text-left p-3 w-44">수정일</th><th class="text-right p-3 w-52">작업</th></tr></thead>
                 <tbody id="cloudList"></tbody>
               </table>
             </div>
@@ -89,31 +98,39 @@ const CloudModule = (() => {
         el.innerHTML = html;
     }
     function renderList(data) {
+        visibleFiles = (data.items || []).filter(e => e.kind === 'file');
+        const ids = new Set(visibleFiles.map(e => e.id));
+        for (const id of selected) if (!ids.has(id)) selected.delete(id);
         renderCrumbs(data.crumbs);
         const body = document.getElementById('cloudList'); if (!body) return;
         if (!data.items?.length) {
-            body.innerHTML = '<tr><td colspan="4" class="p-12 text-center text-slate-400"><i class="fa-regular fa-folder-open text-4xl mb-3 block"></i>' + (searchQuery ? '검색 결과가 없습니다.' : '이 폴더가 비어 있습니다. 파일을 끌어다 놓거나 업로드하세요.') + '</td></tr>';
+            body.innerHTML = '<tr><td colspan="5" class="p-12 text-center text-slate-400"><i class="fa-regular fa-folder-open text-4xl mb-3 block"></i>' + (searchQuery ? '검색 결과가 없습니다.' : '이 폴더가 비어 있습니다. 파일을 끌어다 놓거나 업로드하세요.') + '</td></tr>';
+            updateSelection();
             return;
         }
         body.innerHTML = data.items.map(e => {
             const folder = e.kind === 'folder';
             const name = folder ? '<button class="font-bold text-slate-800 hover:text-cyan-700 text-left" onclick="CloudModule.openFolder(\''+esc(e.id)+'\')"><i class="fa-solid fa-folder text-amber-400 mr-2"></i>'+esc(e.name)+'</button>' : '<span class="text-slate-700"><i class="fa-regular fa-file text-slate-400 mr-2"></i>'+esc(e.name)+'</span>';
             const primary = folder ? '' : '<button onclick="CloudModule.download(\''+esc(e.id)+'\')" class="text-blue-600 hover:underline mr-3">다운로드</button>';
-            return '<tr class="border-t border-slate-100 hover:bg-slate-50"><td class="p-3">'+name+'</td><td class="p-3 text-slate-500">'+(folder?'—':fmtBytes(e.size))+'</td><td class="p-3 text-slate-500">'+fmtDate(e.updated)+'</td><td class="p-3 text-right">'+primary+'<button onclick="CloudModule.rename(\''+esc(e.id)+'\',\''+esc(e.name).replace(/'/g,'&#39;')+'\')" class="text-slate-600 hover:underline mr-3">이름변경</button><button onclick="CloudModule.remove(\''+esc(e.id)+'\',\''+esc(e.name).replace(/'/g,'&#39;')+'\')" class="text-red-600 hover:underline">삭제</button></td></tr>';
+            const checkbox = folder ? '' : '<input type="checkbox" data-cloud-select="'+esc(e.id)+'" aria-label="'+esc(e.name)+' 선택" '+(selected.has(e.id)?'checked ':'')+'onchange="CloudModule.selectFile(this.dataset.cloudSelect,this.checked)">';
+            return '<tr class="border-t border-slate-100 hover:bg-slate-50"><td class="p-3 text-center">'+checkbox+'</td><td class="p-3">'+name+'</td><td class="p-3 text-slate-500">'+(folder?'—':fmtBytes(e.size))+'</td><td class="p-3 text-slate-500">'+fmtDate(e.updated)+'</td><td class="p-3 text-right">'+primary+'<button onclick="CloudModule.rename(\''+esc(e.id)+'\',\''+esc(e.name).replace(/'/g,'&#39;')+'\')" class="text-slate-600 hover:underline mr-3">이름변경</button><button onclick="CloudModule.remove(\''+esc(e.id)+'\',\''+esc(e.name).replace(/'/g,'&#39;')+'\')" class="text-red-600 hover:underline">삭제</button></td></tr>';
         }).join('');
+        updateSelection();
         if (data.truncated) notice('검색 결과가 1,000개를 넘어 일부만 표시됩니다.');
     }
     async function load() {
+        const version = ++listVersion;
         try {
             const qs = searchQuery ? '?q=' + encodeURIComponent(searchQuery) : '?parent=' + encodeURIComponent(parent);
             const [files, storage] = await Promise.all([api('/files'+qs), api('/storage')]);
+            if (version !== listVersion) return;
             renderList(files);
             const el=document.getElementById('cloudStorage');
             if(el) el.textContent='저장공간: ' + fmtBytes(storage.used) + ' 사용 / ' + fmtBytes(storage.total) + ' · 업로드 가능 ' + fmtBytes(storage.uploadAvailable);
-        } catch(e) { notice(e.message, true); }
+        } catch(e) { if (version === listVersion) notice(e.message, true); }
     }
     async function init(container) {
-        parent=''; searchQuery='';
+        parent=''; searchQuery=''; selected.clear(); visibleFiles=[];
         container.innerHTML=shell();
         const drop=document.getElementById('cloudDrop');
         ['dragenter','dragover'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.add('border-cyan-500','bg-cyan-50');}));
@@ -122,20 +139,78 @@ const CloudModule = (() => {
         await load();
         await showPending();
     }
-    async function openFolder(id){parent=id;searchQuery='';const s=document.getElementById('cloudSearch');if(s)s.value='';await load();}
-    async function search(q){searchQuery=String(q||'').trim();await load();}
-    async function refresh(){await load();await showPending();}
+    async function openFolder(id){if(deleting)return;selected.clear();parent=id;searchQuery='';const s=document.getElementById('cloudSearch');if(s)s.value='';await load();}
+    async function search(q){if(deleting)return;selected.clear();searchQuery=String(q||'').trim();await load();}
+    async function refresh(){if(deleting)return;await load();await showPending();}
     async function createFolder(){
+        if(deleting)return;
         const name=prompt('새 폴더 이름을 입력하세요.'); if(!name)return;
         try{await api('/folders',{method:'POST',json:{name,parent}});await load();}catch(e){notice(e.message,true);}
     }
     async function rename(id,current){
+        if(deleting)return;
         const name=prompt('새 이름을 입력하세요.',current);if(!name||name===current)return;
         try{await api('/entries/'+encodeURIComponent(id),{method:'PATCH',json:{name}});await load();}catch(e){notice(e.message,true);}
     }
     async function remove(id,name){
+        if(deleting)return;
         if(!confirm('“'+name+'”을(를) 삭제하시겠습니까?\n폴더는 비어 있어야 삭제할 수 있습니다.'))return;
         try{await api('/entries/'+encodeURIComponent(id),{method:'DELETE'});await load();}catch(e){notice(e.message,true);}
+    }
+    function updateSelection() {
+        const all = document.getElementById('cloudSelectAll');
+        if (all) {
+            all.checked = visibleFiles.length > 0 && selected.size === visibleFiles.length;
+            all.indeterminate = selected.size > 0 && selected.size < visibleFiles.length;
+            all.disabled = deleting || !visibleFiles.length;
+        }
+        document.querySelectorAll('[data-cloud-select]').forEach(el => {
+            el.checked = selected.has(el.dataset.cloudSelect);
+            el.disabled = deleting;
+        });
+        const button = document.getElementById('cloudDeleteSelected');
+        if (button) button.disabled = deleting || !selected.size;
+        const count = document.getElementById('cloudSelectionCount');
+        if (count) count.textContent = selected.size + '개 선택';
+    }
+    function selectFile(id, checked) {
+        if (deleting || !visibleFiles.some(e => e.id === id)) return;
+        if (checked) selected.add(id); else selected.delete(id);
+        updateSelection();
+    }
+    function selectAll(checked) {
+        if (deleting) return;
+        selected.clear();
+        if (checked) visibleFiles.forEach(e => selected.add(e.id));
+        updateSelection();
+    }
+    async function removeSelected() {
+        if (deleting) return;
+        if (busy) { notice('업로드가 끝난 후 삭제해주세요.', true); return; }
+        const targets = visibleFiles.filter(e => selected.has(e.id));
+        if (!targets.length) return;
+        if (!confirm('선택한 파일 ' + targets.length + '개를 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.')) return;
+        deleting = true;
+        ++listVersion;
+        updateSelection();
+        let removed = 0;
+        const failures = [];
+        try {
+            for (let i = 0; i < targets.length; i++) {
+                const file = targets[i];
+                notice('파일 삭제 중… ' + (i + 1) + ' / ' + targets.length);
+                try {
+                    await api('/entries/' + encodeURIComponent(file.id), {method:'DELETE'});
+                    selected.delete(file.id);
+                    removed++;
+                } catch (e) { failures.push(file.name + ': ' + e.message); }
+            }
+        } finally {
+            deleting = false;
+            await load();
+            updateSelection();
+        }
+        notice(removed + '개 삭제 완료' + (failures.length ? ' · ' + failures.length + '개 실패. ' + failures.slice(0, 3).join(' / ') : '.'), failures.length > 0);
     }
     async function download(id){
         try{const r=await api('/download-session',{method:'POST',json:{id}});window.location.href='https://api.aspec-tech.co.kr'+r.url;}catch(e){notice(e.message,true);}
@@ -147,6 +222,7 @@ const CloudModule = (() => {
         return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
     }
     async function uploadFiles(fileList){
+        if(deleting){notice('선택한 파일을 삭제 중입니다.',true);return;}
         if(busy){notice('현재 업로드가 진행 중입니다.',true);return;}
         const files=[...fileList];if(!files.length)return;
         busy=true;
@@ -180,5 +256,5 @@ const CloudModule = (() => {
         }catch{}
     }
     async function logout(){try{await api('/logout',{method:'POST'});}catch{}}
-    return {init,openFolder,search,refresh,createFolder,rename,remove,download,uploadFiles,logout};
+    return {selectFile,selectAll,removeSelected,init,openFolder,search,refresh,createFolder,rename,remove,download,uploadFiles,logout};
 })();
