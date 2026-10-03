@@ -30,6 +30,13 @@ async function switchTab(tab) {
         return;
     }
 
+    // 파일 클라우드
+    if (tab === 'cloud') {
+        document.getElementById('searchContainer').innerHTML = '';
+        await CloudModule.init(container);
+        return;
+    }
+
     // [추가] 프로젝트 탭 - 전용 초기화 로직 실행 (전용 검색바 사용)
     if (tab === 'projects') {
         renderTabContent(tab, container); // 테이블 구조 먼저 생성

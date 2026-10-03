@@ -1,0 +1,34 @@
+[Unit]
+Description=ASPEC authenticated file cloud
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/data/aspec-cloud
+ConditionPathIsMountPoint=/data/aspec-cloud
+
+[Service]
+Type=simple
+User=aspec-cloud
+Group=aspec-cloud
+WorkingDirectory=/opt/aspec-cloud/app
+EnvironmentFile=/opt/aspec-cloud/config/cloud.env
+ExecStartPre=/usr/bin/mountpoint -q /data/aspec-cloud
+ExecStart=/usr/bin/node /opt/aspec-cloud/app/server.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=150
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/data/aspec-cloud
+NoExecPaths=/data/aspec-cloud
+RestrictSUIDSGID=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LimitNOFILE=4096
+MemoryMax=300M
+
+[Install]
+WantedBy=multi-user.target

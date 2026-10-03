@@ -475,6 +475,7 @@ async function logout() {
         console.warn('세션 활동 시각 삭제 실패:', error);
     }
 
+    if (typeof CloudModule !== 'undefined') await CloudModule.logout();
     await supabaseClient.auth.signOut({ scope: 'local' });
     window.location.replace('index.html');
 }
