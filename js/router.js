@@ -30,7 +30,7 @@ async function switchTab(tab) {
         return;
     }
 
-    // [추가] 프로젝트 탭 - 전용 초기화 로직 실행 (전용 검색바 사용)
+    // 파일 클라우드\n    if (tab === 'cloud') {\n        document.getElementById('searchContainer').innerHTML = '';\n        await CloudModule.init(container);\n        return;\n    }\n\n    // [추가] 프로젝트 탭 - 전용 초기화 로직 실행 (전용 검색바 사용)
     if (tab === 'projects') {
         renderTabContent(tab, container); // 테이블 구조 먼저 생성
         ProjectsModule.init(); // 전용 검색바 생성 및 데이터 로드
