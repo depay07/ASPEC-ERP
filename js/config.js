@@ -188,7 +188,8 @@ var TAB_TITLES = {
     rentals: '대여 관리',
     projects: '프로젝트 관리', 
     meeting_logs: '미팅 일지 (영업 활동)',
-    memos: '메모장'
+    memos: '메모장',
+    cloud: '파일 클라우드'
 };
 
 // ========== 캐시 관련 공통 함수 ==========
