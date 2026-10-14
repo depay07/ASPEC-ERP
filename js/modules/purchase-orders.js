@@ -9,6 +9,14 @@ const PurchaseOrdersModule = {
         }, 0);
     },
 
+    calculateScheduledRemittance(data) {
+        return (data || []).reduce((total, row) => {
+            const totalAmount = Number(row.total_amount) || 0;
+            const remittedAmount = Number(row.remitted_amount) || 0;
+            return total + Math.max(0, totalAmount - remittedAmount);
+        }, 0);
+    },
+
     hideSummary() {
         const summary = document.getElementById('purchaseOrdersSummary');
         if (!summary) return;
@@ -21,6 +29,7 @@ const PurchaseOrdersModule = {
         if (!summary) return;
 
         const totalAmount = this.calculateSummary(data);
+        const scheduledRemittance = this.calculateScheduledRemittance(data);
         const startDate = el('searchStartDate');
         const endDate = el('searchEndDate');
 
@@ -29,9 +38,15 @@ const PurchaseOrdersModule = {
                 <h3 class="font-bold text-slate-800">기간 조회 합계</h3>
                 <span class="text-xs text-slate-500">${startDate} ~ ${endDate} · ${data.length}건</span>
             </div>
-            <div class="p-4">
-                <span class="block text-xs font-bold text-slate-500">총액</span>
-                <strong class="mt-1 block text-lg text-blue-600">${formatNumber(totalAmount)}원</strong>
+            <div class="grid grid-cols-1 sm:grid-cols-2">
+                <div class="border-b border-slate-200 p-4 sm:border-b-0 sm:border-r">
+                    <span class="block text-xs font-bold text-slate-500">총액</span>
+                    <strong class="mt-1 block text-lg text-blue-600">${formatNumber(totalAmount)}원</strong>
+                </div>
+                <div class="p-4">
+                    <span class="block text-xs font-bold text-slate-500">송금예정금액</span>
+                    <strong class="mt-1 block text-lg text-orange-600">${formatNumber(scheduledRemittance)}원</strong>
+                </div>
             </div>`;
         summary.classList.remove('hidden');
     },
@@ -161,8 +176,8 @@ const PurchaseOrdersModule = {
                 : '-';
             
             // 송금 여부 계산 로직
-            const totalAmount = row.total_amount || 0;
-            const remittedAmount = row.remitted_amount || 0;
+            const totalAmount = Number(row.total_amount) || 0;
+            const remittedAmount = Number(row.remitted_amount) || 0;
             const isPaid = totalAmount > 0 && remittedAmount >= totalAmount;
             const deliveryDate = row.delivery_date || '';
             const paymentTerms = this.normalizePaymentTerms(row.payment_terms);
