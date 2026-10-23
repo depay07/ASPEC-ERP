@@ -25,7 +25,7 @@ Allow additional users by comma-separated UUIDs and restart only aspec-cloud. Ea
 
 ## API
 
-All endpoints except minimal /cloud/health and CORS preflight require Bearer authentication. Downloads require a short-lived HttpOnly Secure SameSite=Strict cookie, scoped to /cloud/download/, issued after Bearer verification. The cookie identifies one file, is server-side bound to its owner, lasts 90 seconds and is revalidated against Supabase when a download starts. Download streams already started continue to completion. Restarting a download later requires clicking Download again. No tokens appear in URLs.
+All endpoints except minimal /cloud/health, public /cloud/shared/:token downloads and CORS preflight require Bearer authentication. Private downloads require a short-lived HttpOnly Secure SameSite=Strict cookie, scoped to /cloud/download/, issued after Bearer verification. The cookie identifies one file, is server-side bound to its owner, lasts 90 seconds and is revalidated against Supabase when a download starts. Download streams already started continue to completion. Restarting a private download later requires clicking Download again. Login/session tokens never appear in URLs; public share links intentionally contain a separate random capability token.
 
 - GET /cloud/files?parent=UUID&q=term: folder listing or owner-wide substring search, max 1000 results (UI reports truncation)
 - GET /cloud/storage: actual statfs total, used, free, pending reservations and upload-available bytes; 1 GiB safety reserve
@@ -38,7 +38,16 @@ All endpoints except minimal /cloud/health and CORS preflight require Bearer aut
 - POST /cloud/uploads/:id/complete: atomic finalize, idempotent retry
 - POST /cloud/download-session: {id}; returns authenticated download path
 - GET/HEAD /cloud/download/:id: streaming, single HTTP Range supported
+- POST /cloud/shares: authenticated owner creates or retrieves a persistent public download link for {id}; folders cannot be shared
+- DELETE /cloud/shares/:id: authenticated owner revokes the file's public link; sharing again generates a new link
+- GET/HEAD /cloud/shared/:token: anonymous attachment download for one shared file, including single HTTP Range
 - POST /cloud/logout: revoke download tickets for owner
+
+## Public file sharing
+
+The file action menu includes Share (공유). It opens a dialog with the file's link, a copy button, and Stop sharing (공유 중지). Anyone with this link can download that one file without an ERP account. Links do not grant listing, editing, deletion, or access to the owner's other files. A 256-bit cryptographically random token is stored in SQLite; repeated sharing returns the existing link, including after API restarts. Links have no automatic expiry and survive owner logout. Revocation, file deletion, or removing the owner from ALLOWED_USER_IDS prevents subsequent downloads. Transfers already in progress may finish. Renaming the original file preserves the link and changes its download filename. Public downloads use the same attachment/octet-stream/nosniff and Range handling as private downloads.
+
+Deploy the backend before publishing the updated cloud.js frontend. The existing installer runs isolated tests and creates application rollback snapshots; startup adds only the shares table to cloud.sqlite. No ERP/Supabase schema or auth policy changes are needed. After installation, an unauthenticated request to /cloud/shared/ followed by 64 zeroes must return 404 (an invalid share), while /cloud/files must still return 401. Then verify an owner-created test share in a logged-out browser, revoke it, and confirm it stops working before publishing the frontend. No existing file is shared automatically.
 
 Upload protocol is a small offset-based HTTP protocol, not tus. A single 5 GiB file is supported with bounded memory; browser uploads run sequentially to suit the 1 GiB VM. Browser remembers an upload ID keyed by owner, parent, name, size, modification timestamp and first/last 64 KiB SHA-256. To resume after closing browser/logging in again select the original file in the original folder in the same browser profile. This fingerprint detects common wrong-file selection but is not a full-file integrity hash. Network retries query the server offset before resending. Original source file must not be modified mid-upload. Failed uploads expire after 7 inactive days. Folder deletion is allowed only when empty (including uploads); no recursive destructive delete and no recycle bin.
 

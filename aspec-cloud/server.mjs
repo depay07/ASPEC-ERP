@@ -21,7 +21,8 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
     CREATE TABLE IF NOT EXISTS entries(id TEXT PRIMARY KEY, owner TEXT NOT NULL, parent TEXT NOT NULL DEFAULT '', name TEXT NOT NULL, kind TEXT NOT NULL, size INTEGER NOT NULL DEFAULT 0, updated TEXT NOT NULL);
     CREATE UNIQUE INDEX IF NOT EXISTS entry_name ON entries(owner,parent,name);
     CREATE TABLE IF NOT EXISTS uploads(id TEXT PRIMARY KEY, owner TEXT NOT NULL, parent TEXT NOT NULL, name TEXT NOT NULL, size INTEGER NOT NULL, offset INTEGER NOT NULL DEFAULT 0, updated TEXT NOT NULL);
-    CREATE UNIQUE INDEX IF NOT EXISTS upload_name ON uploads(owner,parent,name);`);
+    CREATE UNIQUE INDEX IF NOT EXISTS upload_name ON uploads(owner,parent,name);
+    CREATE TABLE IF NOT EXISTS shares(token TEXT PRIMARY KEY, entry_id TEXT NOT NULL UNIQUE REFERENCES entries(id) ON DELETE CASCADE, created TEXT NOT NULL);`);
   const get = (sql,...args) => db.prepare(sql).get(...args);
   const all = (sql,...args) => db.prepare(sql).all(...args);
   const run = (sql,...args) => db.prepare(sql).run(...args);
@@ -69,6 +70,23 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
   }
   const storage=async()=> {const s=await fsp.statfs(dataDir); const total=s.blocks*s.bsize, free=s.bavail*s.bsize; const pending=get('SELECT COALESCE(SUM(size-offset),0) AS n FROM uploads').n; return {total,used:(s.blocks-s.bfree)*s.bsize,free,reserved:reserve,pending,uploadAvailable:Math.max(0,free-reserve-pending)};};
   const send=(res,obj,status=200)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'}); res.end(JSON.stringify(obj));};
+  async function streamFile(req,res,e) {
+    const handle=await fsp.open(disk('files',e.id),'r');
+    try {
+      let start=0,end=e.size-1,status=200;
+      if(req.headers.range) {
+        const m=/^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+        if(!m || (!m[1]&&!m[2]) || e.size===0) {res.setHeader('Content-Range',`bytes */${e.size}`);fail(416,'잘못된 다운로드 범위입니다.');}
+        if(!m[1]) start=Math.max(0,e.size-Number(m[2])); else {start=Number(m[1]); if(m[2]) end=Math.min(end,Number(m[2]));}
+        if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end||start>=e.size) {res.setHeader('Content-Range',`bytes */${e.size}`);fail(416,'잘못된 다운로드 범위입니다.');}
+        status=206;res.setHeader('Content-Range',`bytes ${start}-${end}/${e.size}`);
+      }
+      res.setHeader('Content-Type','application/octet-stream');res.setHeader('Content-Disposition',`attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(e.name).replace(/['()*]/g,c=>'%'+c.charCodeAt(0).toString(16))}`);
+      res.setHeader('Accept-Ranges','bytes');res.setHeader('Content-Length',Math.max(0,end-start+1));res.writeHead(status);
+      if(req.method==='HEAD'||e.size===0) return res.end();
+      await pipeline(handle.createReadStream({start,end,autoClose:false}),res);
+    } finally {await handle.close();}
+  }
   const timer=setInterval(()=>serial(async()=>{
     for(const [k,v] of tickets) if(v.until<Date.now()) tickets.delete(k);
     rates.clear();
@@ -83,27 +101,19 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
       if(method==='OPTIONS') {res.setHeader('Access-Control-Allow-Methods','GET,POST,PATCH,DELETE,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Authorization,Content-Type,Upload-Offset');res.writeHead(204); return res.end();}
       const ip=req.socket.remoteAddress, count=(rates.get(ip)||0)+1; rates.set(ip,count); if(count>1200) fail(429,'잠시 후 다시 시도하세요.');
       if(p==='/cloud/health' && method==='GET') return send(res,{ok:true});
+      if(p.startsWith('/cloud/shared/') && ['GET','HEAD'].includes(method)) {
+        const shared=/^\/cloud\/shared\/([a-f0-9]{64})$/.exec(p);
+        const e=shared && get('SELECT e.* FROM shares s JOIN entries e ON e.id=s.entry_id WHERE s.token=?',shared[1]);
+        if(!e || e.kind!=='file' || !allowedUsers.has(e.owner)) fail(404,'공유가 중지되었거나 파일을 찾을 수 없습니다.');
+        return await streamFile(req,res,e);
+      }
       if(p.startsWith('/cloud/download/') && ['GET','HEAD'].includes(method)) {
         const ticket=(req.headers.cookie||'').split(';').map(v=>v.trim()).find(v=>v.startsWith('__Secure-aspec_download='))?.split('=')[1];
         const t=tickets.get(ticket), id=p.split('/')[3];
         if(!t || t.until<Date.now() || t.id!==id || !allowedUsers.has(t.owner)) fail(401,'다운로드를 다시 선택하세요.');
         const user=await verify(t.token); if(user?.id!==t.owner) fail(401,'다시 로그인하세요.');
         const e=entry(id,t.owner); if(e.kind!=='file') fail(400,'파일을 선택하세요.');
-        const handle=await fsp.open(disk('files',id),'r');
-        try {
-          let start=0,end=e.size-1,status=200;
-          if(req.headers.range) {
-            const m=/^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
-            if(!m || (!m[1]&&!m[2]) || e.size===0) {res.setHeader('Content-Range',`bytes */${e.size}`);fail(416,'잘못된 다운로드 범위입니다.');}
-            if(!m[1]) start=Math.max(0,e.size-Number(m[2])); else {start=Number(m[1]); if(m[2]) end=Math.min(end,Number(m[2]));}
-            if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end||start>=e.size) {res.setHeader('Content-Range',`bytes */${e.size}`);fail(416,'잘못된 다운로드 범위입니다.');}
-            status=206;res.setHeader('Content-Range',`bytes ${start}-${end}/${e.size}`);
-          }
-          res.setHeader('Content-Type','application/octet-stream');res.setHeader('Content-Disposition',`attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(e.name).replace(/['()*]/g,c=>'%'+c.charCodeAt(0).toString(16))}`);
-          res.setHeader('Accept-Ranges','bytes');res.setHeader('Content-Length',Math.max(0,end-start+1));res.writeHead(status);
-          if(method==='HEAD'||e.size===0) return res.end();
-          await pipeline(handle.createReadStream({start,end,autoClose:false}),res);return;
-        } finally {await handle.close();}
+        return await streamFile(req,res,e);
       }
       const {owner,token}=await authenticate(req);
       if(p==='/cloud/storage' && method==='GET') return send(res,await storage());
@@ -122,6 +132,20 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
       }
       // Serialize changes so rename/delete/move cannot race with an upload chunk.
       await serial(async()=>{
+        if(p==='/cloud/shares' && method==='POST') {
+          const b=await json(req),e=entry(b.id,owner);if(e.kind!=='file') fail(400,'파일을 선택하세요.');
+          let share=get('SELECT token FROM shares WHERE entry_id=?',e.id);
+          if(!share) {
+            share={token:randomBytes(32).toString('hex')};
+            run('INSERT INTO shares VALUES(?,?,?)',share.token,e.id,now());
+          }
+          return send(res,{url:'/cloud/shared/'+share.token});
+        }
+        const sm=/^\/cloud\/shares\/([^/]+)$/.exec(p);
+        if(sm && method==='DELETE') {
+          entry(sm[1],owner);
+          run('DELETE FROM shares WHERE entry_id=?',sm[1]);return send(res,{ok:true});
+        }
         if(p==='/cloud/folders' && method==='POST') {const b=await json(req),name=validName(b.name),parent=b.parent||'';folder(parent,owner);freeName(owner,parent,name);const id=randomUUID();run('INSERT INTO entries VALUES(?,?,?,?,?,?,?)',id,owner,parent,name,'folder',0,now());return send(res,{id},201);}
         const em=/^\/cloud\/entries\/([^/]+)$/.exec(p);
         if(em && ['PATCH','DELETE','GET'].includes(method)) {

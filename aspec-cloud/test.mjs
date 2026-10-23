@@ -6,6 +6,63 @@ import path from 'node:path';
 import {createCloud,validName} from './server.mjs';
 const alice='03cd1d2d-9d0e-4ac4-a785-ad78e34168ef',bob='03cd1d2d-9d0e-4ac4-a785-ad78e34168ee';
 test('reject traversal, control characters and dangerous names; allow installer extensions',()=>{for(const n of ['../x','..','.','a/b','a\\b','x\n',' x'])assert.throws(()=>validName(n));assert.equal(validName('설치 프로그램.exe'),'설치 프로그램.exe');});
+
+test('public file shares persist, allow anonymous downloads, and stop after revocation or deletion',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'aspec-share-test-'));
+ const allowedUsers=new Set([alice,bob]);
+ let verifications=0,app,base;
+ const options={dataDir:dir,origin:'https://erp.aspec-tech.co.kr',allowedUsers,reserve:0,verify:async token=>{verifications++;return {id:token==='alice'?alice:bob};}};
+ async function start(){app=createCloud(options);await new Promise(r=>app.server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+app.server.address().port;}
+ async function req(p,method='GET',body,token='alice') {
+  return fetch(base+'/cloud'+p,{method,headers:{...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
+ }
+ async function upload(name,bytes){
+  const {id}=await (await req('/uploads','POST',{name,size:bytes.length})).json();
+  if(bytes.length){const chunk=await fetch(base+'/cloud/uploads/'+id,{method:'PATCH',headers:{Authorization:'Bearer alice','Upload-Offset':'0'},body:bytes});assert.equal(chunk.status,200);}
+  assert.equal((await req('/uploads/'+id+'/complete','POST',{})).status,200);return id;
+ }
+ try {
+  await start();
+  const bytes=Buffer.from('<html>공유 파일</html>');
+  const id=await upload('자료.html',bytes);
+  const folder=await (await req('/folders','POST',{name:'공유 불가 폴더'})).json();
+  assert.equal((await req('/shares','POST',{id},'')).status,401);
+  assert.equal((await req('/shares','POST',{id},'bob')).status,404);
+  assert.equal((await req('/shares','POST',{id:folder.id})).status,400);
+  const shared=await req('/shares','POST',{id});assert.equal(shared.status,200);
+  const {url}=await shared.json();assert.match(url,/^\/cloud\/shared\/[a-f0-9]{64}$/);
+  assert.equal((await (await req('/shares','POST',{id})).json()).url,url);
+  const verifiedBefore=verifications;
+  const download=await fetch(base+url);
+  assert.equal(download.status,200);assert.deepEqual(Buffer.from(await download.arrayBuffer()),bytes);
+  assert.equal(verifications,verifiedBefore);
+  assert.match(download.headers.get('content-disposition'),/^attachment;/);
+  assert.equal(download.headers.get('content-type'),'application/octet-stream');
+  assert.equal(download.headers.get('x-content-type-options'),'nosniff');
+  assert.equal(download.headers.get('referrer-policy'),'no-referrer');
+  const head=await fetch(base+url,{method:'HEAD'});assert.equal(head.status,200);assert.equal(Number(head.headers.get('content-length')),bytes.length);assert.equal(await head.text(),'');
+  const partial=await fetch(base+url,{headers:{Range:'bytes=1-3'}});assert.equal(partial.status,206);assert.deepEqual(Buffer.from(await partial.arrayBuffer()),bytes.subarray(1,4));
+  assert.equal((await fetch(base+url,{headers:{Range:'bytes=999999-'}})).status,416);
+  assert.equal((await fetch(base+'/cloud/shared/'+id)).status,404);
+  assert.equal((await fetch(base+'/cloud/shared/'+'0'.repeat(64))).status,404);
+  assert.equal((await req('/entries/'+id,'GET',undefined,'')).status,401);
+  assert.equal((await req('/shares/'+id,'DELETE',undefined,'bob')).status,404);
+  await req('/logout','POST');
+  assert.equal((await fetch(base+url)).status,200);
+  await app.close();await start();
+  assert.equal((await fetch(base+url)).status,200);
+  await req('/entries/'+id,'PATCH',{name:'이름변경.zip'});
+  const renamed=await fetch(base+url);assert.equal(renamed.status,200);assert.match(renamed.headers.get('content-disposition'),/\.zip/);
+  assert.equal((await req('/shares/'+id,'DELETE')).status,200);
+  assert.equal((await fetch(base+url)).status,404);
+  const next=await (await req('/shares','POST',{id})).json();assert.notEqual(next.url,url);
+  allowedUsers.delete(alice);assert.equal((await fetch(base+next.url)).status,404);allowedUsers.add(alice);
+  await req('/entries/'+id,'DELETE');assert.equal((await fetch(base+next.url)).status,404);
+  const emptyId=await upload('빈 파일.txt',Buffer.alloc(0));
+  const empty=await (await req('/shares','POST',{id:emptyId})).json();
+  const emptyDownload=await fetch(base+empty.url);assert.equal(emptyDownload.status,200);assert.equal(await emptyDownload.text(),'');
+ } finally {if(app)await app.close();await fs.rm(dir,{recursive:true,force:true});}
+});
 test('authenticated owner isolation, chunk resume, move cycles, downloads, restart recovery and reservation',async()=>{
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'aspec-test-'));
  const options={dataDir:dir,origin:'https://erp.aspec-tech.co.kr',allowedUsers:new Set([alice,bob]),verify:async token=>({id:token==='alice'?alice:token==='bob'?bob:'invalid'}),reserve:0};

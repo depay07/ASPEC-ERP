@@ -79,7 +79,7 @@ const CloudModule = (() => {
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
-                <thead class="bg-slate-50 text-slate-600"><tr><th class="p-3 w-12"><input id="cloudSelectAll" type="checkbox" aria-label="현재 목록 파일 전체 선택" onchange="CloudModule.selectAll(this.checked)"></th><th class="text-left p-3">이름</th><th class="text-left p-3 w-28">크기</th><th class="text-left p-3 w-44">수정일</th><th class="text-right p-3 w-52">작업</th></tr></thead>
+                <thead class="bg-slate-50 text-slate-600"><tr><th class="p-3 w-12"><input id="cloudSelectAll" type="checkbox" aria-label="현재 목록 파일 전체 선택" onchange="CloudModule.selectAll(this.checked)"></th><th class="text-left p-3">이름</th><th class="text-left p-3 w-28">크기</th><th class="text-left p-3 w-44">수정일</th><th class="text-right p-3 w-64">작업</th></tr></thead>
                 <tbody id="cloudList"></tbody>
               </table>
             </div>
@@ -111,7 +111,7 @@ const CloudModule = (() => {
         body.innerHTML = data.items.map(e => {
             const folder = e.kind === 'folder';
             const name = folder ? '<button class="font-bold text-slate-800 hover:text-cyan-700 text-left" onclick="CloudModule.openFolder(\''+esc(e.id)+'\')"><i class="fa-solid fa-folder text-amber-400 mr-2"></i>'+esc(e.name)+'</button>' : '<span class="text-slate-700"><i class="fa-regular fa-file text-slate-400 mr-2"></i>'+esc(e.name)+'</span>';
-            const primary = folder ? '' : '<button onclick="CloudModule.download(\''+esc(e.id)+'\')" class="text-blue-600 hover:underline mr-3">다운로드</button>';
+            const primary = folder ? '' : '<button onclick="CloudModule.download(\''+esc(e.id)+'\')" class="text-blue-600 hover:underline mr-3">다운로드</button><button onclick="CloudModule.share(\''+esc(e.id)+'\')" class="text-cyan-700 hover:underline mr-3">공유</button>';
             const checkbox = folder ? '' : '<input type="checkbox" data-cloud-select="'+esc(e.id)+'" aria-label="'+esc(e.name)+' 선택" '+(selected.has(e.id)?'checked ':'')+'onchange="CloudModule.selectFile(this.dataset.cloudSelect,this.checked)">';
             return '<tr class="border-t border-slate-100 hover:bg-slate-50"><td class="p-3 text-center">'+checkbox+'</td><td class="p-3">'+name+'</td><td class="p-3 text-slate-500">'+(folder?'—':fmtBytes(e.size))+'</td><td class="p-3 text-slate-500">'+fmtDate(e.updated)+'</td><td class="p-3 text-right">'+primary+'<button onclick="CloudModule.rename(\''+esc(e.id)+'\',\''+esc(e.name).replace(/'/g,'&#39;')+'\')" class="text-slate-600 hover:underline mr-3">이름변경</button><button onclick="CloudModule.remove(\''+esc(e.id)+'\',\''+esc(e.name).replace(/'/g,'&#39;')+'\')" class="text-red-600 hover:underline">삭제</button></td></tr>';
         }).join('');
@@ -215,6 +215,48 @@ const CloudModule = (() => {
     async function download(id){
         try{const r=await api('/download-session',{method:'POST',json:{id}});window.location.href='https://api.aspec-tech.co.kr'+r.url;}catch(e){notice(e.message,true);}
     }
+    async function share(id) {
+        if(deleting)return;
+        try {
+            const file=visibleFiles.find(e=>e.id===id);
+            if(!file)return;
+            const result=await api('/shares',{method:'POST',json:{id}});
+            const url=new URL(result.url,API).href;
+            openModal('파일 공유');
+            document.getElementById('modalBody').innerHTML=`
+                <p class="font-bold text-slate-800 mb-2 break-all">${esc(file.name)}</p>
+                <p class="text-sm text-slate-600 mb-4">링크가 있는 사람은 로그인 없이 이 파일을 다운로드할 수 있습니다.</p>
+                <label for="cloudShareLink" class="block text-xs font-bold text-slate-500 mb-1">공유 링크</label>
+                <div class="flex gap-2">
+                    <input id="cloudShareLink" type="text" readonly value="${esc(url)}" onclick="this.select()" class="input-box flex-1 min-w-0">
+                    <button onclick="CloudModule.copyShareLink()" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 rounded font-bold whitespace-nowrap">링크 복사</button>
+                </div>
+                <p id="cloudShareStatus" role="status" aria-live="polite" class="text-sm text-slate-600 mt-3">공유를 중지하거나 파일을 삭제하기 전까지 링크를 사용할 수 있습니다.</p>
+                <button onclick="CloudModule.revokeShare('${esc(id)}',this)" class="mt-5 text-red-600 hover:underline text-sm">공유 중지</button>`;
+        } catch(e) {notice(e.message,true);}
+    }
+    async function copyShareLink() {
+        const input=document.getElementById('cloudShareLink');
+        const status=document.getElementById('cloudShareStatus');
+        if(!input||!status)return;
+        try {
+            await navigator.clipboard.writeText(input.value);
+            status.textContent='공유 링크를 복사했습니다.';
+        } catch {
+            input.focus();input.select();
+            status.textContent='링크가 선택되었습니다. Ctrl+C 또는 길게 눌러 복사하세요.';
+        }
+    }
+    async function revokeShare(id,button) {
+        button.disabled=true;
+        try {
+            await api('/shares/'+encodeURIComponent(id),{method:'DELETE'});
+            closeModal();notice('공유를 중지했습니다. 기존 링크로는 다운로드할 수 없습니다.');
+        } catch(e) {
+            const status=document.getElementById('cloudShareStatus');
+            if(status)status.textContent=e.message;
+        } finally {button.disabled=false;}
+    }
     async function fingerprint(file){
         const first=await file.slice(0,65536).arrayBuffer(), last=await file.slice(Math.max(0,file.size-65536)).arrayBuffer();
         const bytes=new Uint8Array(first.byteLength+last.byteLength);bytes.set(new Uint8Array(first));bytes.set(new Uint8Array(last),first.byteLength);
@@ -256,5 +298,5 @@ const CloudModule = (() => {
         }catch{}
     }
     async function logout(){try{await api('/logout',{method:'POST'});}catch{}}
-    return {selectFile,selectAll,removeSelected,init,openFolder,search,refresh,createFolder,rename,remove,download,uploadFiles,logout};
+    return {selectFile,selectAll,removeSelected,init,openFolder,search,refresh,createFolder,rename,remove,download,share,copyShareLink,revokeShare,uploadFiles,logout};
 })();
