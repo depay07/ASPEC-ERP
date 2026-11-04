@@ -3,9 +3,13 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const NOTIFY_TO = Deno.env.get('INQUIRY_NOTIFY_TO') || 'sales@aspec-tech.co.kr';
 const NOTIFY_FROM = Deno.env.get('INQUIRY_NOTIFY_FROM') || 'ASPEC 홈페이지 <inquiry@notify.aspec-tech.co.kr>';
+const NOTIFY_TO_SANGJIN = Deno.env.get('INQUIRY_NOTIFY_TO_SANGJIN') || 'gm-sangjin@naver.com';
+const NOTIFY_FROM_SANGJIN = Deno.env.get('INQUIRY_NOTIFY_FROM_SANGJIN') || 'SANGJIN 홈페이지 <inquiry@notify.aspec-tech.co.kr>';
 const ALLOWED_ORIGINS = new Set([
   'https://www.aspec-tech.co.kr',
-  'https://aspec-tech.co.kr'
+  'https://aspec-tech.co.kr',
+  'https://sangjin-fa.com',
+  'https://www.sangjin-fa.com'
 ]);
 
 function corsHeaders(origin: string | null) {
@@ -62,8 +66,10 @@ async function updateNotification(id: string, values: Record<string, unknown>) {
   });
 }
 
-async function sendNotification(row: Record<string, string>) {
+async function sendNotification(row: Record<string, string>, source: string) {
   if (!RESEND_API_KEY) return;
+  const isSangjin = source === 'sangjin';
+  const brand = isSangjin ? 'SANGJIN' : 'ASPEC';
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -72,11 +78,11 @@ async function sendNotification(row: Record<string, string>) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: NOTIFY_FROM,
-        to: [NOTIFY_TO],
-        subject: `[ASPEC 홈페이지 문의] ${row.inquiry_type}`,
+        from: isSangjin ? NOTIFY_FROM_SANGJIN : NOTIFY_FROM,
+        to: [isSangjin ? NOTIFY_TO_SANGJIN : NOTIFY_TO],
+        subject: `[${brand} 홈페이지 문의] ${row.inquiry_type}`,
         text: `접수 시각: ${row.created_at}\n문의 유형: ${row.inquiry_type}\n연락처: ${row.contact || '미입력'}\n\n${row.message}\n\nERP 문의 ID: ${row.id}`,
-        html: `<h2>ASPEC 홈페이지 문의</h2><p><strong>문의 유형:</strong> ${escapeHtml(row.inquiry_type)}</p><p><strong>연락처:</strong> ${escapeHtml(row.contact || '미입력')}</p><p style="white-space:pre-wrap">${escapeHtml(row.message)}</p><p><small>ERP 문의 ID: ${row.id}</small></p>`
+        html: `<h2>${brand} 홈페이지 문의</h2><p><strong>문의 유형:</strong> ${escapeHtml(row.inquiry_type)}</p><p><strong>연락처:</strong> ${escapeHtml(row.contact || '미입력')}</p><p style="white-space:pre-wrap">${escapeHtml(row.message)}</p><p><small>ERP 문의 ID: ${row.id}</small></p>`
       })
     });
     if (!response.ok) throw new Error(`Resend HTTP ${response.status}`);
@@ -116,6 +122,7 @@ Deno.serve(async req => {
   const message = clean(body.message, 10000);
   const contact = clean(body.contact, 200) || null;
   const sourcePage = clean(body.source_page, 500) || null;
+  const source = clean(body.source, 20);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) {
     return json(origin, 400, { ok: false, error: 'invalid_request_id' });
   }
@@ -154,7 +161,7 @@ Deno.serve(async req => {
   }
 
   const [row] = await insertResponse.json();
-  if (RESEND_API_KEY) EdgeRuntime.waitUntil(sendNotification(row));
+  if (RESEND_API_KEY) EdgeRuntime.waitUntil(sendNotification(row, source));
   return json(origin, 201, { ok: true, id: row.id });
 });
 
