@@ -102,6 +102,9 @@ async function runSearch(tab, forceRefresh, userInitiated) {
         case 'sales':
             await SalesModule.search(forceRefresh, userInitiated);
             break;                                            
+        case 'website_inquiries':
+            await WebsiteInquiriesModule.search();
+            break;
         case 'collections':
             await CollectionsModule.search(forceRefresh, userInitiated);
             break;
@@ -247,7 +250,7 @@ function getTabButtons(tab) {
             '<i class="fa-solid fa-plus"></i> 제품 입고</button>';
     }
     
-    if (tab === 'collections' || tab === 'cost_management') {
+    if (tab === 'collections' || tab === 'cost_management' || tab === 'website_inquiries') {
         return '';
     }
     
@@ -278,7 +281,8 @@ function getTableStructure(tab) {
         rentals: '<thead><tr><th style="width:10%">대여번호</th><th style="width:7%">대여일자</th><th style="width:10%">거래처</th><th style="width:9%">담당자</th><th style="width:8%">대여 목적</th><th style="width:13%">품목 요약</th><th style="width:7%">총 수량</th><th style="width:9%">회수예정일</th><th style="width:8%">상태</th><th style="width:8%">실제 회수일</th><th style="width:11%">관리</th></tr></thead>',
         projects: '<thead><tr><th style="width:15%">프로젝트명</th><th style="width:10%">고객사</th><th style="width:8%">상태</th><th style="width:15%">진척도</th><th style="width:8%">EndUser</th><th style="width:10%">검사 종류</th><th style="width:15%">광학 조건</th><th>비고</th><th style="width:10%">관리</th></tr></thead>',
         orders: '<thead><tr><th style="width:9%">일자</th><th style="width:16%">거래처</th><th style="width:10%">담당자</th><th style="width:11%">공급가액</th><th style="width:9%">부가세</th><th style="width:11%">합계</th><th>비고</th><th style="width:7%">납품</th><th style="width:15%">관리</th></tr></thead>',
-        sales: '<thead><tr><th style="width:10%">일자</th><th style="width:15%">거래처</th><th style="width:10%">담당자</th><th style="width:10%">공급가액</th><th style="width:10%">부가세</th><th style="width:10%">합계</th><th style="width:15%">비고</th><th style="width:8%">계산서</th><th style="width:12%">관리</th></tr></thead>'
+        sales: '<thead><tr><th style="width:10%">일자</th><th style="width:15%">거래처</th><th style="width:10%">담당자</th><th style="width:10%">공급가액</th><th style="width:10%">부가세</th><th style="width:10%">합계</th><th style="width:15%">비고</th><th style="width:8%">계산서</th><th style="width:12%">관리</th></tr></thead>',
+        website_inquiries: '<thead><tr><th style="width:13%">접수 시각</th><th style="width:16%">문의 유형</th><th style="width:16%">연락처</th><th>문의 내용</th><th style="width:8%">상태</th><th style="width:9%">알림</th><th style="width:7%">보기</th></tr></thead>'
     };
     var defaultStructure = '<thead><tr><th style="width:10%">일자</th><th style="width:18%">거래처</th><th style="width:12%">담당자</th><th style="width:12%">공급가액</th><th style="width:10%">부가세</th><th style="width:12%">합계</th><th>비고</th><th style="width:15%">관리</th></tr></thead>';
     return structures[tab] || defaultStructure;

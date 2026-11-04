@@ -182,6 +182,7 @@ var TAB_TITLES = {
     quotes: '견적 관리',
     orders: '주문 관리 (수주)',
     sales: '판매 관리 (출고)',
+    website_inquiries: '홈페이지 문의함',
     collections: '수금 관리',
     bookkeeping: '기장 관리 (지출/비용)',
     cost_management: '원가 관리 (마진 분석)',

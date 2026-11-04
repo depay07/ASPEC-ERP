@@ -108,7 +108,7 @@ function renderSearchPanel(tab) {
     let html = `<div class="search-panel no-print"><div class="flex flex-wrap gap-6 items-end">`;
     
     // 기간 조회 (일부 탭 제외)
-    if (!['partners', 'products', 'price_list', 'inventory'].includes(tab)) {
+    if (!['partners', 'products', 'price_list', 'inventory', 'website_inquiries'].includes(tab)) {
         html += `
             <div>
                 <span class="search-label">기간 조회</span>
@@ -153,6 +153,19 @@ function getDateRangeForTab(tab) {
  */
 function getTabSpecificFilters(tab) {
     switch (tab) {
+        case 'website_inquiries':
+            return `
+                <div><span class="search-label">처리 상태</span>
+                    <select id="search_wiStatus" class="input-box h-[38px]" onchange="runSearch('${tab}')">
+                        <option value="">전체</option>
+                        <option value="new">신규</option>
+                        <option value="in_progress">처리 중</option>
+                        <option value="completed">완료</option>
+                        <option value="spam">스팸</option>
+                    </select>
+                </div>
+                <div><span class="search-label">검색</span><input type="search" id="search_wiKeyword" class="input-box" placeholder="연락처·문의 내용" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>`;
+
         case 'rentals':
             return `
                 <div><span class="search-label">대여번호</span><input type="text" id="search_rRentalNo" class="input-box" placeholder="대여번호" onkeypress="handleSearchKeyPress(event, '${tab}')"></div>
