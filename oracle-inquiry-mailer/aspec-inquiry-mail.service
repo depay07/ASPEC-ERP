@@ -1,0 +1,15 @@
+[Unit]
+Description=ASPEC website inquiry email delivery
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/aspec-blog
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/home/ubuntu/aspec-blog/.venv/bin/python /home/ubuntu/aspec-blog/aspec_blog_engine/inquiry_email_dispatch.py
+NoNewPrivileges=true
+PrivateTmp=true
+

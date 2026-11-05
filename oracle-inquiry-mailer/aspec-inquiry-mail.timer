@@ -1,0 +1,13 @@
+[Unit]
+Description=Check ASPEC website inquiries every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Persistent=true
+Unit=aspec-inquiry-mail.service
+
+[Install]
+WantedBy=timers.target
+
