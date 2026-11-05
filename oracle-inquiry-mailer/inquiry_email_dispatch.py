@@ -44,13 +44,17 @@ def format_received(value):
 
 def mail_content(inquiry):
     inquiry_id = inquiry["id"]
-    subject = f"[ASPEC 홈페이지 문의] {inquiry.get('inquiry_type') or '간단 문의'} ({inquiry_id[:8].upper()})"
+    source_page = (inquiry.get("source_page") or "").lower()
+    inquiry_type = inquiry.get("inquiry_type") or "간단 문의"
+    is_sangjin = "sangjin-fa.com" in source_page or inquiry_type.startswith("SANGJIN -")
+    brand = "SANGJIN" if is_sangjin else "ASPEC"
+    subject = f"[{brand} 홈페이지 문의] {inquiry_type} ({inquiry_id[:8].upper()})"
     body = "\n".join([
-        "ASPEC 홈페이지에 새로운 문의가 접수되었습니다.",
+        f"{brand} 홈페이지에 새로운 문의가 접수되었습니다.",
         "",
         f"접수번호: {inquiry_id}",
         f"접수시각: {format_received(inquiry.get('created_at'))}",
-        f"문의유형: {inquiry.get('inquiry_type') or '간단 문의'}",
+        f"문의유형: {inquiry_type}",
         f"연락처: {inquiry.get('contact') or '미입력'}",
         f"접수페이지: {inquiry.get('source_page') or '확인 불가'}",
         "",
