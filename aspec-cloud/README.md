@@ -8,6 +8,8 @@ Prerequisites already configured: Ubuntu, Node 24, Nginx TLS, TCP 80/443, non-lo
 
 Run `sudo bash install.sh` inside this directory. The installer checks the disk UUID, runs isolated API tests in a temporary directory, snapshots application/configuration files for rollback, installs the service, and updates only the aspec-cloud Nginx virtual host. It never edits RustDesk, Docker, Supabase, or existing ERP data. These local config snapshots are NOT a backup of business files.
 
+For an existing running installation whose storage/unit was configured separately, use `sudo bash install.sh --update-only`. This requires the active service and existing SQLite metadata at the configured data directory, runs the same isolated tests and creates rollback snapshots, and updates only server.mjs, share-page.html and the Nginx paths. It preserves the existing service unit and storage configuration. The 2026-11-07 deployment used this mode; its rollback snapshot is `/opt/aspec-cloud/releases/20261107-103733`.
+
 `project.json` contains the existing PUBLIC Supabase URL and anon key copied from js/config.js. No service_role or signing secret is used. For another ERP project override SUPABASE_URL and SUPABASE_ANON_KEY on the server. Do not use a service_role key.
 
 Environment:
