@@ -4,7 +4,7 @@ const path = require('node:path');
 const { test } = require('node:test');
 const vm = require('node:vm');
 
-async function loadCloud() {
+async function loadCloud(quick = false) {
     const elements = new Map();
     function element(id) {
         if (!elements.has(id)) elements.set(id, {
@@ -16,7 +16,7 @@ async function loadCloud() {
     }
     const calls = [], clipboard = [];
     let clipboardFails = false, shareFails = false, closed = false;
-    const sharedPath = '/cloud/shared/' + 'a'.repeat(64);
+    const sharedPath = '/s/abcd2345efgh6789';
     const context = vm.createContext({
         Headers, URL,
         document: { getElementById: element, querySelectorAll: () => [] },
@@ -32,7 +32,7 @@ async function loadCloud() {
             ] };
             if (url.endsWith('/storage')) data = { used: 10, total: 100, uploadAvailable: 90 };
             if (url.endsWith('/uploads')) data = [];
-            if (url.endsWith('/shares')) data = shareFails ? { error: '공유 서버 오류' } : { url: sharedPath };
+            if (url.endsWith('/shares')) data = shareFails ? { error: '공유 서버 오류' } : { url: sharedPath, ...(quick?{code:'abcd2345',codeUrl:'/s/abcd2345',codeExpiresAt:'2026-11-08T03:00:00Z'}:{}) };
             return { ok: !shareFails, status: shareFails ? 500 : 200, headers: new Headers({ 'content-type': 'application/json' }), json: async () => data };
         }
     });
@@ -75,4 +75,12 @@ test('공유 생성에 실패하면 링크 생성 성공으로 표시하지 않�
     await h.module.share('file-id');
     assert.equal(h.element('modalBody').innerHTML, '');
     assert.equal(h.element('cloudNotice').textContent, '공유 서버 오류');
+});
+
+test('공유 코드를 크게 표시하고 간편 링크와 만료 없는 링크를 함께 제공한다', async () => {
+    const h = await loadCloud(true); await h.module.share('file-id');
+    const html=h.element('modalBody').innerHTML;
+    assert.match(html,/abcd2345/);assert.match(html,/간편 링크 \(24시간\)/);assert.match(html,/만료 없는 링크/);
+    assert.ok(html.includes('https://api.aspec-tech.co.kr/s/abcd2345'));
+    assert.ok(html.includes('https://api.aspec-tech.co.kr'+h.sharedPath));
 });

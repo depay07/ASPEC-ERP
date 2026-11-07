@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { DatabaseSync } from 'node:sqlite';
-import { randomUUID, randomBytes, createHash } from 'node:crypto';
+import { randomUUID, randomBytes, randomInt, createHash } from 'node:crypto';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
@@ -10,6 +10,9 @@ import project from './project.json' with {type:'json'};
 
 const fail = (status, message) => { throw Object.assign(new Error(message), {status}); };
 const uuid = v => typeof v === 'string' && /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(v);
+const alphabet='23456789abcdefghjkmnpqrstuvwxyz';
+const randomCode=length=>Array.from({length},()=>alphabet[randomInt(alphabet.length)]).join('');
+const sharePage=fs.readFileSync(new URL('./share-page.html',import.meta.url),'utf8');
 export function validName(v) {
   if (typeof v !== 'string' || !v.trim() || v !== v.trim() || Buffer.byteLength(v) > 240 || /[\\/\x00-\x1f\x7f]/.test(v) || v === '.' || v === '..') fail(400, '파일 또는 폴더 이름을 확인하세요.');
   return v.normalize('NFC');
@@ -22,7 +25,9 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
     CREATE UNIQUE INDEX IF NOT EXISTS entry_name ON entries(owner,parent,name);
     CREATE TABLE IF NOT EXISTS uploads(id TEXT PRIMARY KEY, owner TEXT NOT NULL, parent TEXT NOT NULL, name TEXT NOT NULL, size INTEGER NOT NULL, offset INTEGER NOT NULL DEFAULT 0, updated TEXT NOT NULL);
     CREATE UNIQUE INDEX IF NOT EXISTS upload_name ON uploads(owner,parent,name);
-    CREATE TABLE IF NOT EXISTS shares(token TEXT PRIMARY KEY, entry_id TEXT NOT NULL UNIQUE REFERENCES entries(id) ON DELETE CASCADE, created TEXT NOT NULL);`);
+    CREATE TABLE IF NOT EXISTS shares(token TEXT PRIMARY KEY, entry_id TEXT NOT NULL UNIQUE REFERENCES entries(id) ON DELETE CASCADE, created TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS share_codes(code TEXT PRIMARY KEY, token TEXT NOT NULL UNIQUE REFERENCES shares(token) ON DELETE CASCADE);
+    CREATE TABLE IF NOT EXISTS quick_shares(code TEXT PRIMARY KEY, token TEXT NOT NULL UNIQUE REFERENCES shares(token) ON DELETE CASCADE, expires INTEGER NOT NULL);`);
   const get = (sql,...args) => db.prepare(sql).get(...args);
   const all = (sql,...args) => db.prepare(sql).all(...args);
   const run = (sql,...args) => db.prepare(sql).run(...args);
@@ -44,7 +49,19 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
   }
   let queue=Promise.resolve();
   const serial = fn => {const next=queue.then(fn); queue=next.catch(()=>{}); return next;};
-  const tickets=new Map(), authCache=new Map(), rates=new Map();
+  const tickets=new Map(), authCache=new Map(), rates=new Map(), quickRates=new Map();
+  let quickGlobal={at:Date.now(),count:0};
+  const quickLimit=req=>{
+    const peer=req.socket.remoteAddress;
+    const ip=['127.0.0.1','::1','::ffff:127.0.0.1'].includes(peer)?String(req.headers['x-real-ip']||peer):peer;
+    const now=Date.now();
+    for(const [key,value] of quickRates) if(now-value.at>=60000) quickRates.delete(key);
+    if(now-quickGlobal.at>=60000) quickGlobal={at:now,count:0};
+    if(++quickGlobal.count>120) fail(429,'잠시 후 다시 시도하세요.');
+    let bucket=quickRates.get(ip);
+    if(!bucket){if(quickRates.size>=4096)fail(429,'잠시 후 다시 시도하세요.');bucket={at:now,count:0};quickRates.set(ip,bucket);}
+    if(++bucket.count>20) fail(429,'입력 시도가 많습니다. 1분 후 다시 시도하세요.');
+  };
   async function authenticate(req) {
     const token=(req.headers.authorization || '').match(/^Bearer (.{1,8192})$/)?.[1];
     if(!token) fail(401,'ERP에 다시 로그인하세요.');
@@ -101,9 +118,24 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
       if(method==='OPTIONS') {res.setHeader('Access-Control-Allow-Methods','GET,POST,PATCH,DELETE,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Authorization,Content-Type,Upload-Offset');res.writeHead(204); return res.end();}
       const ip=req.socket.remoteAddress, count=(rates.get(ip)||0)+1; rates.set(ip,count); if(count>1200) fail(429,'잠시 후 다시 시도하세요.');
       if(p==='/cloud/health' && method==='GET') return send(res,{ok:true});
-      if(p.startsWith('/cloud/shared/') && ['GET','HEAD'].includes(method)) {
+      if(p==='/' && ['GET','HEAD'].includes(method)) {
+        res.setHeader('Content-Type','text/html; charset=utf-8');
+        res.setHeader('Content-Security-Policy',"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
+        res.writeHead(200);return res.end(method==='HEAD'?'':sharePage);
+      }
+      if(p==='/s/' && method==='GET' && url.searchParams.has('code')) {
+        const code=url.searchParams.get('code').replace(/[\s-]/g,'').toLowerCase();
+        if(!/^[23456789abcdefghjkmnpqrstuvwxyz]{8}$/.test(code)) fail(400,'공유 코드 8자리를 확인하세요.');
+        res.writeHead(303,{Location:'/s/'+code});return res.end();
+      }
+      if((p.startsWith('/cloud/shared/') || p.startsWith('/s/')) && ['GET','HEAD'].includes(method)) {
         const shared=/^\/cloud\/shared\/([a-f0-9]{64})$/.exec(p);
-        const e=shared && get('SELECT e.* FROM shares s JOIN entries e ON e.id=s.entry_id WHERE s.token=?',shared[1]);
+        const short=/^\/s\/([23456789abcdefghjkmnpqrstuvwxyz]{16})$/i.exec(p);
+        const quick=/^\/s\/([23456789abcdefghjkmnpqrstuvwxyz]{8})$/i.exec(p);
+        if(quick)quickLimit(req);
+        const token=shared?.[1] || (short && get('SELECT token FROM share_codes WHERE code=?',short[1].toLowerCase())?.token)
+          || (quick && get('SELECT token FROM quick_shares WHERE code=? AND expires>?',quick[1].toLowerCase(),Date.now())?.token);
+        const e=token && get('SELECT e.* FROM shares s JOIN entries e ON e.id=s.entry_id WHERE s.token=?',token);
         if(!e || e.kind!=='file' || !allowedUsers.has(e.owner)) fail(404,'공유가 중지되었거나 파일을 찾을 수 없습니다.');
         return await streamFile(req,res,e);
       }
@@ -139,7 +171,24 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
             share={token:randomBytes(32).toString('hex')};
             run('INSERT INTO shares VALUES(?,?,?)',share.token,e.id,now());
           }
-          return send(res,{url:'/cloud/shared/'+share.token});
+          let alias=get('SELECT code FROM share_codes WHERE token=?',share.token);
+          if(!alias) {
+            // ~79 random bits; omit 0, 1, i, l, o so the code is easy to transcribe.
+            let code;
+            do { code=randomCode(16); }
+            while(get('SELECT code FROM share_codes WHERE code=?',code));
+            run('INSERT INTO share_codes VALUES(?,?)',code,share.token);
+            alias={code};
+          }
+          let quick=get('SELECT code,expires FROM quick_shares WHERE token=?',share.token);
+          if(!quick || quick.expires<=Date.now()) {
+            run('DELETE FROM quick_shares WHERE token=?',share.token);
+            let code;
+            do {code=randomCode(8);}while(get('SELECT code FROM quick_shares WHERE code=?',code));
+            quick={code,expires:Date.now()+24*60*60*1000};
+            run('INSERT INTO quick_shares VALUES(?,?,?)',code,share.token,quick.expires);
+          }
+          return send(res,{url:'/s/'+alias.code,code:quick.code,codeUrl:'/s/'+quick.code,codeExpiresAt:new Date(quick.expires).toISOString()});
         }
         const sm=/^\/cloud\/shares\/([^/]+)$/.exec(p);
         if(sm && method==='DELETE') {

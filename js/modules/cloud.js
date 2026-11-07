@@ -221,17 +221,20 @@ const CloudModule = (() => {
             const file=visibleFiles.find(e=>e.id===id);
             if(!file)return;
             const result=await api('/shares',{method:'POST',json:{id}});
-            const url=new URL(result.url,API).href;
+            const url=new URL(result.codeUrl||result.url,API).href;
+            const permanentUrl=new URL(result.url,API).href;
             openModal('파일 공유');
             document.getElementById('modalBody').innerHTML=`
                 <p class="font-bold text-slate-800 mb-2 break-all">${esc(file.name)}</p>
+                ${result.code?`<div class="bg-cyan-50 border border-cyan-100 rounded-xl p-5 mb-4 text-center"><p class="text-sm text-slate-600">다른 PC에서 <strong>api.aspec-tech.co.kr</strong> 접속 후 입력</p><p class="text-3xl font-mono font-bold tracking-widest text-cyan-800 my-3 select-all">${esc(result.code)}</p><p class="text-xs text-slate-500">${esc(new Date(result.codeExpiresAt).toLocaleString('ko-KR'))}까지 · 대소문자 구분 없음</p></div>`:''}
                 <p class="text-sm text-slate-600 mb-4">링크가 있는 사람은 로그인 없이 이 파일을 다운로드할 수 있습니다.</p>
-                <label for="cloudShareLink" class="block text-xs font-bold text-slate-500 mb-1">공유 링크</label>
+                <label for="cloudShareLink" class="block text-xs font-bold text-slate-500 mb-1">${result.code?'간편 링크 (24시간)':'공유 링크'}</label>
                 <div class="flex gap-2">
                     <input id="cloudShareLink" type="text" readonly value="${esc(url)}" onclick="this.select()" class="input-box flex-1 min-w-0">
                     <button onclick="CloudModule.copyShareLink()" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 rounded font-bold whitespace-nowrap">링크 복사</button>
                 </div>
-                <p id="cloudShareStatus" role="status" aria-live="polite" class="text-sm text-slate-600 mt-3">공유를 중지하거나 파일을 삭제하기 전까지 링크를 사용할 수 있습니다.</p>
+                <p id="cloudShareStatus" role="status" aria-live="polite" class="text-sm text-slate-600 mt-3">${result.code?'코드와 간편 링크는 표시된 시간까지 사용할 수 있습니다.':'공유를 중지하거나 파일을 삭제하기 전까지 링크를 사용할 수 있습니다.'}</p>
+                ${result.code?`<details class="mt-4 text-sm text-slate-600"><summary class="cursor-pointer">만료 없는 링크</summary><input type="text" readonly value="${esc(permanentUrl)}" onclick="this.select()" class="input-box w-full mt-2" aria-label="만료 없는 공유 링크"><p class="text-xs mt-1">공유 중지 또는 파일 삭제 전까지 유효합니다.</p></details>`:''}
                 <button onclick="CloudModule.revokeShare('${esc(id)}',this)" class="mt-5 text-red-600 hover:underline text-sm">공유 중지</button>`;
         } catch(e) {notice(e.message,true);}
     }

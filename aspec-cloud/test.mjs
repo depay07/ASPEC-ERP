@@ -4,8 +4,43 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {createCloud,validName} from './server.mjs';
+import {DatabaseSync} from 'node:sqlite';
 const alice='03cd1d2d-9d0e-4ac4-a785-ad78e34168ef',bob='03cd1d2d-9d0e-4ac4-a785-ad78e34168ee';
 test('reject traversal, control characters and dangerous names; allow installer extensions',()=>{for(const n of ['../x','..','.','a/b','a\\b','x\n',' x'])assert.throws(()=>validName(n));assert.equal(validName('설치 프로그램.exe'),'설치 프로그램.exe');});
+
+test('upgrade adds short aliases to existing long shares without breaking their links',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'aspec-legacy-share-'));
+ const id='bbbbbbbb-bbbb-4bbb-abbb-bbbbbbbbbbbb',token='a'.repeat(64);
+ let app;
+ try {
+  await fs.mkdir(path.join(dir,'meta'));await fs.mkdir(path.join(dir,'files'));
+  const db=new DatabaseSync(path.join(dir,'meta','cloud.sqlite'));
+  db.exec(`CREATE TABLE entries(id TEXT PRIMARY KEY,owner TEXT NOT NULL,parent TEXT NOT NULL DEFAULT '',name TEXT NOT NULL,kind TEXT NOT NULL,size INTEGER NOT NULL DEFAULT 0,updated TEXT NOT NULL);
+   CREATE TABLE shares(token TEXT PRIMARY KEY,entry_id TEXT NOT NULL UNIQUE REFERENCES entries(id) ON DELETE CASCADE,created TEXT NOT NULL);`);
+  db.prepare('INSERT INTO entries VALUES(?,?,?,?,?,?,?)').run(id,alice,'','legacy.txt','file',3,new Date().toISOString());
+  db.prepare('INSERT INTO shares VALUES(?,?,?)').run(token,id,new Date().toISOString());db.close();
+  await fs.writeFile(path.join(dir,'files',id),'old');
+  app=createCloud({dataDir:dir,origin:'https://erp.aspec-tech.co.kr',allowedUsers:new Set([alice]),reserve:0,verify:async()=>({id:alice})});
+  await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port;
+  assert.equal(await (await fetch(base+'/cloud/shared/'+token)).text(),'old');
+  const response=await fetch(base+'/cloud/shares',{method:'POST',headers:{Authorization:'Bearer alice','Content-Type':'application/json'},body:JSON.stringify({id})});
+  const {url,codeUrl}=await response.json();assert.match(url,/^\/s\/[23456789abcdefghjkmnpqrstuvwxyz]{16}$/);
+  assert.equal(await (await fetch(base+url)).text(),'old');
+  assert.equal(await (await fetch(base+'/cloud/shared/'+token)).text(),'old');
+  assert.equal((await fetch(base+'/s/'+'2'.repeat(16))).status,404);
+  const metadata=new DatabaseSync(path.join(dir,'meta','cloud.sqlite'));
+  metadata.prepare('UPDATE quick_shares SET expires=? WHERE token=?').run(Date.now()-1,token);metadata.close();
+  assert.equal((await fetch(base+codeUrl)).status,404);
+  assert.equal((await fetch(base+url)).status,200);
+  const renewed=await (await fetch(base+'/cloud/shares',{method:'POST',headers:{Authorization:'Bearer alice','Content-Type':'application/json'},body:JSON.stringify({id})})).json();
+  assert.notEqual(renewed.codeUrl,codeUrl);assert.equal(renewed.url,url);
+  assert.equal((await fetch(base+renewed.codeUrl)).status,200);
+  let limited;
+  for(let i=0;i<21;i++)limited=await fetch(base+'/s/'+'2'.repeat(8));
+  assert.equal(limited.status,429);
+  assert.equal((await fetch(base+url)).status,200);
+ } finally {if(app)await app.close();await fs.rm(dir,{recursive:true,force:true});}
+});
 
 test('public file shares persist, allow anonymous downloads, and stop after revocation or deletion',async()=>{
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'aspec-share-test-'));
@@ -30,7 +65,17 @@ test('public file shares persist, allow anonymous downloads, and stop after revo
   assert.equal((await req('/shares','POST',{id},'bob')).status,404);
   assert.equal((await req('/shares','POST',{id:folder.id})).status,400);
   const shared=await req('/shares','POST',{id});assert.equal(shared.status,200);
-  const {url}=await shared.json();assert.match(url,/^\/cloud\/shared\/[a-f0-9]{64}$/);
+  const {url,code,codeUrl,codeExpiresAt}=await shared.json();assert.match(url,/^\/s\/[23456789abcdefghjkmnpqrstuvwxyz]{16}$/);
+  assert.match(code,/^[23456789abcdefghjkmnpqrstuvwxyz]{8}$/);assert.equal(codeUrl,'/s/'+code);
+  assert.ok(Date.parse(codeExpiresAt)>Date.now()+23*60*60*1000);
+  assert.equal((await fetch(base+codeUrl)).status,200);
+  const landing=await fetch(base+'/');assert.equal(landing.status,200);assert.match(await landing.text(),/8자리/);
+  const form=await fetch(base+'/s/?code='+code.toUpperCase(),{redirect:'manual'});assert.equal(form.status,303);assert.equal(form.headers.get('location'),codeUrl);
+  assert.equal((await fetch(base+url.toUpperCase().replace('/S/','/s/'))).status,200);
+  const metadata=new DatabaseSync(path.join(dir,'meta','cloud.sqlite'));
+  const legacy='/cloud/shared/'+metadata.prepare('SELECT token FROM shares WHERE entry_id=?').get(id).token;
+  metadata.close();
+  assert.equal((await fetch(base+legacy)).status,200);
   assert.equal((await (await req('/shares','POST',{id})).json()).url,url);
   const verifiedBefore=verifications;
   const download=await fetch(base+url);
@@ -55,6 +100,8 @@ test('public file shares persist, allow anonymous downloads, and stop after revo
   const renamed=await fetch(base+url);assert.equal(renamed.status,200);assert.match(renamed.headers.get('content-disposition'),/\.zip/);
   assert.equal((await req('/shares/'+id,'DELETE')).status,200);
   assert.equal((await fetch(base+url)).status,404);
+  assert.equal((await fetch(base+legacy)).status,404);
+  assert.equal((await fetch(base+codeUrl)).status,404);
   const next=await (await req('/shares','POST',{id})).json();assert.notEqual(next.url,url);
   allowedUsers.delete(alice);assert.equal((await fetch(base+next.url)).status,404);allowedUsers.add(alice);
   await req('/entries/'+id,'DELETE');assert.equal((await fetch(base+next.url)).status,404);
