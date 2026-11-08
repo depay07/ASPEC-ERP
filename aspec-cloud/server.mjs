@@ -7,6 +7,7 @@ import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
 import project from './project.json' with {type:'json'};
+import {createContracts} from './contracts.mjs';
 
 const fail = (status, message) => { throw Object.assign(new Error(message), {status}); };
 const uuid = v => typeof v === 'string' && /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(v);
@@ -81,14 +82,15 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
   }
   async function json(req) {
     if(!String(req.headers['content-type']).startsWith('application/json')) fail(415,'JSON 요청이 필요합니다.');
-    let n=0; const chunks=[];
-    for await(const c of req) {n+=c.length; if(n>16384) fail(413,'요청이 너무 큽니다.'); chunks.push(c);}
+    let n=0; const chunks=[],limit=req.url.split('?')[0].startsWith('/cloud/contracts')?65536:16384;
+    for await(const c of req) {n+=c.length; if(n>limit) fail(413,'요청이 너무 큽니다.'); chunks.push(c);}
     try{return JSON.parse(Buffer.concat(chunks).toString());}catch{fail(400,'잘못된 JSON입니다.');}
   }
   const storage=async()=> {const s=await fsp.statfs(dataDir); const total=s.blocks*s.bsize, free=s.bavail*s.bsize; const pending=get('SELECT COALESCE(SUM(size-offset),0) AS n FROM uploads').n; return {total,used:(s.blocks-s.bfree)*s.bsize,free,reserved:reserve,pending,uploadAvailable:Math.max(0,free-reserve-pending)};};
   const send=(res,obj,status=200)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'}); res.end(JSON.stringify(obj));};
+  const contracts=createContracts({db,dataDir,fail,storage,validName});
   async function streamFile(req,res,e) {
-    const handle=await fsp.open(disk('files',e.id),'r');
+    const handle=await fsp.open(disk(e.storageDir||'files',e.id),'r');
     try {
       let start=0,end=e.size-1,status=200;
       if(req.headers.range) {
@@ -98,7 +100,7 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
         if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end||start>=e.size) {res.setHeader('Content-Range',`bytes */${e.size}`);fail(416,'잘못된 다운로드 범위입니다.');}
         status=206;res.setHeader('Content-Range',`bytes ${start}-${end}/${e.size}`);
       }
-      res.setHeader('Content-Type','application/octet-stream');res.setHeader('Content-Disposition',`attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(e.name).replace(/['()*]/g,c=>'%'+c.charCodeAt(0).toString(16))}`);
+      res.setHeader('Content-Type',e.preview?e.mime:'application/octet-stream');res.setHeader('Content-Disposition',`${e.preview?'inline':'attachment'}; filename="download"; filename*=UTF-8''${encodeURIComponent(e.name).replace(/['()*]/g,c=>'%'+c.charCodeAt(0).toString(16))}`);
       res.setHeader('Accept-Ranges','bytes');res.setHeader('Content-Length',Math.max(0,end-start+1));res.writeHead(status);
       if(req.method==='HEAD'||e.size===0) return res.end();
       await pipeline(handle.createReadStream({start,end,autoClose:false}),res);
@@ -115,7 +117,7 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
       const url=new URL(req.url,'http://localhost'), p=url.pathname, method=req.method;
       if(req.headers.origin && req.headers.origin!==origin) fail(403,'허용되지 않은 Origin입니다.');
       if(req.headers.origin===origin) {res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');res.setHeader('Access-Control-Allow-Credentials','true');}
-      if(method==='OPTIONS') {res.setHeader('Access-Control-Allow-Methods','GET,POST,PATCH,DELETE,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Authorization,Content-Type,Upload-Offset');res.writeHead(204); return res.end();}
+      if(method==='OPTIONS') {res.setHeader('Access-Control-Allow-Methods','GET,POST,PATCH,DELETE,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Authorization,Content-Type,Upload-Offset,X-File-Name,X-Upload-Id');res.writeHead(204); return res.end();}
       const ip=req.socket.remoteAddress, count=(rates.get(ip)||0)+1; rates.set(ip,count); if(count>1200) fail(429,'잠시 후 다시 시도하세요.');
       if(p==='/cloud/health' && method==='GET') return send(res,{ok:true});
       if(p==='/' && ['GET','HEAD'].includes(method)) {
@@ -144,7 +146,7 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
         const t=tickets.get(ticket), id=p.split('/')[3];
         if(!t || t.until<Date.now() || t.id!==id || !allowedUsers.has(t.owner)) fail(401,'다운로드를 다시 선택하세요.');
         const user=await verify(t.token); if(user?.id!==t.owner) fail(401,'다시 로그인하세요.');
-        const e=entry(id,t.owner); if(e.kind!=='file') fail(400,'파일을 선택하세요.');
+        const e=t.contractFile?{...contracts.lookup(id,t.owner),preview:t.preview}:entry(id,t.owner); if(!t.contractFile&&e.kind!=='file') fail(400,'파일을 선택하세요.');
         return await streamFile(req,res,e);
       }
       const {owner,token}=await authenticate(req);
@@ -157,13 +159,14 @@ export function createCloud({dataDir, origin, allowedUsers, verify, maxFile = 5 
       }
       if(p==='/cloud/logout' && method==='POST') {for(const [k,t] of tickets) if(t.owner===owner) tickets.delete(k);authCache.clear();res.setHeader('Set-Cookie','__Secure-aspec_download=; Path=/cloud/download/; Secure; HttpOnly; SameSite=Strict; Max-Age=0');return send(res,{ok:true});}
       if(p==='/cloud/download-session' && method==='POST') {
-        const b=await json(req),e=entry(b.id,owner);if(e.kind!=='file') fail(400,'파일을 선택하세요.');
+        const b=await json(req),e=b.contractFileId?contracts.lookup(b.contractFileId,owner):entry(b.id,owner);if(!b.contractFileId&&e.kind!=='file') fail(400,'파일을 선택하세요.');
         if(tickets.size>=512) fail(429,'잠시 후 다시 시도하세요.');
-        const key=randomBytes(32).toString('hex');tickets.set(key,{id:e.id,owner,token,until:Date.now()+90000});
+        const key=randomBytes(32).toString('hex');tickets.set(key,{id:e.id,owner,token,until:Date.now()+90000,contractFile:!!b.contractFileId,preview:!!b.contractFileId&&b.preview===true});
         res.setHeader('Set-Cookie',`__Secure-aspec_download=${key}; Path=/cloud/download/; Secure; HttpOnly; SameSite=Strict; Max-Age=90`);return send(res,{url:'/cloud/download/'+e.id});
       }
       // Serialize changes so rename/delete/move cannot race with an upload chunk.
       await serial(async()=>{
+        if(await contracts.handle(req,res,p,url,owner,json,send))return;
         if(p==='/cloud/shares' && method==='POST') {
           const b=await json(req),e=entry(b.id,owner);if(e.kind!=='file') fail(400,'파일을 선택하세요.');
           let share=get('SELECT token FROM shares WHERE entry_id=?',e.id);

@@ -190,6 +190,7 @@ var TAB_TITLES = {
     projects: '프로젝트 관리', 
     meeting_logs: '미팅 일지 (영업 활동)',
     memos: '메모장',
+    contracts: '계약서 관리',
     cloud: '파일 클라우드'
 };
 

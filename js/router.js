@@ -30,6 +30,12 @@ async function switchTab(tab) {
         return;
     }
 
+    if (tab === 'contracts') {
+        document.getElementById('searchContainer').innerHTML = '';
+        await ContractsModule.init(container);
+        return;
+    }
+
     // 파일 클라우드
     if (tab === 'cloud') {
         document.getElementById('searchContainer').innerHTML = '';

@@ -18,7 +18,7 @@ fi
 /usr/bin/node -e "if(process.versions.node.split('.')[0]!=='24')process.exit(1)"
 getent passwd aspec-cloud >/dev/null
 test -f /opt/aspec-cloud/config/cloud.env
-/usr/bin/node --test test.mjs
+/usr/bin/node --test test.mjs contracts.test.mjs
 stamp=$(date +%Y%m%d-%H%M%S)
 backup="/opt/aspec-cloud/releases/$stamp"
 install -d -m 700 "$backup"
@@ -27,10 +27,10 @@ cp -a /etc/nginx/sites-available/aspec-cloud "$backup/nginx.conf"
 if [ -f /etc/systemd/system/aspec-cloud.service ]; then cp -a /etc/systemd/system/aspec-cloud.service "$backup/"; fi
 if systemctl is-active --quiet aspec-cloud; then systemctl stop aspec-cloud; fi
 if [ "$mode" = '--update-only' ]; then
-    install -o root -g root -m 644 server.mjs share-page.html /opt/aspec-cloud/app/
+    install -o root -g root -m 644 server.mjs contracts.mjs share-page.html /opt/aspec-cloud/app/
     systemctl start aspec-cloud
 else
-    install -o root -g root -m 644 server.mjs share-page.html project.json package.json /opt/aspec-cloud/app/
+    install -o root -g root -m 644 server.mjs contracts.mjs share-page.html project.json package.json /opt/aspec-cloud/app/
     install -o root -g root -m 644 aspec-cloud.service /etc/systemd/system/aspec-cloud.service
     systemctl daemon-reload
     systemctl enable --now aspec-cloud
@@ -81,6 +81,23 @@ if 'location /s/' not in s:
 ''' + marker, 1)
     p.write_text(s)
 s=p.read_text()
+if 'location ^~ /cloud/contracts/' not in s:
+    marker='    location /cloud/ {'
+    if marker not in s: raise SystemExit('계약서 업로드 경로를 추가할 위치를 찾지 못했습니다.')
+    s=s.replace(marker, '''    location ^~ /cloud/contracts/ {
+        client_max_body_size 50m;
+        client_body_timeout 120s;
+        proxy_pass http://127.0.0.1:3100;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
+    }
+''' + marker,1)
+    p.write_text(s)
 if 'location = / {' not in s:
     marker='    location / { return 404; }'
     if marker not in s: raise SystemExit('코드 입력 화면 경로를 추가할 위치를 찾지 못했습니다.')
