@@ -26,8 +26,11 @@ ERP 왼쪽 메뉴의 **계약서 관리 → 계약서 등록**에서 계약명, 
 
 ```sh
 node --test aspec-cloud/test.mjs aspec-cloud/contracts.test.mjs 'tests/*.test.cjs'
+node aspec-cloud/check-contract-routes.mjs https://api.aspec-tech.co.kr
 ```
 
 계약서 생성·검색·수정 충돌·비공개 미리보기·소유자 분리·일반 클라우드 및 공유 차단·파일 형식 검증·보관/복원·재시작·페이지 조회와 부분 업로드 실패 재시도를 검증합니다. 테스트는 격리된 임시 디렉터리와 가짜 인증을 사용하며 실제 업무 계약서를 만들거나 삭제하지 않습니다.
 
 2026-11-08 검증: 위 명령의 테스트 62개 통과. 운영 서버에서도 격리 테스트 6개를 실행하고 배포했습니다. Nginx 구문 검사, 서비스 상태, HTTPS 인증 차단(401), 첨부 CORS와 10 MiB 요청의 업로드 경로 통과를 확인했습니다. 브라우저에서는 예시 데이터로 목록·등록·저장 화면을 확인했습니다. 실제 계정의 업무 계약서나 스캔본으로 등록 테스트를 하지는 않았습니다. 배포 전 코드·설정 백업은 `/opt/aspec-cloud/releases/20261108-111128`입니다.
+
+같은 날 운영 수정: Nginx의 `/cloud/contracts/` 프록시가 `/cloud/contracts`의 OPTIONS/POST를 301로 자동 이동시켜 브라우저에서 `Failed to fetch`가 발생했습니다. 정확히 일치하는 `location = /cloud/contracts`를 추가했습니다. 위 라우트 검증은 `redirect: 'manual'`로 사전 요청이 204, 인증 없는 조회·저장이 401이고 이동 응답이 없는지 확인합니다. 일반 Node fetch의 기본 리다이렉트 처리는 이 문제를 가릴 수 있으므로 운영 배포 후 이 검사를 반드시 수행하세요. 수정 전 Nginx 백업은 `/opt/aspec-cloud/releases/contracts-route-20261108-111921`입니다.

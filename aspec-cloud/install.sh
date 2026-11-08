@@ -81,6 +81,17 @@ if 'location /s/' not in s:
 ''' + marker, 1)
     p.write_text(s)
 s=p.read_text()
+if 'location = /cloud/contracts {' not in s:
+    marker='    location /cloud/ {'
+    if marker not in s: raise SystemExit('계약서 목록 경로를 추가할 위치를 찾지 못했습니다.')
+    s=s.replace(marker, '''    # Avoid nginx's automatic slash redirect on CORS preflight/POST requests.
+    location = /cloud/contracts {
+        proxy_pass http://127.0.0.1:3100;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+''' + marker,1)
+    p.write_text(s)
 if 'location ^~ /cloud/contracts/' not in s:
     marker='    location /cloud/ {'
     if marker not in s: raise SystemExit('계약서 업로드 경로를 추가할 위치를 찾지 못했습니다.')
