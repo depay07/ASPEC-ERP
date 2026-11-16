@@ -250,8 +250,8 @@ const CostManagementModule = {
                                 <td class="p-2 border text-center text-slate-500">${qty * child.qty}</td>
                                 <td class="p-2 border bg-white">
                                     <input type="number" id="cost_input_bom_${idx}_${cIdx}" 
-                                           data-parent="${idx}" data-qty="${escapeAttr(child.qty)}" 
-                                           value="${escapeAttr(childCost)}" 
+                                           data-parent="${idx}" data-qty="${escapeAttr(child.qty)}"
+                                           value="${escapeAttr(childCost)}"
                                            class="w-full text-right border p-1 rounded font-bold text-slate-700" 
                                            oninput="CostManagementModule.calcRealTimeMargin()" 
                                            placeholder="단가 입력">
@@ -271,7 +271,7 @@ const CostManagementModule = {
                             <td class="p-2 border">${escapeHtml(qty)}</td>
                             <td class="p-2 border bg-yellow-50">
                                 <input type="number" id="cost_input_${idx}" 
-                                       value="${escapeAttr(costPrice)}" 
+                                       value="${escapeAttr(costPrice)}"
                                        class="w-full text-right border p-1 rounded font-bold text-slate-700" 
                                        oninput="CostManagementModule.calcRealTimeMargin()" 
                                        placeholder="0">

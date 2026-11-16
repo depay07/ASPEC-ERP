@@ -409,12 +409,12 @@ const DocumentBaseModule = {
                     </td>
                     <td class="p-2 border">
                         <input type="number" class="w-full text-center font-bold bg-orange-50 outline-none focus:bg-white focus:ring-1 focus:ring-orange-300 px-1" 
-                               value="${escapeHtml(item.qty || 0)}" 
+                               value="${escapeHtml(item.qty || 0)}"
                                onchange="DocumentBaseModule.updateItemValue(${idx}, 'qty', this.value)">
                     </td>
                     <td class="p-2 border">
                         <input type="number" class="w-full text-right text-slate-600 bg-blue-50 outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
-                               value="${escapeHtml(item.price || 0)}" 
+                               value="${escapeHtml(item.price || 0)}"
                                onchange="DocumentBaseModule.updateItemValue(${idx}, 'price', this.value)">
                     </td>
                     <td class="p-2 border text-right font-bold text-slate-700" id="row-supply-${idx}">

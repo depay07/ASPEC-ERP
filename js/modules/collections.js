@@ -114,7 +114,7 @@ const CollectionsModule = {
                     </td>
                     <td class="text-right ${balanceClass}">${formatNumber(balance)}</td>
                     <td>
-                        <input type="text" id="cnote_${row.id}" value="${escapeHtml(row.collection_note || '')}" 
+                        <input type="text" id="cnote_${row.id}" value="${escapeHtml(row.collection_note || '')}"
                                class="border rounded px-2 py-1 w-full text-xs" placeholder="메모">
                     </td>
                     <td class="text-center">

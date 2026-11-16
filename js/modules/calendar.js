@@ -111,7 +111,7 @@ const CalendarModule = {
                 <div class="calendar-day ${isToday ? 'today' : ''} ${dayEvents.length > 0 ? 'has-events' : ''}" data-event-count="${dayEvents.length}" onclick="CalendarModule.handleDateClick('${dateStr}', ${dayEvents.length})">
                     <div class="calendar-day-number">${date}</div>
                     ${visibleEvents.map(evt => `
-                        <div class="calendar-event event-${escapeHtml(evt.color)} ${evt.all_day ? 'allday' : ''}" 
+                        <div class="calendar-event event-${escapeHtml(evt.color)} ${evt.all_day ? 'allday' : ''}"
                              onclick="CalendarModule.editEvent(${evt.id}); event.stopPropagation();" 
                              title="${escapeHtml(evt.title)}">
                             ${evt.all_day ? '' : escapeHtml(evt.start_time.substring(0, 5)) + ' '}${escapeHtml(evt.title)}
@@ -426,7 +426,7 @@ const CalendarModule = {
             body.innerHTML = '<p class="text-center text-slate-500 py-8">일정이 없습니다.</p>';
         } else {
             body.innerHTML = events.map(evt => `
-                <div class="calendar-event event-${escapeHtml(evt.color)} mb-2 cursor-pointer hover:opacity-80 transition" 
+                <div class="calendar-event event-${escapeHtml(evt.color)} mb-2 cursor-pointer hover:opacity-80 transition"
                      onclick="CalendarModule.editEvent(${evt.id}); CalendarModule.closeAllEventsModal();" 
                      style="padding:10px; font-size:14px; border-radius:4px;">
                     <div class="font-bold flex justify-between">
