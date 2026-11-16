@@ -276,7 +276,7 @@ const MemosModule = {
             if (images.length > 0) {
                 imageHtml = `
                     <div class="grid grid-cols-2 gap-1 mb-2 h-24 overflow-hidden rounded-lg bg-slate-50 relative">
-                        ${images.slice(0, 2).map(url => `<img src="${escapeAttr(url)}" class="w-full h-full object-cover">`).join('')}
+                        ${images.slice(0, 2).map(url => `<img data-private-file="${escapeAttr(url)}" class="w-full h-full object-cover">`).join('')}
                         ${images.length > 2 ? `<div class="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 rounded-md font-bold">+${images.length - 2}</div>` : ''}
                     </div>`;
             }
@@ -284,7 +284,7 @@ const MemosModule = {
             return `
                 <div ondblclick="MemosModule.openDetailModal('${dataId}')"
                      class="h-auto min-h-[12rem] p-4 rounded-xl shadow-sm border-t-4 transition hover:shadow-md hover:-translate-y-1 relative flex flex-col cursor-pointer overflow-hidden bg-white" 
-                     style="border-top-color: ${row.color || '#06b6d4'};">
+                     style="border-top-color: ${/^#[0-9a-f]{6}$/i.test(row.color) ? row.color : '#06b6d4'};">
                     
                     <div class="flex justify-between items-center mb-2 flex-shrink-0 gap-2">
                         <div class="flex items-center gap-2 min-w-0">
@@ -308,6 +308,7 @@ const MemosModule = {
                     </div>
                 </div>`;
         }).join('');
+        PrivateStorage.hydrateImages(container);
     },
     
     // 3. 새 메모 등록 모달 열기
@@ -346,7 +347,7 @@ const MemosModule = {
         const images = Array.isArray(row.image_urls) ? row.image_urls : [];
         const imagesHtml = images.map(url => `
             <div class="mb-3">
-                <img src="${escapeAttr(url)}" class="w-full rounded-lg border shadow-sm cursor-zoom-in" onclick="window.open(this.src)">
+                <img data-private-file="${escapeAttr(url)}" class="w-full rounded-lg border shadow-sm cursor-zoom-in" onclick="PrivateStorage.open('memos', this.dataset.privateFile)">
             </div>
         `).join('');
 
@@ -366,6 +367,7 @@ const MemosModule = {
                 </div>
             </div>
         `;
+        PrivateStorage.hydrateImages(body);
     },
 
     // 6. 입력 폼 HTML (multiple 속성 추가)
@@ -421,7 +423,7 @@ const MemosModule = {
             if (fileInput.files.length > 0) {
                 for (const file of fileInput.files) {
                     const fileExt = file.name.split('.').pop();
-                    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+                    const fileName = `${crypto.randomUUID()}.${fileExt}`;
                     const filePath = `uploads/${fileName}`;
 
                     const { error: uploadError } = await supabaseClient.storage
@@ -430,8 +432,7 @@ const MemosModule = {
 
                     if (uploadError) throw uploadError;
 
-                    const { data: urlData } = supabaseClient.storage.from(this.bucketName).getPublicUrl(filePath);
-                    imageUrls.push(urlData.publicUrl);
+                    imageUrls.push(PrivateStorage.reference(this.bucketName, filePath));
                 }
             }
 
@@ -493,7 +494,7 @@ const MemosModule = {
         if (error) return alert("삭제 실패");
 
         if (imageUrls && imageUrls.length > 0) {
-            const paths = imageUrls.map(url => `uploads/${url.split('/').pop()}`);
+            const paths = imageUrls.map(url => PrivateStorage.pathFor(this.bucketName, url));
             await supabaseClient.storage.from(this.bucketName).remove(paths);
         }
         

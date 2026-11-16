@@ -104,8 +104,8 @@ const CollectionsModule = {
             
             return `
                 <tr class="hover:bg-slate-50 border-b transition">
-                    <td class="text-center">${row.date}</td>
-                    <td class="font-bold text-slate-700">${row.partner_name}</td>
+                    <td class="text-center">${escapeHtml(row.date)}</td>
+                    <td class="font-bold text-slate-700">${escapeHtml(row.partner_name)}</td>
                     <td class="text-right font-bold">${formatNumber(total)}</td>
                     <td class="text-center">
                         <input type="number" id="col_${row.id}" value="${collected}" 
@@ -114,7 +114,7 @@ const CollectionsModule = {
                     </td>
                     <td class="text-right ${balanceClass}">${formatNumber(balance)}</td>
                     <td>
-                        <input type="text" id="cnote_${row.id}" value="${row.collection_note || ''}" 
+                        <input type="text" id="cnote_${row.id}" value="${escapeHtml(row.collection_note || '')}" 
                                class="border rounded px-2 py-1 w-full text-xs" placeholder="메모">
                     </td>
                     <td class="text-center">

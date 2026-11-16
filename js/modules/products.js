@@ -47,10 +47,10 @@ const ProductsModule = {
             
             return `
                 <tr class="hover:bg-slate-50 border-b transition">
-                    <td class="font-mono text-center text-cyan-600">${row.code}</td>
-                    <td>${row.name}</td>
-                    <td>${row.spec || '-'}</td>
-                    <td class="text-center font-bold text-slate-600">${row.unit || 'EA'}</td>
+                    <td class="font-mono text-center text-cyan-600">${escapeHtml(row.code)}</td>
+                    <td>${escapeHtml(row.name)}</td>
+                    <td>${escapeHtml(row.spec || '-')}</td>
+                    <td class="text-center font-bold text-slate-600">${escapeHtml(row.unit || 'EA')}</td>
                     <td>${this.getActionButtons(dataId, row.id)}</td>
                 </tr>`;
         }).join('');

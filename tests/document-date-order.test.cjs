@@ -77,6 +77,7 @@ function createHarness(file, name) {
     }
 
     const context = vm.createContext({
+        ...require('./helpers/html.cjs'),
         supabaseClient: { from: table => new Query(table) },
         AppState: { currentEditId: 4, tempItems: structuredClone(rows[3].items) },
         document: {

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <meta name="referrer" content="no-referrer">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>발주서 보기 / 인쇄</title>
@@ -802,11 +803,7 @@
                 return;
             }
 
-            const result = await supabaseClient
-                .from('purchase_orders')
-                .select('*')
-                .eq('public_token', token)
-                .single();
+            const result = await supabaseClient.rpc('get_shared_purchase_order', { p_token: token });
 
             if (result.error || !result.data) {
                 status.className = 'error';

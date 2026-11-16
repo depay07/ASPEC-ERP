@@ -114,10 +114,10 @@ const BOMModule = {
                 html += `
                     <tr class="border-b hover:bg-slate-50">
                         <td class="p-3 ${idx === 0 ? 'font-bold text-purple-700' : 'text-slate-400 text-xs pl-8'}">
-                            ${idx === 0 ? `<i class="fa-solid fa-layer-group mr-1"></i> ${parentName}` : '└'}
+                            ${idx === 0 ? `<i class="fa-solid fa-layer-group mr-1"></i> ${escapeHtml(parentName)}` : '└'}
                         </td>
-                        <td class="p-3">${child.child_name}</td>
-                        <td class="p-3 text-center font-bold">${child.qty}</td>
+                        <td class="p-3">${escapeHtml(child.child_name)}</td>
+                        <td class="p-3 text-center font-bold">${escapeHtml(child.qty)}</td>
                         <td class="p-3 text-center">
                             <button onclick="BOMModule.deleteBOM(${child.id})" class="text-red-400 hover:text-red-600">
                                 <i class="fa-solid fa-trash"></i>

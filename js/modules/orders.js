@@ -96,13 +96,13 @@ const OrdersModule = {
             const deliveryIcon = this.renderDeliveryIcon(row);
             return `
                 <tr class="hover:bg-slate-50 border-b transition">
-                    <td class="text-center">${row.date}</td>
-                    <td class="font-bold">${row.partner_name || '-'}</td>
-                    <td class="text-center">${row.manager || '-'}</td>
+                    <td class="text-center">${escapeHtml(row.date)}</td>
+                    <td class="font-bold">${escapeHtml(row.partner_name || '-')}</td>
+                    <td class="text-center">${escapeHtml(row.manager || '-')}</td>
                     <td class="text-right text-slate-600">${formatNumber(row.total_supply)}</td>
                     <td class="text-right text-slate-400 text-xs">${formatNumber(row.total_vat)}</td>
                     <td class="text-right font-bold text-cyan-700">${formatNumber(row.total_amount)}</td>
-                    <td>${row.note || ''}</td>
+                    <td>${escapeHtml(row.note || '')}</td>
                     <td class="text-center text-lg">${deliveryIcon}</td>
                     <td>
                         <div class="flex justify-center items-center gap-3">
@@ -181,8 +181,8 @@ const OrdersModule = {
 
         tbody.innerHTML = data.map(row => `
             <tr class="hover:bg-slate-50 cursor-pointer" onclick="OrdersModule.loadFromQuote(${row.id})">
-                <td class="p-3">${row.date}</td>
-                <td class="p-3 font-bold">${row.partner_name}</td>
+                <td class="p-3">${escapeHtml(row.date)}</td>
+                <td class="p-3 font-bold">${escapeHtml(row.partner_name)}</td>
                 <td class="p-3 text-right">${formatNumber(row.total_amount)}</td>
                 <td class="p-3">
                     <button class="bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold">선택</button>

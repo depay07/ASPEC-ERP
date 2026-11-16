@@ -80,13 +80,13 @@ const InventoryModule = {
                 <tr class="hover:bg-slate-50 border-b transition cursor-pointer"
                     ondblclick="InventoryModule.openHistoryModal(${row.id})"
                     title="더블클릭하여 입출고 내역 보기">
-                    <td class="font-bold">${row.name}</td>
-                    <td class="text-center text-xs text-slate-500">${row.manufacturer || '-'}</td>
-                    <td class="text-center">${row.last_vendor || '-'}</td>
+                    <td class="font-bold">${escapeHtml(row.name)}</td>
+                    <td class="text-center text-xs text-slate-500">${escapeHtml(row.manufacturer || '-')}</td>
+                    <td class="text-center">${escapeHtml(row.last_vendor || '-')}</td>
                     <td class="text-right">${formatNumber(row.last_price)}</td>
                     <td class="text-center font-bold text-slate-700">${totalStock}</td>
                     <td class="text-center ${availableClass}">${available}</td>
-                    <td class="text-xs text-slate-500">${row.last_serial_no || ''}</td>
+                    <td class="text-xs text-slate-500">${escapeHtml(row.last_serial_no || '')}</td>
                     <td class="text-center">
                         ${reserved > 0 ? `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">${reserved}개 예약</span>` : '-'}
                     </td>
@@ -290,7 +290,7 @@ const InventoryModule = {
         const body = document.getElementById('modalBody');
         body.innerHTML = `
             <div class="bg-blue-50 p-4 rounded mb-4 border border-blue-200">
-                <h3 class="font-bold text-blue-800 mb-2">${product.name}</h3>
+                <h3 class="font-bold text-blue-800 mb-2">${escapeHtml(product.name)}</h3>
                 <p class="text-sm text-slate-600">현재 재고: <span class="font-bold text-xl text-blue-600">${product.stock || 0}</span>개</p>
             </div>
             

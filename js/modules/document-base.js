@@ -68,13 +68,13 @@ const DocumentBaseModule = {
         
         return `
             <tr class="hover:bg-slate-50 border-b transition">
-                <td class="text-center">${row.date}</td>
-                <td class="font-bold">${row.partner_name || '-'}</td>
-                <td class="text-center">${row.manager || '-'}</td>
+                <td class="text-center">${escapeHtml(row.date)}</td>
+                <td class="font-bold">${escapeHtml(row.partner_name || '-')}</td>
+                <td class="text-center">${escapeHtml(row.manager || '-')}</td>
                 <td class="text-right text-slate-600">${formatNumber(row.total_supply)}</td>
                 <td class="text-right text-slate-400 text-xs">${formatNumber(row.total_vat)}</td>
                 <td class="text-right font-bold text-cyan-700">${formatNumber(row.total_amount)}</td>
-                <td>${row.note || ''}</td>
+                <td>${escapeHtml(row.note || '')}</td>
                 <td>${actions}</td>
             </tr>`;
     },
@@ -409,12 +409,12 @@ const DocumentBaseModule = {
                     </td>
                     <td class="p-2 border">
                         <input type="number" class="w-full text-center font-bold bg-orange-50 outline-none focus:bg-white focus:ring-1 focus:ring-orange-300 px-1" 
-                               value="${item.qty || 0}" 
+                               value="${escapeHtml(item.qty || 0)}" 
                                onchange="DocumentBaseModule.updateItemValue(${idx}, 'qty', this.value)">
                     </td>
                     <td class="p-2 border">
                         <input type="number" class="w-full text-right text-slate-600 bg-blue-50 outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 px-1" 
-                               value="${item.price || 0}" 
+                               value="${escapeHtml(item.price || 0)}" 
                                onchange="DocumentBaseModule.updateItemValue(${idx}, 'price', this.value)">
                     </td>
                     <td class="p-2 border text-right font-bold text-slate-700" id="row-supply-${idx}">

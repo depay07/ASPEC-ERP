@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <meta name="referrer" content="no-referrer">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>거래명세서 보기 / 인쇄</title>
@@ -569,13 +570,7 @@
                 String(d.getMonth() + 1).padStart(2, '0') +
                 String(d.getDate()).padStart(2, '0');
 
-            const result = await supabaseClient
-                .from('sales')
-                .select('*', { count: 'exact', head: true })
-                .eq('date', row.date)
-                .lte('id', row.id);
-
-            return `ASPEC-${yymmdd}-T${String(result.count || 1).padStart(2, '0')}`;
+            return row.document_no || `ASPEC-${yymmdd}-T01`;
         }
 
         function numberToKorean(num) {
@@ -841,11 +836,7 @@
                 return;
             }
 
-            const result = await supabaseClient
-                .from('sales')
-                .select('*')
-                .eq('public_token', token)
-                .single();
+            const result = await supabaseClient.rpc('get_shared_sale', { p_token: token });
 
             if (result.error || !result.data) {
                 status.className = 'error';

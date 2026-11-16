@@ -56,14 +56,14 @@ const PurchasesModule = {
             
             return `
                 <tr class="hover:bg-slate-50 border-b transition">
-                    <td class="text-center">${row.date}</td>
-                    <td class="text-center">${row.manufacturer || '-'}</td>
-                    <td>${row.partner_name}</td>
-                    <td>${row.item_name}</td>
-                    <td class="text-center font-bold">${row.qty}</td>
+                    <td class="text-center">${escapeHtml(row.date)}</td>
+                    <td class="text-center">${escapeHtml(row.manufacturer || '-')}</td>
+                    <td>${escapeHtml(row.partner_name)}</td>
+                    <td>${escapeHtml(row.item_name)}</td>
+                    <td class="text-center font-bold">${escapeHtml(row.qty)}</td>
                     <td class="text-right">${formatNumber(row.unit_price)}</td>
                     <td class="text-right font-bold">${formatNumber(row.total_amount)}</td>
-                    <td class="text-center">${row.serial_no || '-'}</td>
+                    <td class="text-center">${escapeHtml(row.serial_no || '-')}</td>
                     <td>${this.getActionButtons(dataId, row.id)}</td>
                 </tr>`;
         }).join('');
@@ -175,9 +175,9 @@ const PurchasesModule = {
                             <tbody>
                                 ${data.map(po => `
                                     <tr class="border-b hover:bg-slate-50 transition">
-                                        <td class="p-2">${po.date}</td>
-                                        <td class="p-2 text-blue-600 font-bold">${po.po_number}</td>
-                                        <td class="p-2">${po.partner_name}</td>
+                                        <td class="p-2">${escapeHtml(po.date)}</td>
+                                        <td class="p-2 text-blue-600 font-bold">${escapeHtml(po.po_number)}</td>
+                                        <td class="p-2">${escapeHtml(po.partner_name)}</td>
                                         <td class="p-2">${po.items ? po.items.length : 0}건</td>
                                         <td class="p-2 text-right">${formatNumber(po.total_amount)}원</td>
                                         <td class="p-2">
@@ -407,10 +407,10 @@ const PurchasesModule = {
             grandTotal += item.total_amount;
             return `
                 <tr class="border-b hover:bg-slate-50">
-                    <td class="p-2">${item.name}</td>
-                    <td class="p-2 text-xs text-slate-500">${item.manufacturer || '-'}</td>
-                    <td class="p-2 text-xs text-blue-600">${item.serial_no || '-'}</td>
-                    <td class="p-2 font-bold">${item.qty}</td>
+                    <td class="p-2">${escapeHtml(item.name)}</td>
+                    <td class="p-2 text-xs text-slate-500">${escapeHtml(item.manufacturer || '-')}</td>
+                    <td class="p-2 text-xs text-blue-600">${escapeHtml(item.serial_no || '-')}</td>
+                    <td class="p-2 font-bold">${escapeHtml(item.qty)}</td>
                     <td class="p-2 text-right text-slate-600">${formatNumber(item.unit_price)}</td>
                     <td class="p-2 text-right font-bold">${formatNumber(item.total_amount)}</td>
                     <td class="p-2">

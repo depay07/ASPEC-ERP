@@ -194,12 +194,12 @@ const PurchaseOrdersModule = {
 
             return `
                 <tr class="hover:bg-slate-50 border-b transition text-sm">
-                    <td class="font-bold text-blue-600 text-center">${row.po_number}</td>
-                    <td class="pl-2">${row.partner_name}</td>
-                    <td class="text-center text-xs">${row.end_user || '-'}</td>
-                    <td class="pl-2 text-xs">${itemsSummary}</td>
+                    <td class="font-bold text-blue-600 text-center">${escapeHtml(row.po_number)}</td>
+                    <td class="pl-2">${escapeHtml(row.partner_name)}</td>
+                    <td class="text-center text-xs">${escapeHtml(row.end_user || '-')}</td>
+                    <td class="pl-2 text-xs">${escapeHtml(itemsSummary)}</td>
                     <td class="font-bold text-right pr-2">${formatNumber(totalAmount)}</td>
-                    <td class="text-center">${row.date}</td>
+                    <td class="text-center">${escapeHtml(row.date)}</td>
                     <td class="text-center">${deliveryDate || '-'}</td>
                     <td class="text-center text-xs">${this.getPaymentTermsLabel(paymentTerms)}</td>
                     <td class="text-center text-xs">${paymentDueHtml}</td>

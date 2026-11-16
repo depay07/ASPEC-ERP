@@ -150,9 +150,9 @@ const CostManagementModule = {
             
             return `
                 <tr class="hover:bg-slate-50 border-b transition">
-                    <td class="text-center">${row.date}</td>
-                    <td class="font-bold text-slate-700">${row.partner_name}</td>
-                    <td>${title}</td>
+                    <td class="text-center">${escapeHtml(row.date)}</td>
+                    <td class="font-bold text-slate-700">${escapeHtml(row.partner_name)}</td>
+                    <td>${escapeHtml(title)}</td>
                     <td class="text-right font-bold">${formatNumber(totalSales)}</td>
                     <td class="text-right text-slate-600">${formatNumber(totalCost)}</td>
                     <td class="text-right font-bold ${marginClass}">${formatNumber(margin)}</td>
@@ -228,10 +228,10 @@ const CostManagementModule = {
                     itemsHtml += `
                         <tr class="bg-slate-100 font-bold text-slate-700">
                             <td class="p-2 border text-left">
-                                <i class="fa-solid fa-layer-group text-purple-600 mr-1"></i> ${item.name} (세트)
+                                <i class="fa-solid fa-layer-group text-purple-600 mr-1"></i> ${escapeHtml(item.name)} (세트)
                             </td>
                             <td class="p-2 border text-right">${formatNumber(sellPrice)}</td>
-                            <td class="p-2 border">${qty}</td>
+                            <td class="p-2 border">${escapeHtml(qty)}</td>
                             <td class="p-2 border text-right text-xs text-slate-500">(하단 구성품 입력)</td>
                             <td class="p-2 border text-right text-blue-600" id="margin_parent_${idx}">-</td>
                         </tr>`;
@@ -244,14 +244,14 @@ const CostManagementModule = {
                         itemsHtml += `
                             <tr class="text-xs bg-purple-50">
                                 <td class="p-2 border text-left pl-6">
-                                    └ ${child.child_name} <span class="text-slate-400">(${child.qty}ea/set)</span>
+                                    └ ${escapeHtml(child.child_name)} <span class="text-slate-400">(${escapeHtml(child.qty)}ea/set)</span>
                                 </td>
                                 <td class="p-2 border text-center text-slate-400">-</td>
                                 <td class="p-2 border text-center text-slate-500">${qty * child.qty}</td>
                                 <td class="p-2 border bg-white">
                                     <input type="number" id="cost_input_bom_${idx}_${cIdx}" 
-                                           data-parent="${idx}" data-qty="${child.qty}" 
-                                           value="${childCost}" 
+                                           data-parent="${idx}" data-qty="${escapeAttr(child.qty)}" 
+                                           value="${escapeAttr(childCost)}" 
                                            class="w-full text-right border p-1 rounded font-bold text-slate-700" 
                                            oninput="CostManagementModule.calcRealTimeMargin()" 
                                            placeholder="단가 입력">
@@ -266,12 +266,12 @@ const CostManagementModule = {
                     
                     itemsHtml += `
                         <tr>
-                            <td class="p-2 border text-left">${item.name}</td>
+                            <td class="p-2 border text-left">${escapeHtml(item.name)}</td>
                             <td class="p-2 border text-right text-slate-500">${formatNumber(sellPrice)}</td>
-                            <td class="p-2 border">${qty}</td>
+                            <td class="p-2 border">${escapeHtml(qty)}</td>
                             <td class="p-2 border bg-yellow-50">
                                 <input type="number" id="cost_input_${idx}" 
-                                       value="${costPrice}" 
+                                       value="${escapeAttr(costPrice)}" 
                                        class="w-full text-right border p-1 rounded font-bold text-slate-700" 
                                        oninput="CostManagementModule.calcRealTimeMargin()" 
                                        placeholder="0">

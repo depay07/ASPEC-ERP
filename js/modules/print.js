@@ -290,10 +290,10 @@ const PrintModule = {
                 tbody.innerHTML += `
                     <tr class="items-row">
                         <td style="text-align:center">${idx + 1}</td>
-                        <td>${item.name}</td>
-                        <td style="font-size:10px">${spec || '-'}</td>
-                        <td style="text-align:center">${item.unit || 'EA'}</td>
-                        <td style="text-align:center">${item.qty}</td>
+                        <td>${escapeHtml(item.name)}</td>
+                        <td style="font-size:10px">${escapeHtml(spec || '-')}</td>
+                        <td style="text-align:center">${escapeHtml(item.unit || 'EA')}</td>
+                        <td style="text-align:center">${escapeHtml(item.qty)}</td>
                         <td style="text-align:right">${formatNumber(item.price)}</td>
                         <td style="text-align:right">${formatNumber(item.supply)}</td>
                     </tr>`;

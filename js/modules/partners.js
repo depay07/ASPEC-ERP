@@ -43,18 +43,18 @@ var PartnersModule = {
             
             // 파일 아이콘들 (파일이 있는 경우에만 표시)
             var bizIcons = '';
-            if (row.biz_file_url) bizIcons += '<a href="' + row.biz_file_url + '" target="_blank" class="text-green-600 hover:text-green-800 ml-1" title="사업자1"><i class="fa-solid fa-file-pdf"></i></a>';
-            if (row.biz_file_url2) bizIcons += '<a href="' + row.biz_file_url2 + '" target="_blank" class="text-green-500 hover:text-green-700 ml-1" title="사업자2"><i class="fa-solid fa-file-pdf"></i></a>';
+            if (row.biz_file_url) bizIcons += PrivateStorage.link('erp', row.biz_file_url, '<i class="fa-solid fa-file-pdf" title="사업자1"></i>', 'text-green-600 ml-1');
+            if (row.biz_file_url2) bizIcons += PrivateStorage.link('erp', row.biz_file_url2, '<i class="fa-solid fa-file-pdf" title="사업자2"></i>', 'text-green-500 ml-1');
             
             var bankIcons = '';
-            if (row.bank_file_url1) bankIcons += '<a href="' + row.bank_file_url1 + '" target="_blank" class="text-blue-600 hover:text-blue-800 ml-1" title="통장1"><i class="fa-solid fa-building-columns"></i></a>';
-            if (row.bank_file_url2) bankIcons += '<a href="' + row.bank_file_url2 + '" target="_blank" class="text-blue-500 hover:text-blue-700 ml-1" title="통장2"><i class="fa-solid fa-building-columns"></i></a>';
+            if (row.bank_file_url1) bankIcons += PrivateStorage.link('erp', row.bank_file_url1, '<i class="fa-solid fa-building-columns" title="통장1"></i>', 'text-blue-600 ml-1');
+            if (row.bank_file_url2) bankIcons += PrivateStorage.link('erp', row.bank_file_url2, '<i class="fa-solid fa-building-columns" title="통장2"></i>', 'text-blue-500 ml-1');
             
             html += '<tr class="hover:bg-slate-50 border-b transition">';
-            html += '<td class="text-left pl-4 font-bold">' + (row.name || '') + bizIcons + bankIcons + '</td>';
-            html += '<td class="text-center">' + (row.manager_name || '-') + '</td>';
-            html += '<td class="text-center">' + (row.phone || '-') + '</td>';
-            html += '<td class="text-left text-xs text-slate-500">' + (row.note || '') + '</td>';
+            html += '<td class="text-left pl-4 font-bold">' + escapeHtml(row.name || '') + bizIcons + bankIcons + '</td>';
+            html += '<td class="text-center">' + escapeHtml(row.manager_name || '-') + '</td>';
+            html += '<td class="text-center">' + escapeHtml(row.phone || '-') + '</td>';
+            html += '<td class="text-left text-xs text-slate-500">' + escapeHtml(row.note || '') + '</td>';
             html += '<td>';
             html += '<div class="flex justify-center items-center gap-3">';
             html += '<button onclick="PartnersModule.openEditModal(\'' + dataId + '\')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fa-solid fa-pen-to-square fa-lg"></i></button>';
@@ -101,7 +101,7 @@ var PartnersModule = {
             fileSlots.forEach(function(slot) {
                 var el = document.getElementById(slot.id);
                 if (slot.url) {
-                    el.innerHTML = '<a href="' + slot.url + '" target="_blank" class="text-blue-600 font-bold hover:underline">[기존파일]</a>';
+                    el.innerHTML = PrivateStorage.link('erp', slot.url, '[기존파일]', 'text-blue-600 font-bold hover:underline');
                 }
             });
         }, 50);
@@ -143,12 +143,12 @@ var PartnersModule = {
         if (fileInput && fileInput.files.length > 0) {
             var file = fileInput.files[0];
             var fileExt = file.name.split('.').pop();
-            var fileName = prefix + '_' + Date.now() + '_' + Math.floor(Math.random() * 1000) + '.' + fileExt;
+            var fileName = prefix + '_' + crypto.randomUUID() + '.' + fileExt;
             
             var { data, error } = await supabaseClient.storage.from('erp').upload(fileName, file);
             if (error) throw error;
             
-            return supabaseClient.storage.from('erp').getPublicUrl(fileName).data.publicUrl;
+            return PrivateStorage.reference('erp', fileName);
         }
         return null;
     },

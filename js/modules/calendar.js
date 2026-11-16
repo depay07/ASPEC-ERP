@@ -24,7 +24,7 @@ const CalendarModule = {
                     <div class="flex items-center gap-3">
                         <div class="relative group">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-hover:text-blue-500 transition"></i>
-                            <input type="text" id="calendarSearchInput" value="${existingSearch}"
+                            <input type="text" id="calendarSearchInput" value="${escapeHtml(existingSearch)}"
                                 placeholder="일정 검색" 
                                 onkeyup="if(event.keyCode==13){ CalendarModule.search(this.value) } else if(this.value==''){ CalendarModule.search('') }"
                                 class="pl-10 pr-4 py-2 bg-slate-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-full text-sm transition-all w-64 focus:w-80 outline-none shadow-sm">
@@ -111,10 +111,10 @@ const CalendarModule = {
                 <div class="calendar-day ${isToday ? 'today' : ''} ${dayEvents.length > 0 ? 'has-events' : ''}" data-event-count="${dayEvents.length}" onclick="CalendarModule.handleDateClick('${dateStr}', ${dayEvents.length})">
                     <div class="calendar-day-number">${date}</div>
                     ${visibleEvents.map(evt => `
-                        <div class="calendar-event event-${evt.color} ${evt.all_day ? 'allday' : ''}" 
+                        <div class="calendar-event event-${escapeHtml(evt.color)} ${evt.all_day ? 'allday' : ''}" 
                              onclick="CalendarModule.editEvent(${evt.id}); event.stopPropagation();" 
-                             title="${evt.title}">
-                            ${evt.all_day ? '' : evt.start_time.substring(0, 5) + ' '}${evt.title}
+                             title="${escapeHtml(evt.title)}">
+                            ${evt.all_day ? '' : escapeHtml(evt.start_time.substring(0, 5)) + ' '}${escapeHtml(evt.title)}
                         </div>
                     `).join('')}
                     ${hiddenCount > 0 ? `
@@ -191,8 +191,8 @@ const CalendarModule = {
                         const dayStr = days[dateObj.getDay()];
                         const yearMonth = `${dateParts.year}년 ${dateParts.month}월`;
                         const timeHtml = evt.all_day 
-                            ? `<span class="inline-block w-2 h-2 rounded-full bg-${evt.color}-500 mr-2"></span>종일`
-                            : `<span class="inline-block w-2 h-2 rounded-full bg-${evt.color}-500 mr-2"></span>${evt.start_time.substring(0,5)} ~ ${evt.end_time.substring(0,5)}`;
+                            ? `<span class="inline-block w-2 h-2 rounded-full bg-${escapeHtml(evt.color)}-500 mr-2"></span>종일`
+                            : `<span class="inline-block w-2 h-2 rounded-full bg-${escapeHtml(evt.color)}-500 mr-2"></span>${escapeHtml(evt.start_time.substring(0,5))} ~ ${escapeHtml(evt.end_time.substring(0,5))}`;
                         
                         return `
                             <div class="flex hover:bg-slate-50 transition cursor-pointer group" onclick="CalendarModule.editEvent(${evt.id})">
@@ -204,8 +204,8 @@ const CalendarModule = {
                                 </div>
                                 <div class="flex-1 p-4 flex flex-col justify-center">
                                     <div class="flex items-center text-sm font-bold text-slate-600 mb-1">${timeHtml}</div>
-                                    <div class="text-base font-bold text-slate-800 mb-1">${evt.title}</div>
-                                    ${evt.description ? `<div class="text-sm text-slate-400 truncate">${evt.description}</div>` : ''}
+                                    <div class="text-base font-bold text-slate-800 mb-1">${escapeHtml(evt.title)}</div>
+                                    ${evt.description ? `<div class="text-sm text-slate-400 truncate">${escapeHtml(evt.description)}</div>` : ''}
                                 </div>
                                 <div class="w-12 flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 transition">
                                     <i class="fa-solid fa-chevron-right"></i>
@@ -426,17 +426,17 @@ const CalendarModule = {
             body.innerHTML = '<p class="text-center text-slate-500 py-8">일정이 없습니다.</p>';
         } else {
             body.innerHTML = events.map(evt => `
-                <div class="calendar-event event-${evt.color} mb-2 cursor-pointer hover:opacity-80 transition" 
+                <div class="calendar-event event-${escapeHtml(evt.color)} mb-2 cursor-pointer hover:opacity-80 transition" 
                      onclick="CalendarModule.editEvent(${evt.id}); CalendarModule.closeAllEventsModal();" 
                      style="padding:10px; font-size:14px; border-radius:4px;">
                     <div class="font-bold flex justify-between">
-                        <span>${evt.title}</span>
+                        <span>${escapeHtml(evt.title)}</span>
                         <span class="text-xs font-normal opacity-70"><i class="fa-solid fa-pen"></i></span>
                     </div>
                     ${evt.all_day 
                         ? '<div class="text-xs mt-1 font-semibold opacity-90">종일</div>' 
-                        : `<div class="text-xs mt-1 font-semibold opacity-90">${evt.start_time.substring(0,5)}</div>`}
-                    ${evt.description ? `<div class="text-xs mt-1 opacity-80 border-t border-black/10 pt-1 mt-1">${evt.description}</div>` : ''}
+                        : `<div class="text-xs mt-1 font-semibold opacity-90">${escapeHtml(evt.start_time.substring(0,5))}</div>`}
+                    ${evt.description ? `<div class="text-xs mt-1 opacity-80 border-t border-black/10 pt-1 mt-1">${escapeHtml(evt.description)}</div>` : ''}
                 </div>
             `).join('');
         }

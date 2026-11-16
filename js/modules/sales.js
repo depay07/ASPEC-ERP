@@ -70,15 +70,15 @@ const SalesModule = {
 
             return `
 <tr class="hover:bg-slate-50 border-b transition text-sm">
-    <td class="text-center p-2">${row.date}</td>
-    <td class="text-center font-bold p-2">${row.partner_name}</td>
-    <td class="text-center p-2 text-xs">${row.manager || '-'}</td>
+    <td class="text-center p-2">${escapeHtml(row.date)}</td>
+    <td class="text-center font-bold p-2">${escapeHtml(row.partner_name)}</td>
+    <td class="text-center p-2 text-xs">${escapeHtml(row.manager || '-')}</td>
     <td class="text-right p-2 text-slate-600">${formatNumber(row.total_supply)}</td>
     <td class="text-right p-2 text-slate-400 text-xs">${formatNumber(row.total_vat)}</td>
     <td class="text-right p-2 font-bold">${formatNumber(row.total_amount)}</td>
     
     <!-- 비고: 내용이 길면 말줄임표(...) 처리 -->
-    <td class="text-left p-2 text-xs truncate max-w-[150px]">${row.note || ''}</td>
+    <td class="text-left p-2 text-xs truncate max-w-[150px]">${escapeHtml(row.note || '')}</td>
     
     <!-- 계산서 상태 -->
     <td class="text-center p-2 text-lg">${taxIcon}</td>
@@ -299,7 +299,7 @@ const SalesModule = {
 
         tbody.innerHTML = data.map(row => `
             <tr class="hover:bg-slate-50 cursor-pointer" onclick="SalesModule.loadFromOrder(${row.id})">
-                <td class="p-3">${row.date}</td><td class="p-3 font-bold">${row.partner_name}</td>
+                <td class="p-3">${escapeHtml(row.date)}</td><td class="p-3 font-bold">${escapeHtml(row.partner_name)}</td>
                 <td class="p-3 text-right">${formatNumber(row.total_amount)}</td>
                 <td class="p-3"><button class="bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold">선택</button></td>
             </tr>`).join('');

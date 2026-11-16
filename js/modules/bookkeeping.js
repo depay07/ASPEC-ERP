@@ -80,14 +80,14 @@ const BookkeepingModule = {
             
             return `
                 <tr class="hover:bg-slate-50 border-b transition">
-                    <td class="text-center">${row.date}</td>
-                    <td class="text-center font-bold text-slate-600">${row.category}</td>
-                    <td>${row.usage_desc}</td>
+                    <td class="text-center">${escapeHtml(row.date)}</td>
+                    <td class="text-center font-bold text-slate-600">${escapeHtml(row.category)}</td>
+                    <td>${escapeHtml(row.usage_desc)}</td>
                     <td class="text-center">
-                        <span class="px-2 py-1 rounded text-xs ${methodClass}">${row.payment_method || '-'}</span>
+                        <span class="px-2 py-1 rounded text-xs ${methodClass}">${escapeHtml(row.payment_method || '-')}</span>
                     </td>
                     <td class="text-right font-bold">${formatNumber(row.amount)}원</td>
-                    <td>${row.note || ''}</td>
+                    <td>${escapeHtml(row.note || '')}</td>
                     <td>${this.getActionButtons(dataId, row.id)}</td>
                 </tr>`;
         }).join('');

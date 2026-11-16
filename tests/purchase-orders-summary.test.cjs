@@ -27,6 +27,7 @@ function loadPurchaseOrders(rows = [], itemFilter = '') {
         then(resolve) { return Promise.resolve({ data: rows, error: null }).then(resolve); }
     };
     const context = vm.createContext({
+        ...require('./helpers/html.cjs'),
         document: { getElementById: id => id === 'purchaseOrdersSummary' ? summary : listBody },
         el: id => inputs[id] || '',
         formatNumber: value => Number(value).toLocaleString('ko-KR'),

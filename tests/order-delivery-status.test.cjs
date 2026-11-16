@@ -10,6 +10,7 @@ function loadOrders(deliveryFilter = '') {
     const listBody = { innerHTML: '' };
     let emptyColspan = null;
     const context = vm.createContext({
+        ...require('./helpers/html.cjs'),
         AppState: {},
         DocumentBaseModule: {},
         document: { getElementById: () => listBody },
